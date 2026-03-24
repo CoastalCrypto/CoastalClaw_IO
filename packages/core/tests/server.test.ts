@@ -5,8 +5,8 @@ describe('health endpoint', () => {
   let server: Awaited<ReturnType<typeof buildServer>>
 
   beforeAll(async () => {
-    server = await buildServer({ port: 0, host: '127.0.0.1' })
-    await server.listen({ port: 0 })
+    server = await buildServer()
+    await server.listen({ port: 0, host: '127.0.0.1' })
   })
 
   afterAll(async () => {

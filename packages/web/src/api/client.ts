@@ -27,3 +27,5 @@ export class CoreClient {
     return res.json()
   }
 }
+
+export const coreClient = new CoreClient('/api')

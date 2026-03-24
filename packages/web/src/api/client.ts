@@ -10,7 +10,10 @@ export interface SendMessageResult {
 }
 
 export class CoreClient {
-  constructor(private baseUrl: string) {}
+  private baseUrl: string
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl
+  }
 
   async sendMessage(options: SendMessageOptions): Promise<SendMessageResult> {
     const res = await fetch(`${this.baseUrl}/api/chat`, {

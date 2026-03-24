@@ -4,6 +4,11 @@ export interface Config {
   dataDir: string
   ollamaUrl: string
   mem0ApiKey: string | undefined
+  vramBudgetGb: number
+  routerConfidence: number
+  tinyRouterModel: string
+  quantRouterModel: string
+  llamaCppDir: string
 }
 
 export function loadConfig(): Config {
@@ -21,5 +26,10 @@ export function loadConfig(): Config {
     dataDir: process.env.CC_DATA_DIR ?? './data',
     ollamaUrl: process.env.CC_OLLAMA_URL ?? 'http://127.0.0.1:11434',
     mem0ApiKey: process.env.MEM0_API_KEY,
+    vramBudgetGb: Number(process.env.CC_VRAM_BUDGET_GB ?? '24'),
+    routerConfidence: Number(process.env.CC_ROUTER_CONFIDENCE ?? '0.7'),
+    tinyRouterModel: process.env.CC_TINY_ROUTER_MODEL ?? './data/tiny-router.onnx',
+    quantRouterModel: process.env.CC_QUANT_ROUTER_MODEL ?? 'qwen2.5:0.5b',
+    llamaCppDir: process.env.CC_LLAMA_CPP_DIR ?? './data/llama-cpp/',
   }
 }

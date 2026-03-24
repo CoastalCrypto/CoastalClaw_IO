@@ -1,0 +1,51 @@
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
+import { buildServer } from '../../src/server.js'
+
+vi.mock('../../src/models/router.js', () => ({
+  ModelRouter: vi.fn().mockImplementation(() => ({
+    chat: vi.fn().mockResolvedValue('Hello from the agent!'),
+    listModels: vi.fn().mockResolvedValue(['llama3.2']),
+  })),
+}))
+
+vi.mock('mem0ai', () => ({
+  MemoryClient: vi.fn().mockImplementation(() => ({
+    add: vi.fn().mockResolvedValue({}),
+    search: vi.fn().mockResolvedValue([]),
+  })),
+}))
+
+describe('POST /api/chat', () => {
+  let server: Awaited<ReturnType<typeof buildServer>>
+
+  beforeAll(async () => {
+    server = await buildServer()
+    await server.listen({ port: 0, host: '127.0.0.1' })
+  })
+
+  afterAll(async () => await server.close())
+
+  it('returns assistant reply', async () => {
+    const res = await server.inject({
+      method: 'POST',
+      url: '/api/chat',
+      payload: {
+        sessionId: 'test-session',
+        message: 'hello',
+      },
+    })
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.reply).toBe('Hello from the agent!')
+    expect(body.sessionId).toBe('test-session')
+  })
+
+  it('rejects missing message with 400', async () => {
+    const res = await server.inject({
+      method: 'POST',
+      url: '/api/chat',
+      payload: { sessionId: 'test' },
+    })
+    expect(res.statusCode).toBe(400)
+  })
+})

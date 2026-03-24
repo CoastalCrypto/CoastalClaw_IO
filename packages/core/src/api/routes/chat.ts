@@ -15,6 +15,8 @@ export async function chatRoutes(fastify: FastifyInstance) {
     mem0ApiKey: config.mem0ApiKey,
   })
 
+  fastify.addHook('onClose', async () => { await memory.close() })
+
   fastify.post<{
     Body: { sessionId?: string; message: string; model?: string }
   }>('/api/chat', {

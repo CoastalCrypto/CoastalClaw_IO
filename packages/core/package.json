@@ -1,0 +1,27 @@
+{
+  "name": "@coastal-claw/core",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "node --watch --loader ts-node/esm src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "fastify": "^4.28.0",
+    "@fastify/websocket": "^8.3.0",
+    "@fastify/cors": "^9.0.0",
+    "better-sqlite3": "^9.6.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}

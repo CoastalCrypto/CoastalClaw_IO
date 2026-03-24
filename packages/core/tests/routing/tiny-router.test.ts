@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { existsSync } from 'fs'
 import { TinyRouterClient } from '../../src/routing/tiny-router.js'
 
 describe('TinyRouterClient', () => {
@@ -20,5 +21,22 @@ describe('TinyRouterClient', () => {
     expect(['ephemeral','useful','remember']).toContain(signals.retention)
     expect(['low','medium','high']).toContain(signals.urgency)
     expect(typeof signals.confidence).toBe('number')
+  })
+})
+
+const MODEL_PATH = process.env.CC_TINY_ROUTER_MODEL ?? './data/tiny-router.onnx'
+const modelAvailable = existsSync(MODEL_PATH)
+
+describe.skipIf(!modelAvailable)('TinyRouterClient — live ONNX inference', () => {
+  it('returns non-zero confidence when model is present', async () => {
+    const client = new TinyRouterClient(MODEL_PATH)
+    const signals = await client.classify('what is our burn rate?')
+    expect(signals.confidence).toBeGreaterThan(0)
+  })
+
+  it('maps relation output to a valid relation label', async () => {
+    const client = new TinyRouterClient(MODEL_PATH)
+    const signals = await client.classify('follow up on the budget discussion')
+    expect(['new','follow_up','correction','confirmation','cancellation','closure']).toContain(signals.relation)
   })
 })

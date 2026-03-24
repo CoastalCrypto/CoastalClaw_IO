@@ -14,9 +14,10 @@
   "dependencies": {
     "@fastify/cors": "^9.0.0",
     "@fastify/websocket": "^8.3.0",
-    "better-sqlite3": "^9.6.0",
+    "better-sqlite3": "^11.10.0",
     "dotenv": "^16.4.0",
-    "fastify": "^4.28.0"
+    "fastify": "^4.28.0",
+    "mem0ai": "^2.4.2"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",

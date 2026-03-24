@@ -28,8 +28,8 @@ export class Mem0Adapter {
     }>
     return results.map((r) => ({
       id: r.id,
-      content: r.memory,
-      score: r.score,
+      content: r.memory ?? '',
+      score: r.score ?? 0,
     }))
   }
 }

@@ -41,6 +41,7 @@ export class UnifiedMemory {
 
   async close(): Promise<void> {
     await this.lossless.close()
+    // Note: mem0ai MemoryClient has no close() — HTTP connections drain naturally
   }
 }
 

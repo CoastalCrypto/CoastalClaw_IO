@@ -60,7 +60,7 @@ export class LosslessAdapter implements MemoryStore {
       role: r.role as MemoryEntry['role'],
       content: r.content,
       timestamp: r.timestamp,
-      metadata: r.metadata ? JSON.parse(r.metadata) : undefined,
+      metadata: r.metadata ? (() => { try { return JSON.parse(r.metadata as string) } catch { return undefined } })() : undefined,
     }))
   }
 

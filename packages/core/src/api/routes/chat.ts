@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { ModelRouter } from '../../models/router.js'
 import { UnifiedMemory } from '../../memory/index.js'
 import { loadConfig } from '../../config.js'
-import { randomUUID } from 'crypto'
+import { randomUUID } from 'node:crypto'
 
 export async function chatRoutes(fastify: FastifyInstance) {
   const config = loadConfig()
@@ -15,7 +15,10 @@ export async function chatRoutes(fastify: FastifyInstance) {
     mem0ApiKey: config.mem0ApiKey,
   })
 
-  fastify.addHook('onClose', async () => { await memory.close() })
+  fastify.addHook('onClose', async () => {
+    await memory.close()
+    router.close()
+  })
 
   fastify.post<{
     Body: { sessionId?: string; message: string; model?: string }
@@ -35,33 +38,35 @@ export async function chatRoutes(fastify: FastifyInstance) {
     const { message, model } = req.body
     const sessionId = req.body.sessionId ?? randomUUID()
 
-    // Persist user message
+    // Get history first (before persisting user message, to avoid including it)
+    const history = await memory.queryHistory({ sessionId, limit: 20 })
+    const messages = history
+      .slice()
+      .reverse()
+      .map((e) => ({ role: e.role, content: e.content }))
+    messages.push({ role: 'user', content: message })
+
+    // Route to model — cascade router classifies the message
+    const { reply: replyText, decision } = await router.chat(messages, { model })
+    const retention = decision.signals.retention
+
+    // Persist user message with retention signal from tiny-router
     await memory.write({
       id: randomUUID(),
       sessionId,
       role: 'user',
       content: message,
       timestamp: Date.now(),
-    })
+    }, retention)
 
-    // Get history for context (newest-first from DB → reverse for chronological order)
-    const history = await memory.queryHistory({ sessionId, limit: 20 })
-    const messages = history
-      .slice()
-      .reverse()
-      .map((e) => ({ role: e.role, content: e.content }))
-
-    // Route to model
-    const replyText = await router.chat(messages, { model })
-
-    // Persist assistant reply
+    // Assistant replies always persisted
     await memory.write({
       id: randomUUID(),
       sessionId,
       role: 'assistant',
       content: replyText,
       timestamp: Date.now(),
-    })
+    }, 'useful')
 
     return reply.send({ sessionId, reply: replyText })
   })

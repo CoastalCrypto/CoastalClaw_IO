@@ -18,12 +18,15 @@ export class UnifiedMemory {
       : null
   }
 
-  async write(entry: MemoryEntry): Promise<void> {
-    // Always write to lossless store — nothing is ever lost
+  async write(
+    entry: MemoryEntry,
+    retention: 'ephemeral' | 'useful' | 'remember' = 'useful'
+  ): Promise<void> {
+    if (retention === 'ephemeral') return
+
     await this.lossless.write(entry)
 
-    // Fan out to Mem0 for personalization (fire-and-forget, non-blocking)
-    if (this.mem0 && entry.role === 'user') {
+    if (retention === 'remember' && this.mem0) {
       this.mem0
         .remember(entry.sessionId, entry.content)
         .catch((err) => console.warn('[memory] mem0 write failed:', err))

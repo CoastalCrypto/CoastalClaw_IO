@@ -37,4 +37,40 @@ describe('UnifiedMemory', () => {
     expect(results).toHaveLength(1)
     expect(results[0].content).toBe('test message')
   })
+
+  it('ephemeral retention skips all writes', async () => {
+    await memory.write({
+      id: 'msg-ephemeral',
+      sessionId: 'sess-1',
+      role: 'user',
+      content: 'what time is it?',
+      timestamp: Date.now(),
+    }, 'ephemeral')
+    const results = await memory.queryHistory({ sessionId: 'sess-1' })
+    expect(results).toHaveLength(0)
+  })
+
+  it('useful retention writes lossless only', async () => {
+    await memory.write({
+      id: 'msg-useful',
+      sessionId: 'sess-2',
+      role: 'user',
+      content: 'useful info',
+      timestamp: Date.now(),
+    }, 'useful')
+    const results = await memory.queryHistory({ sessionId: 'sess-2' })
+    expect(results).toHaveLength(1)
+  })
+
+  it('default retention (no arg) behaves like useful', async () => {
+    await memory.write({
+      id: 'msg-default',
+      sessionId: 'sess-3',
+      role: 'user',
+      content: 'default behavior',
+      timestamp: Date.now(),
+    })
+    const results = await memory.queryHistory({ sessionId: 'sess-3' })
+    expect(results).toHaveLength(1)
+  })
 })

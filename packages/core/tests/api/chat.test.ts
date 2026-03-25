@@ -3,8 +3,16 @@ import { buildServer } from '../../src/server.js'
 
 vi.mock('../../src/models/router.js', () => ({
   ModelRouter: vi.fn().mockImplementation(() => ({
-    chat: vi.fn().mockResolvedValue('Hello from the agent!'),
+    chat: vi.fn().mockResolvedValue({
+      reply: 'Hello from the agent!',
+      decision: {
+        model: 'llama3.2', domain: 'general',
+        signals: { relation: 'new', urgency: 'medium', actionability: 'act', retention: 'useful', confidence: 0 },
+        domainConfidence: 0.5, classifiedBy: 'llm',
+      },
+    }),
     listModels: vi.fn().mockResolvedValue(['llama3.2']),
+    close: vi.fn(),
   })),
 }))
 

@@ -30,6 +30,13 @@ vi.mock('../../src/routing/vram-manager.js', () => ({
   })),
 }))
 
+vi.mock('../../src/models/registry.js', () => ({
+  ModelRegistry: vi.fn().mockImplementation(() => ({
+    getVariants: vi.fn().mockReturnValue([]),
+    close: vi.fn(),
+  })),
+}))
+
 describe('CascadeRouter', () => {
   const makeRouter = () => new CascadeRouter({
     ollamaUrl: 'http://localhost:11434',
@@ -72,6 +79,7 @@ describe('CascadeRouter', () => {
     expect(decision).toHaveProperty('model')
     expect(typeof decision.model).toBe('string')
     expect(decision.model.length).toBeGreaterThan(0)
+    expect(decision.model).toBe('finma:7b-q5_K_M')
     router.close()
   })
 })

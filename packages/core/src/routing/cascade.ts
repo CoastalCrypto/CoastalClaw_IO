@@ -20,11 +20,10 @@ export class CascadeRouter {
   private domain: DomainClassifier
   private registry: DomainModelRegistry
   private vram: VRAMManager
-  private _models: ModelRegistry | null = null
-  private modelsDataDir: string
+  private models: ModelRegistry
 
   constructor(config: CascadeRouterConfig) {
-    this.modelsDataDir = config.dataDir
+    this.models = new ModelRegistry(config.dataDir)
     this.tiny = new TinyRouterClient(config.tinyRouterModel)
     this.domain = new DomainClassifier({
       ollamaUrl: config.ollamaUrl,
@@ -35,15 +34,8 @@ export class CascadeRouter {
     this.vram = new VRAMManager({
       ollamaUrl: config.ollamaUrl,
       budgetGb: config.vramBudgetGb,
-      getVariants: (baseName) => this.getModels().getVariants(baseName),
+      getVariants: (baseName) => this.models.getVariants(baseName),
     })
-  }
-
-  private getModels(): ModelRegistry {
-    if (!this._models) {
-      this._models = new ModelRegistry(this.modelsDataDir)
-    }
-    return this._models
   }
 
   async route(message: string): Promise<RouteDecision> {
@@ -73,6 +65,6 @@ export class CascadeRouter {
 
   close(): void {
     this.registry.close()
-    this._models?.close()
+    this.models.close()
   }
 }

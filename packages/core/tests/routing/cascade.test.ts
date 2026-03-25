@@ -19,7 +19,7 @@ vi.mock('../../src/routing/domain-classifier.js', () => ({
 
 vi.mock('../../src/routing/domain-registry.js', () => ({
   DomainModelRegistry: vi.fn().mockImplementation(() => ({
-    resolve: vi.fn().mockReturnValue('finma:7b-q5_K_M'),
+    resolve: vi.fn().mockReturnValue('finma:7b-Q5_K_M'),
     close: vi.fn(),
   })),
 }))
@@ -79,7 +79,7 @@ describe('CascadeRouter', () => {
     expect(decision).toHaveProperty('model')
     expect(typeof decision.model).toBe('string')
     expect(decision.model.length).toBeGreaterThan(0)
-    expect(decision.model).toBe('finma:7b-q5_K_M')
+    expect(decision.model).toBe('finma:7b-Q5_K_M')
     router.close()
   })
 })

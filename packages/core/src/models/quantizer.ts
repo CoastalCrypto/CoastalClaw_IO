@@ -1,5 +1,5 @@
 import { spawn, execSync } from 'child_process'
-import { mkdirSync, existsSync, writeFileSync } from 'fs'
+import { mkdirSync, existsSync, writeFileSync, statSync } from 'fs'
 import { join } from 'node:path'
 import { ModelRegistry } from './registry.js'
 
@@ -24,9 +24,10 @@ const LLAMA_CPP_RELEASE = 'b3178'
 const LLAMA_CPP_ARCHIVE_WIN = `llama-${LLAMA_CPP_RELEASE}-bin-win-cuda-cu12.2.0-x64.zip`
 const LLAMA_CPP_ARCHIVE_LINUX = `llama-${LLAMA_CPP_RELEASE}-bin-ubuntu-x64.zip`
 
-function runCommand(cmd: string, args: string[], cwd?: string): Promise<void> {
+function runCommand(cmd: string, args: string[], cwd?: string, useShell = false): Promise<void> {
   return new Promise((resolve, reject) => {
-    const proc = spawn(cmd, args, { cwd, shell: true })
+    const proc = spawn(cmd, args, { cwd, shell: useShell })
+    proc.stdout.on('data', (d: Buffer) => process.stdout.write(d))
     proc.stderr.on('data', (d: Buffer) => process.stderr.write(d))
     proc.on('close', (code) => {
       if (code === 0) resolve()
@@ -62,7 +63,7 @@ async function ensureLlamaCppBinaries(llamaCppDir: string): Promise<void> {
     await runCommand('powershell', [
       '-Command',
       `Expand-Archive -Force -Path '${zipPath}' -DestinationPath '${llamaCppDir}'`,
-    ])
+    ], undefined, true)
   } else {
     await runCommand('unzip', ['-o', zipPath, '-d', llamaCppDir])
   }
@@ -72,8 +73,8 @@ export class QuantizationPipeline {
   constructor(private config: QuantizationPipelineConfig) {}
 
   async run(hfModelId: string, quants: QuantLevel[]): Promise<void> {
-    if (!hfModelId.includes('/')) {
-      throw new Error('hfModelId must be in owner/repo format')
+    if (!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(hfModelId)) {
+      throw new Error('hfModelId must be in owner/repo format (alphanumeric, dots, dashes, underscores only)')
     }
     if (quants.length === 0) {
       throw new Error('Must request at least one quant level')
@@ -125,7 +126,6 @@ export class QuantizationPipeline {
 
         // Step C: Register in SQLite models table
         progress(step++, `Saving ${quant} to model registry...`)
-        const { statSync } = await import('fs')
         const sizeGb = statSync(quantPath).size / (1024 ** 3)
         registry.register({
           id: ollamaName,

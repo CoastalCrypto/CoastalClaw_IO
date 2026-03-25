@@ -87,4 +87,37 @@ describe('Admin API', () => {
     })
     expect(res.statusCode).toBe(204)
   })
+
+  it('GET /api/admin/registry returns empty object when no registry file', async () => {
+    const res = await server.inject({
+      method: 'GET',
+      url: '/api/admin/registry',
+      headers: { 'x-admin-token': token },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body)).toEqual({})
+  })
+
+  it('PATCH /api/admin/registry returns ok:true when models are valid', async () => {
+    // First register a model in the registry so isActive() returns true
+    const { ModelRegistry } = await import('../../src/models/registry.js')
+    const registry = new ModelRegistry(tmpDir)
+    registry.register({
+      id: 'llama3.2:1b',
+      hfSource: 'meta/llama3.2',
+      baseName: 'llama3.2',
+      quantLevel: '1b',
+      sizeGb: 1.0,
+    })
+    registry.close()
+
+    const res = await server.inject({
+      method: 'PATCH',
+      url: '/api/admin/registry',
+      headers: { 'x-admin-token': token, 'content-type': 'application/json' },
+      body: JSON.stringify({ general: { high: 'llama3.2:1b', medium: 'llama3.2:1b', low: 'llama3.2:1b' } }),
+    })
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body)).toEqual({ ok: true })
+  })
 })

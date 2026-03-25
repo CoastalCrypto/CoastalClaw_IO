@@ -34,9 +34,14 @@ export class DomainModelRegistry {
     if (!existsSync(this.filePath)) return
     try {
       const raw = readFileSync(this.filePath, 'utf8')
-      this.registry = JSON.parse(raw) as ModelRegistry
+      const parsed = JSON.parse(raw) as Record<string, unknown>
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        console.warn(`[DomainModelRegistry] Invalid registry shape in ${this.filePath}, keeping previous config`)
+        return
+      }
+      this.registry = parsed as ModelRegistry
     } catch {
-      // keep existing registry on parse error
+      console.warn(`[DomainModelRegistry] Failed to parse ${this.filePath}, keeping previous config`)
     }
   }
 

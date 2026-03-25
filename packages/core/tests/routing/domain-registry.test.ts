@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { DomainModelRegistry } from '../../src/routing/domain-registry.js'
-import { writeFileSync, mkdtempSync, rmSync, existsSync } from 'fs'
-import { join } from 'path'
-import { tmpdir } from 'os'
+import { writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 
 describe('DomainModelRegistry', () => {
   const registries: DomainModelRegistry[] = []

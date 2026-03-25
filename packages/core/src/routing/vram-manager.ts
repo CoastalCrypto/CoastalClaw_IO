@@ -36,7 +36,11 @@ export class VRAMManager {
     const loaded = await this.getLoadedModels()
 
     // If the model is already loaded at any quant, return it directly
-    const alreadyLoaded = loaded.find(m => m.name.startsWith(baseName))
+    const alreadyLoaded = loaded.find(m =>
+      m.name === baseName ||
+      m.name.startsWith(baseName + ':') ||
+      m.name.startsWith(baseName + '-')
+    )
     if (alreadyLoaded) return alreadyLoaded.name
 
     // Calculate available VRAM
@@ -54,7 +58,8 @@ export class VRAMManager {
       }
     }
 
-    // Final fallback: return Q4_0 variant if it exists, otherwise base name
+    // Intentional overcommit: nothing fits, but returning a model ID lets Ollama
+    // attempt to load at Q4_0. Better to try than to fail silently.
     const q4 = variants.find(v => v.quantLevel === 'Q4_0')
     return q4?.id ?? `${baseName}-Q4_0`
   }

@@ -9,10 +9,33 @@ export interface SendMessageResult {
   sessionId: string
 }
 
+export interface ModelVariant {
+  id: string
+  quantLevel: string
+  sizeGb: number
+  addedAt: number
+  active: boolean
+}
+
+export interface ModelGroup {
+  baseName: string
+  hfSource: string
+  variants: ModelVariant[]
+}
+
+export type RegistryUpdate = Partial<Record<'cfo' | 'cto' | 'coo' | 'general', Record<'high' | 'medium' | 'low', string>>>
+
 export class CoreClient {
   private baseUrl: string
-  constructor(baseUrl: string) {
+  private adminToken: string | undefined
+
+  constructor(baseUrl: string, adminToken?: string) {
     this.baseUrl = baseUrl
+    this.adminToken = adminToken
+  }
+
+  private adminHeaders(): Record<string, string> {
+    return this.adminToken ? { 'x-admin-token': this.adminToken } : {}
   }
 
   async sendMessage(options: SendMessageOptions): Promise<SendMessageResult> {
@@ -28,6 +51,52 @@ export class CoreClient {
     }
 
     return res.json()
+  }
+
+  async listModels(): Promise<ModelGroup[]> {
+    const res = await fetch(`${this.baseUrl}/api/admin/models`, {
+      headers: this.adminHeaders(),
+    })
+    if (!res.ok) throw new Error(`Failed to list models (${res.status})`)
+    return res.json()
+  }
+
+  async removeModel(quantId: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/admin/models/${encodeURIComponent(quantId)}`, {
+      method: 'DELETE',
+      headers: this.adminHeaders(),
+    })
+    if (!res.ok && res.status !== 204) throw new Error(`Failed to remove model (${res.status})`)
+  }
+
+  async addModel(hfModelId: string, quants: string[], sessionId: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/admin/models/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify({ hfModelId, quants, sessionId }),
+    })
+    if (!res.ok) throw new Error(`Failed to start install (${res.status})`)
+  }
+
+  async getRegistry(): Promise<Record<string, Record<string, string>>> {
+    const res = await fetch(`${this.baseUrl}/api/admin/registry`, {
+      method: 'GET',
+      headers: this.adminHeaders(),
+    })
+    if (!res.ok) throw new Error(`Failed to get registry (${res.status})`)
+    return res.json()
+  }
+
+  async updateRegistry(updates: RegistryUpdate): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/admin/registry`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify(updates),
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(`Failed to update registry (${res.status}): ${text}`)
+    }
   }
 }
 

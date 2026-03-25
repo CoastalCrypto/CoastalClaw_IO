@@ -16,10 +16,11 @@ function argmax(arr: Float32Array): number {
 }
 
 function softmaxMax(arr: Float32Array): number {
+  const maxIdx = argmax(arr)
   const max = Math.max(...Array.from(arr))
   const exps = Array.from(arr).map(v => Math.exp(v - max))
   const sum = exps.reduce((a, b) => a + b, 0)
-  return exps[argmax(arr)] / sum
+  return exps[maxIdx] / sum
 }
 
 export class TinyRouterClient {

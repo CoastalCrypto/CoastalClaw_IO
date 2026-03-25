@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import { join } from 'path'
+import { join } from 'node:path'
 
 export interface ModelRecord {
   id: string

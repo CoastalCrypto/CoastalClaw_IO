@@ -39,7 +39,7 @@ export class DomainModelRegistry {
         console.warn(`[DomainModelRegistry] Invalid registry shape in ${this.filePath}, keeping previous config`)
         return
       }
-      this.registry = parsed as ModelRegistry
+      this.registry = parsed as unknown as ModelRegistry
     } catch {
       console.warn(`[DomainModelRegistry] Failed to parse ${this.filePath}, keeping previous config`)
     }

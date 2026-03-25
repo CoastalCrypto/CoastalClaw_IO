@@ -7,7 +7,7 @@ interface Message {
   content: string
 }
 
-export function Chat({ sessionId }: { sessionId: string }) {
+export function Chat({ sessionId, onNav }: { sessionId: string; onNav: () => void }) {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: 'Hello. I\'m your AI executive. How can I help you today?' }
   ])
@@ -40,6 +40,9 @@ export function Chat({ sessionId }: { sessionId: string }) {
       <header className="border-b border-gray-800 px-6 py-4 flex items-center gap-3">
         <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
         <span className="text-sm text-gray-400 font-mono">COASTAL CLAW · SESSION {sessionId.slice(-8).toUpperCase()}</span>
+        <button onClick={onNav} className="text-xs text-gray-500 hover:text-gray-300 transition-colors ml-auto">
+          Models
+        </button>
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 py-6">

@@ -32,19 +32,23 @@ describe('CoreClient admin methods', () => {
   it('listModels returns grouped model array', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
-      json: async () => [{ baseName: 'codestral:22b', variants: [] }],
+      json: async () => [{ baseName: 'codestral:22b', hfSource: 'mistralai/Codestral-22B', variants: [] }],
     } as Response)
     const result = await client.listModels()
     expect(result).toHaveLength(1)
     expect(result[0].baseName).toBe('codestral:22b')
+    expect(result[0].hfSource).toBe('mistralai/Codestral-22B')
   })
 
-  it('removeModel sends DELETE request', async () => {
+  it('removeModel sends DELETE request with admin token', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({ ok: true } as Response)
     await client.removeModel('codestral:22b-Q4_K_M')
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('/api/admin/models/'),
-      expect.objectContaining({ method: 'DELETE' })
+      expect.objectContaining({
+        method: 'DELETE',
+        headers: expect.objectContaining({ 'x-admin-token': 'test-token' }),
+      })
     )
   })
 

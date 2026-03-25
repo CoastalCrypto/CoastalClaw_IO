@@ -66,7 +66,7 @@ export class CoreClient {
       method: 'DELETE',
       headers: this.adminHeaders(),
     })
-    if (!res.ok && res.status !== 204) throw new Error(`Failed to remove model (${res.status})`)
+    if (!res.ok) throw new Error(`Failed to remove model (${res.status})`)
   }
 
   async addModel(hfModelId: string, quants: string[], sessionId: string): Promise<void> {
@@ -78,7 +78,7 @@ export class CoreClient {
     if (!res.ok) throw new Error(`Failed to start install (${res.status})`)
   }
 
-  async getRegistry(): Promise<Record<string, Record<string, string>>> {
+  async getRegistry(): Promise<RegistryUpdate> {
     const res = await fetch(`${this.baseUrl}/api/admin/registry`, {
       method: 'GET',
       headers: this.adminHeaders(),

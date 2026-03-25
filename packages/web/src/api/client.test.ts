@@ -59,7 +59,10 @@ describe('CoreClient admin methods', () => {
     await client.updateRegistry({ cfo: { high: 'model-a', medium: 'model-b', low: 'model-c' } })
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('/api/admin/registry'),
-      expect.objectContaining({ method: 'PATCH' })
+      expect.objectContaining({
+        method: 'PATCH',
+        headers: expect.objectContaining({ 'x-admin-token': 'test-token' }),
+      })
     )
   })
 
@@ -73,6 +76,7 @@ describe('CoreClient admin methods', () => {
       expect.objectContaining({
         method: 'POST',
         body: expect.stringContaining('owner/mymodel'),
+        headers: expect.objectContaining({ 'x-admin-token': 'test-token' }),
       })
     )
   })
@@ -86,7 +90,10 @@ describe('CoreClient admin methods', () => {
     expect(result).toEqual(mockRegistry)
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('/api/admin/registry'),
-      expect.objectContaining({ method: 'GET' })
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({ 'x-admin-token': 'test-token' }),
+      })
     )
   })
 })

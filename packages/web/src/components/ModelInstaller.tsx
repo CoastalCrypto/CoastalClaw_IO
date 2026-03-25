@@ -44,6 +44,8 @@ export function ModelInstaller({ onInstall, installing, progress, error }: Model
           <button
             key={opt.value}
             onClick={() => setQuant(opt.value)}
+            disabled={installing}
+            aria-pressed={quant === opt.value}
             className={`p-3 rounded-lg border text-left transition-all ${
               quant === opt.value
                 ? 'border-cyan-500 bg-cyan-500/10'
@@ -65,7 +67,7 @@ export function ModelInstaller({ onInstall, installing, progress, error }: Model
           <div className="w-full bg-gray-800 rounded-full h-1">
             <div
               className="bg-cyan-400 h-1 rounded-full transition-all"
-              style={{ width: `${(progress.step / progress.total) * 100}%` }}
+              style={{ width: `${progress.total > 0 ? (progress.step / progress.total) * 100 : 0}%` }}
             />
           </div>
         </div>

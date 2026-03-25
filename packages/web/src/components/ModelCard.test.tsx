@@ -35,6 +35,6 @@ describe('ModelCard', () => {
     render(<ModelCard group={group} onRemove={vi.fn()} removingId="codestral:22b-Q4_K_M" />)
     const buttons = screen.getAllByRole('button')
     expect(buttons[0]).toBeDisabled()
-    expect(buttons[0]).toHaveTextContent('Removing…')
+    expect(buttons[0]).toHaveTextContent('Removing\u2026')
   })
 })

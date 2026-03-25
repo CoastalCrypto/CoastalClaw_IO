@@ -4,7 +4,7 @@ import { ModelRegistry } from '../../models/registry.js'
 import { QuantizationPipeline } from '../../models/quantizer.js'
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { randomBytes } from 'node:crypto'
+import { randomBytes, timingSafeEqual } from 'node:crypto'
 
 function getOrCreateAdminToken(dataDir: string): string {
   const envToken = process.env.CC_ADMIN_TOKEN
@@ -16,7 +16,7 @@ function getOrCreateAdminToken(dataDir: string): string {
   const token = randomBytes(32).toString('hex')
   mkdirSync(dataDir, { recursive: true })
   writeFileSync(tokenFile, token)
-  console.log(`[coastal-claw] Admin token generated: ${token}`)
+  console.log(`[coastal-claw] Admin token written to ${tokenFile}`)
   return token
 }
 
@@ -29,7 +29,10 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // Auth hook for all admin routes
   fastify.addHook('onRequest', async (req: FastifyRequest, reply: FastifyReply) => {
     if (!req.url.startsWith('/api/admin')) return
-    if (req.headers['x-admin-token'] !== adminToken) {
+    const headerToken = req.headers['x-admin-token'] ?? ''
+    const a = Buffer.from(typeof headerToken === 'string' ? headerToken : headerToken[0] ?? '', 'utf8')
+    const b = Buffer.from(adminToken, 'utf8')
+    if (a.length !== b.length || !timingSafeEqual(a, b)) {
       return reply.status(401).send({ error: 'Unauthorized' })
     }
   })
@@ -72,8 +75,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
   }, async (req, reply) => {
     const { hfModelId, quants, sessionId } = req.body
 
-    if (!hfModelId.includes('/')) {
-      return reply.status(400).send({ error: 'hfModelId must be in owner/repo format' })
+    if (!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(hfModelId)) {
+      return reply.status(400).send({ error: 'hfModelId must be in owner/repo format (e.g. org/model-name)' })
     }
 
     // Start pipeline in background
@@ -107,7 +110,17 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // PATCH /api/admin/registry
   fastify.patch<{
     Body: Partial<Record<'cfo' | 'cto' | 'coo' | 'general', Record<string, string>>>
-  }>('/api/admin/registry', async (req, reply) => {
+  }>('/api/admin/registry', {
+    schema: {
+      body: {
+        type: 'object',
+        additionalProperties: {
+          type: 'object',
+          additionalProperties: { type: 'string' },
+        },
+      },
+    },
+  }, async (req, reply) => {
     const updates = req.body
 
     // Validate all model names exist in registry
@@ -133,7 +146,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
     return reply.send({ ok: true })
   })
 
-  fastify.addHook('onClose', () => {
+  fastify.addHook('onClose', async () => {
     modelRegistry.close()
   })
 }

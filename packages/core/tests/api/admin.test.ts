@@ -1,9 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { buildServer } from '../../src/server.js'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { FastifyInstance } from 'fastify'
+
+vi.mock('../../src/models/quantizer.js', () => ({
+  QuantizationPipeline: vi.fn().mockImplementation(() => ({
+    run: vi.fn().mockResolvedValue(undefined),
+  })),
+}))
 
 describe('Admin API', () => {
   let server: FastifyInstance

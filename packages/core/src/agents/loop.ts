@@ -47,6 +47,7 @@ export class AgenticLoop {
         role: 'assistant',
         content,
         tool_calls: toolCalls.map(tc => ({
+          id: tc.id,
           function: { name: tc.name, arguments: tc.args },
         })),
       })

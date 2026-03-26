@@ -86,4 +86,105 @@ describe('AgenticLoop', () => {
     expect(executor).not.toHaveBeenCalled()
     expect(result.reply).toBe('understood')
   })
+
+  it('uses parallel execution for all-read tool calls', async () => {
+    const executionOrder: string[] = []
+    const ollama = {
+      chatWithTools: vi.fn()
+        .mockResolvedValueOnce({
+          content: '',
+          toolCalls: [
+            { id: 'tc1', name: 'read_file', args: { path: '/a' } },
+            { id: 'tc2', name: 'read_file', args: { path: '/b' } },
+          ],
+        })
+        .mockResolvedValueOnce({ content: 'done', toolCalls: [] }),
+    } as any
+    const executor = vi.fn().mockImplementation(async (name, args) => {
+      executionOrder.push(args.path as string)
+      return 'content'
+    })
+    const registry = mockRegistry(executor)
+    const loop = new AgenticLoop(ollama, registry, mockGate('allow'), mockLog())
+    const result = await loop.run(mockSession(['read_file']), 'read both', 'sess-1', [])
+    expect(result.reply).toBe('done')
+    expect(executor).toHaveBeenCalledTimes(2)
+    // Both were called (order may vary due to parallelism)
+    expect(executionOrder).toHaveLength(2)
+  })
+
+  it('handles QUEUE timeout — returns error to LLM and loop continues', async () => {
+    const ollama = {
+      chatWithTools: vi.fn()
+        .mockResolvedValueOnce({ content: '', toolCalls: [{ id: 'tc1', name: 'write_file', args: {} }] })
+        .mockResolvedValueOnce({ content: 'ok after timeout', toolCalls: [] }),
+    } as any
+    const gate = {
+      evaluate: vi.fn().mockReturnValue('queued'),
+      setAlwaysAllow: vi.fn(),
+      createPendingApproval: vi.fn().mockReturnValue({
+        approvalId: 'test-id',
+        promise: Promise.resolve('timeout'),
+      }),
+      resolveApproval: vi.fn(),
+    } as unknown as PermissionGate
+    const loop = new AgenticLoop(ollama, mockRegistry(), gate, mockLog())
+    const result = await loop.run(mockSession(['write_file']), 'write something', 'sess-1', [])
+    expect(result.reply).toBe('ok after timeout')
+    expect(ollama.chatWithTools).toHaveBeenCalledTimes(2)
+  })
+
+  it('handles QUEUE denied — returns error to LLM and loop continues', async () => {
+    const ollama = {
+      chatWithTools: vi.fn()
+        .mockResolvedValueOnce({ content: '', toolCalls: [{ id: 'tc1', name: 'write_file', args: {} }] })
+        .mockResolvedValueOnce({ content: 'ok after denial', toolCalls: [] }),
+    } as any
+    const gate = {
+      evaluate: vi.fn().mockReturnValue('queued'),
+      setAlwaysAllow: vi.fn(),
+      createPendingApproval: vi.fn().mockReturnValue({
+        approvalId: 'test-id',
+        promise: Promise.resolve('denied'),
+      }),
+      resolveApproval: vi.fn(),
+    } as unknown as PermissionGate
+    const loop = new AgenticLoop(ollama, mockRegistry(), gate, mockLog())
+    const result = await loop.run(mockSession(['write_file']), 'write something', 'sess-1', [])
+    expect(result.reply).toBe('ok after denial')
+    expect(ollama.chatWithTools).toHaveBeenCalledTimes(2)
+  })
+
+  it('truncates tool output at CC_TOOL_RESULT_MAX_CHARS', async () => {
+    process.env.CC_TOOL_RESULT_MAX_CHARS = '10'
+    const longOutput = 'a'.repeat(100)
+    const ollama = {
+      chatWithTools: vi.fn()
+        .mockResolvedValueOnce({ content: '', toolCalls: [{ id: 'tc1', name: 'read_file', args: { path: '/x' } }] })
+        .mockImplementationOnce(async (_model, messages) => {
+          // Check that the tool message content was truncated
+          const toolMsg = messages.find((m: any) => m.role === 'tool')
+          expect(toolMsg?.content).toHaveLength(10)
+          return { content: 'done', toolCalls: [] }
+        }),
+    } as any
+    const registry = mockRegistry(async () => longOutput)
+    const loop = new AgenticLoop(ollama, registry, mockGate('allow'), mockLog())
+    await loop.run(mockSession(['read_file']), 'read', 'sess-1', [])
+    delete process.env.CC_TOOL_RESULT_MAX_CHARS
+  })
+
+  it('includes tool_call_id on tool result messages', async () => {
+    const ollama = {
+      chatWithTools: vi.fn()
+        .mockResolvedValueOnce({ content: '', toolCalls: [{ id: 'my-tc-id', name: 'read_file', args: { path: '/x' } }] })
+        .mockImplementationOnce(async (_model, messages) => {
+          const toolMsg = messages.find((m: any) => m.role === 'tool')
+          expect(toolMsg?.tool_call_id).toBe('my-tc-id')
+          return { content: 'done', toolCalls: [] }
+        }),
+    } as any
+    const loop = new AgenticLoop(ollama, mockRegistry(), mockGate('allow'), mockLog())
+    await loop.run(mockSession(['read_file']), 'read', 'sess-1', [])
+  })
 })

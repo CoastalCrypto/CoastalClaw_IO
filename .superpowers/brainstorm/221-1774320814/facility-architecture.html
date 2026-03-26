@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #050a12;
+    color: #c0d0e0;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    padding: 32px 24px;
+    min-height: 100vh;
+  }
+  h1 { color: #00c8ff; font-size: 18px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 6px; }
+  .subtitle { color: #4a6a7a; font-size: 12px; letter-spacing: 1px; margin-bottom: 32px; }
+
+  .arch { display: flex; flex-direction: column; gap: 0; max-width: 1000px; margin: 0 auto; }
+
+  /* FACILITY BOX */
+  .facility {
+    border: 1px solid rgba(0,255,150,0.4);
+    border-radius: 12px;
+    background: rgba(0,255,150,0.03);
+    padding: 20px;
+    position: relative;
+    margin-bottom: 0;
+  }
+  .facility-label {
+    position: absolute;
+    top: -11px;
+    left: 20px;
+    background: #050a12;
+    padding: 0 10px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(0,255,150,0.7);
+  }
+  .facility-sub {
+    font-size: 10px;
+    color: rgba(0,255,150,0.4);
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+
+  /* HARDWARE ROW */
+  .hw-row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .hw-node {
+    flex: 1;
+    background: rgba(0,200,255,0.05);
+    border: 1px solid rgba(0,200,255,0.15);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .hw-node.gpu { border-color: rgba(255,160,0,0.4); background: rgba(255,160,0,0.04); }
+  .hw-node.mem { border-color: rgba(160,100,255,0.4); background: rgba(160,100,255,0.04); }
+  .hw-node.net { border-color: rgba(0,200,255,0.4); background: rgba(0,200,255,0.04); }
+  .hw-node.ctrl { border-color: rgba(255,200,0,0.4); background: rgba(255,200,0,0.04); }
+  .hw-title { font-size: 11px; font-weight: bold; margin-bottom: 5px; }
+  .hw-node.gpu .hw-title { color: #ffa040; }
+  .hw-node.mem .hw-title { color: #a064ff; }
+  .hw-node.net .hw-title { color: #00c8ff; }
+  .hw-node.ctrl .hw-title { color: #ffc800; }
+  .hw-detail { font-size: 10px; color: #5a7a8a; line-height: 1.6; }
+  .hw-badge { display: inline-block; font-size: 9px; padding: 1px 5px; border-radius: 3px; margin: 3px 2px 0 0; }
+  .hw-node.gpu .hw-badge { background: rgba(255,160,0,0.1); color: rgba(255,160,0,0.8); border: 1px solid rgba(255,160,0,0.2); }
+  .hw-node.mem .hw-badge { background: rgba(160,100,255,0.1); color: rgba(160,100,255,0.8); border: 1px solid rgba(160,100,255,0.2); }
+  .hw-node.net .hw-badge { background: rgba(0,200,255,0.1); color: rgba(0,200,255,0.8); border: 1px solid rgba(0,200,255,0.2); }
+  .hw-node.ctrl .hw-badge { background: rgba(255,200,0,0.1); color: rgba(255,200,0,0.8); border: 1px solid rgba(255,200,0,0.2); }
+
+  /* CORE ENGINE INSIDE FACILITY */
+  .core-engine {
+    border: 1px solid rgba(255,200,0,0.5);
+    border-radius: 8px;
+    background: rgba(255,200,0,0.04);
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .core-title { color: #ffc800; font-size: 11px; font-weight: bold; margin-bottom: 10px; letter-spacing: 1px; }
+  .core-row { display: flex; gap: 8px; }
+  .core-chip {
+    flex: 1;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,200,0,0.2);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+  .core-chip-title { color: rgba(255,200,0,0.8); margin-bottom: 4px; font-size: 10px; }
+  .core-chip-detail { color: #4a6a7a; font-size: 9px; line-height: 1.5; }
+
+  /* TENANT ISOLATION */
+  .tenant-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .tenant {
+    flex: 1;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(0,200,255,0.12);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+  .tenant-title { color: rgba(0,200,255,0.6); font-size: 9px; letter-spacing: 1px; margin-bottom: 4px; }
+  .tenant-detail { color: #3a5a6a; font-size: 9px; line-height: 1.5; }
+
+  /* CONNECTORS */
+  .conn-band {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin: 0;
+    position: relative;
+    height: 50px;
+  }
+  .conn-line {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    gap: 60px;
+  }
+  .conn-arrow { color: rgba(0,200,255,0.3); font-size: 20px; }
+  .conn-label-row { display: flex; justify-content: center; gap: 80px; font-size: 9px; color: #2a4a5a; letter-spacing: 1px; text-transform: uppercase; margin-top: -8px; margin-bottom: 8px; }
+
+  /* SECURE TUNNEL */
+  .tunnel-band {
+    border: 1px dashed rgba(0,200,255,0.2);
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin: 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 10px;
+    color: #2a5a6a;
+    background: rgba(0,200,255,0.02);
+  }
+  .tunnel-icon { color: rgba(0,200,255,0.4); font-size: 16px; }
+  .tunnel-text { flex: 1; line-height: 1.6; }
+  .tunnel-text strong { color: rgba(0,200,255,0.6); }
+
+  /* CLIENT LAYER */
+  .client-layer {
+    border: 1px solid rgba(0,200,255,0.2);
+    border-radius: 12px;
+    background: rgba(0,200,255,0.02);
+    padding: 18px;
+    position: relative;
+  }
+  .client-label {
+    position: absolute;
+    top: -11px;
+    left: 20px;
+    background: #050a12;
+    padding: 0 10px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(0,200,255,0.5);
+  }
+  .client-row { display: flex; gap: 10px; }
+  .client-node {
+    flex: 1;
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid rgba(0,200,255,0.15);
+    background: rgba(0,200,255,0.04);
+    text-align: center;
+  }
+  .client-node.electron { border-color: rgba(0,255,150,0.3); background: rgba(0,255,150,0.04); }
+  .client-node.self { border-color: rgba(255,160,0,0.3); background: rgba(255,160,0,0.04); }
+  .client-icon { font-size: 24px; margin-bottom: 6px; }
+  .client-title { font-size: 11px; margin-bottom: 4px; }
+  .client-node.electron .client-title { color: #00ff96; }
+  .client-node.self .client-title { color: #ffa040; }
+  .client-node:not(.electron):not(.self) .client-title { color: #00c8ff; }
+  .client-detail { font-size: 10px; color: #3a5a6a; line-height: 1.5; }
+
+  /* BOTTOM NOTE */
+  .note { margin-top: 20px; font-size: 10px; color: #2a4a5a; line-height: 1.8; border-top: 1px solid rgba(0,200,255,0.08); padding-top: 14px; }
+  .note strong { color: rgba(0,200,255,0.4); }
+
+  .vert-connector { text-align: center; color: rgba(0,200,255,0.2); font-size: 22px; margin: 4px 0; line-height: 1; }
+</style>
+</head>
+<body>
+
+<h1>Coastal Claw — Facility-Hosted Architecture</h1>
+<p class="subtitle">CC owns the iron. Clients get privacy. No AWS middleman.</p>
+
+<div class="arch">
+
+  <!-- ═══ CC FACILITY ═══ -->
+  <div class="facility">
+    <div class="facility-label">🏢 Coastal Crypto Facility — On-Premise Infrastructure</div>
+    <div class="facility-sub">GPU inference + memory + multi-tenant isolation — all under CC's roof</div>
+
+    <!-- HARDWARE -->
+    <div class="hw-row">
+      <div class="hw-node gpu">
+        <div class="hw-title">⚡ GPU Inference Cluster</div>
+        <div class="hw-detail">
+          Local model inference. No external API calls unless client opts in.<br>
+          Ollama / vLLM serving pool. Per-client model routing.
+        </div>
+        <span class="hw-badge">RTX 4090 / A100</span>
+        <span class="hw-badge">Ollama + vLLM</span>
+        <span class="hw-badge">Llama / Mistral / Qwen</span>
+      </div>
+      <div class="hw-node mem">
+        <div class="hw-title">🧠 Memory &amp; Storage Cluster</div>
+        <div class="hw-detail">
+          QMD + LosslessClaw DAGs + Mem0 vectors + Always-On consolidation.<br>
+          Unix-FS spine. Per-client encrypted volumes.
+        </div>
+        <span class="hw-badge">NVMe RAID</span>
+        <span class="hw-badge">Per-tenant encryption</span>
+        <span class="hw-badge">SQLite + vector store</span>
+      </div>
+      <div class="hw-node net">
+        <div class="hw-title">🔒 Network &amp; Security Layer</div>
+        <div class="hw-detail">
+          WireGuard VPN tunnels per client. Zero-trust access.<br>
+          OpenShell sandbox policy (NemoClaw pattern).
+        </div>
+        <span class="hw-badge">WireGuard VPN</span>
+        <span class="hw-badge">Zero-trust</span>
+        <span class="hw-badge">OpenShell sandbox</span>
+      </div>
+      <div class="hw-node ctrl">
+        <div class="hw-title">🖥️ Control Plane</div>
+        <div class="hw-detail">
+          Auto-updates via blueprint engine. Tenant provisioning.<br>
+          Health monitoring. Agent lifecycle management.
+        </div>
+        <span class="hw-badge">Blueprint engine</span>
+        <span class="hw-badge">Auto-update</span>
+        <span class="hw-badge">Prometheus + Grafana</span>
+      </div>
+    </div>
+
+    <!-- CORE ENGINE -->
+    <div class="core-engine">
+      <div class="core-title">⚙️ Coastal Claw Core — Multi-Tenant Service Layer</div>
+      <div class="core-row">
+        <div class="core-chip">
+          <div class="core-chip-title">Agent Runtime</div>
+          <div class="core-chip-detail">OpenClaw + LosslessClaw. Spin up, assign model, monitor, kill. MiroFish swarm simulation.</div>
+        </div>
+        <div class="core-chip">
+          <div class="core-chip-title">Memory Stack</div>
+          <div class="core-chip-detail">QMD + Mem0 + Always-On Consolidator. 30min background sync. Multimodal ingest inbox.</div>
+        </div>
+        <div class="core-chip">
+          <div class="core-chip-title">Agent Blueprints</div>
+          <div class="core-chip-detail">Maxwell-COO, Ledger-CFO, Vector-CTO. Pre-loaded Exec Suite configs. Custom blueprints per client.</div>
+        </div>
+        <div class="core-chip">
+          <div class="core-chip-title">Multimodal I/O</div>
+          <div class="core-chip-detail">STT / TTS on-prem. Image + video ingestion. No data leaves facility unless opted in.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TENANT ISOLATION -->
+    <div style="font-size:9px;color:#2a5a4a;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Per-Client Isolation Namespaces</div>
+    <div class="tenant-row">
+      <div class="tenant">
+        <div class="tenant-title">CLIENT A — Exec Suite Starter</div>
+        <div class="tenant-detail">Maxwell agent • encrypted volume • WireGuard tunnel • dedicated Ollama context</div>
+      </div>
+      <div class="tenant">
+        <div class="tenant-title">CLIENT B — Exec Suite Pro</div>
+        <div class="tenant-detail">Maxwell + Ledger + Vector • custom blueprints • priority GPU allocation</div>
+      </div>
+      <div class="tenant">
+        <div class="tenant-title">CLIENT C — Self-Hosted Power User</div>
+        <div class="tenant-detail">Runs own Coastal Claw instance • connects to CC facility for overflow / cloud models</div>
+      </div>
+      <div class="tenant">
+        <div class="tenant-title">+ N more tenants</div>
+        <div class="tenant-detail">Horizontally scalable • add hardware as demand grows • no rearchitecting</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SECURE TUNNEL BAND -->
+  <div style="margin: 8px 0;">
+    <div class="tunnel-band">
+      <div class="tunnel-icon">🔐</div>
+      <div class="tunnel-text">
+        <strong>WireGuard Encrypted Tunnel</strong> — All client traffic terminates here. Clients never hit public cloud APIs unless they opt in.
+        TLS + mutual auth. Sub-20ms latency on local network. Accessible remotely via secure endpoint.
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIENT LAYER -->
+  <div class="client-layer">
+    <div class="client-label">👤 Client — Three Ways to Connect</div>
+    <div class="client-row">
+
+      <div class="client-node">
+        <div class="client-icon">🌐</div>
+        <div class="client-title">Web Portal</div>
+        <div class="client-detail">
+          Browser → CC facility.<br>
+          Abacus.ai-style onboarding.<br>
+          Coastal Crypto website.<br>
+          Zero install. 3-min cloud setup.
+        </div>
+      </div>
+
+      <div class="client-node electron">
+        <div class="client-icon">🖥️</div>
+        <div class="client-title">Electron — JARVIS HUD</div>
+        <div class="client-detail">
+          Desktop app connecting to CC facility.<br>
+          Full HUD, neural net, voice/video.<br>
+          Agent visualizer. TUI built-in.<br>
+          15-min install for power users.
+        </div>
+      </div>
+
+      <div class="client-node">
+        <div class="client-icon">⌨️</div>
+        <div class="client-title">True TUI</div>
+        <div class="client-detail">
+          Terminal CLI.<br>
+          Config, deploy, monitor.<br>
+          SSH-friendly. Infra operators.
+        </div>
+      </div>
+
+      <div class="client-node self">
+        <div class="client-icon">🏠</div>
+        <div class="client-title">Self-Hosted</div>
+        <div class="client-detail">
+          Run own CC instance locally.<br>
+          Connect to CC facility for<br>
+          GPU overflow or cloud models.<br>
+          Full control. Dev/power users.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>Privacy story:</strong> Client data never leaves CC's facility. Models run on CC hardware. Memory encrypted per tenant. Clients can optionally route to external APIs (Anthropic, OpenAI) but it's opt-in, not default. &nbsp;|&nbsp;
+    <strong>Competitive moat:</strong> No per-token cloud cost eating margins. CC owns GPU capacity. Pricing is predictable. &nbsp;|&nbsp;
+    <strong>Scale path:</strong> Add GPU nodes as demand grows. Horizontal scaling without rearchitecting.
+  </div>
+
+</div>
+
+</body>
+</html>

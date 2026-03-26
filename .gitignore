@@ -7,3 +7,5 @@ dist/
 *.db-wal
 .turbo/
 coverage/
+# Runtime data — never commit secrets or downloaded model files
+packages/core/data/

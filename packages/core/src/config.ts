@@ -24,7 +24,18 @@ export function loadConfig(): Config {
     })(),
     host: process.env.CC_HOST ?? '127.0.0.1',
     dataDir: process.env.CC_DATA_DIR ?? './data',
-    ollamaUrl: process.env.CC_OLLAMA_URL ?? 'http://127.0.0.1:11434',
+    ollamaUrl: (() => {
+      const url = process.env.CC_OLLAMA_URL ?? 'http://127.0.0.1:11434'
+      try {
+        const { hostname } = new URL(url)
+        if (!['localhost', '127.0.0.1', '::1'].includes(hostname)) {
+          console.warn(`[coastal-claw] Warning: CC_OLLAMA_URL points to ${hostname} — ensure this host is trusted (SSRF risk)`)
+        }
+      } catch {
+        throw new Error(`CC_OLLAMA_URL is not a valid URL: "${url}"`)
+      }
+      return url
+    })(),
     mem0ApiKey: process.env.MEM0_API_KEY,
     vramBudgetGb: Number(process.env.CC_VRAM_BUDGET_GB ?? '24'),
     routerConfidence: Number(process.env.CC_ROUTER_CONFIDENCE ?? '0.7'),

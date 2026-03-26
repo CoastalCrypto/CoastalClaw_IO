@@ -11,7 +11,7 @@ vi.mock('../../src/models/ollama.js', () => ({
 vi.mock('../../src/routing/cascade.js', () => ({
   CascadeRouter: vi.fn().mockImplementation(() => ({
     route: vi.fn().mockResolvedValue({
-      model: 'llama3.2', domain: 'general',
+      model: 'llama3.2', fallbackModels: [], domain: 'general',
       signals: { relation: 'new', urgency: 'medium', actionability: 'act', retention: 'useful', confidence: 0 },
       domainConfidence: 0.5, classifiedBy: 'llm',
     }),

@@ -35,9 +35,23 @@ export class ModelRouter {
   ): Promise<{ reply: string; decision: RouteDecision }> {
     const lastMessage = messages[messages.length - 1].content
     const decision = await this.cascade.route(lastMessage)
-    const model = options?.model ?? decision.model
-    const reply = await this.ollama.chat(model, messages)
-    return { reply, decision }
+
+    // Two-layer failover: try primary, then each fallback in order
+    const candidates = options?.model
+      ? [options.model]
+      : [decision.model, ...decision.fallbackModels]
+
+    let lastErr: unknown
+    for (const model of candidates) {
+      try {
+        const reply = await this.ollama.chat(model, messages)
+        return { reply, decision: { ...decision, model } }
+      } catch (err) {
+        lastErr = err
+        console.warn(`[router] model ${model} failed, trying next fallback`)
+      }
+    }
+    throw lastErr ?? new Error('All candidate models failed')
   }
 
   async listModels(): Promise<string[]> {

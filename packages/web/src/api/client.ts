@@ -27,15 +27,32 @@ export type RegistryUpdate = Partial<Record<'cfo' | 'cto' | 'coo' | 'general', R
 
 export class CoreClient {
   private baseUrl: string
-  private adminToken: string | undefined
+  private sessionToken: string | undefined
 
-  constructor(baseUrl: string, adminToken?: string) {
+  constructor(baseUrl: string) {
     this.baseUrl = baseUrl
-    this.adminToken = adminToken
+    this.sessionToken = sessionStorage.getItem('cc_admin_session') ?? undefined
+  }
+
+  /** Exchange the raw admin token for a short-lived (24h) session token. */
+  async login(adminToken: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: adminToken }),
+    })
+    if (!res.ok) throw new Error('Invalid admin token')
+    const { sessionToken } = await res.json() as { sessionToken: string }
+    this.sessionToken = sessionToken
+    sessionStorage.setItem('cc_admin_session', sessionToken)
+  }
+
+  get isAuthenticated(): boolean {
+    return Boolean(this.sessionToken)
   }
 
   private adminHeaders(): Record<string, string> {
-    return this.adminToken ? { 'x-admin-token': this.adminToken } : {}
+    return this.sessionToken ? { 'x-admin-session': this.sessionToken } : {}
   }
 
   async sendMessage(options: SendMessageOptions): Promise<SendMessageResult> {
@@ -101,3 +118,4 @@ export class CoreClient {
 }
 
 export const coreClient = new CoreClient('/api')
+export const adminClient = new CoreClient('/api')

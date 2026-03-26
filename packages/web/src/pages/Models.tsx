@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { CoreClient, type ModelGroup, type RegistryUpdate } from '../api/client'
+import { adminClient, type ModelGroup, type RegistryUpdate } from '../api/client'
 import { ModelCard } from '../components/ModelCard'
 import { ModelInstaller } from '../components/ModelInstaller'
 import { DomainAssigner } from '../components/DomainAssigner'
@@ -11,13 +11,53 @@ interface QuantProgress {
   message: string
 }
 
-const adminClient = new CoreClient('/api', import.meta.env.VITE_ADMIN_TOKEN ?? '')
-if (!import.meta.env.VITE_ADMIN_TOKEN) {
-  console.warn('[Models] VITE_ADMIN_TOKEN is not set — admin API calls will return 401. Set it in packages/web/.env.local')
+function AdminLoginGate({ onLogin }: { onLogin: () => void }) {
+  const [token, setToken] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    try {
+      await adminClient.login(token.trim())
+      onLogin()
+    } catch {
+      setError('Invalid admin token. Check CC_ADMIN_TOKEN in your core startup output.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
+      <form onSubmit={handleSubmit} className="bg-gray-900 border border-gray-800 rounded-xl p-8 w-full max-w-sm space-y-4">
+        <h2 className="text-white font-semibold text-lg">Admin Login</h2>
+        <p className="text-gray-400 text-sm">Enter your Coastal Claw admin token to continue.</p>
+        <input
+          type="password"
+          value={token}
+          onChange={e => setToken(e.target.value)}
+          placeholder="Admin token"
+          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500"
+          autoFocus
+        />
+        {error && <p className="text-red-400 text-xs">{error}</p>}
+        <button
+          type="submit"
+          disabled={!token.trim() || loading}
+          className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg py-2 text-sm font-medium transition-colors"
+        >
+          {loading ? 'Logging in…' : 'Login'}
+        </button>
+      </form>
+    </div>
+  )
 }
-// Note: Set VITE_ADMIN_TOKEN in packages/web/.env.local to match CC_ADMIN_TOKEN from core startup output.
 
 export function Models() {
+  const [authed, setAuthed] = useState(adminClient.isAuthenticated)
   const [models, setModels] = useState<ModelGroup[]>([])
   const [registry, setRegistry] = useState<Record<string, Record<string, string>>>({})
   const [installing, setInstalling] = useState(false)
@@ -38,13 +78,17 @@ export function Models() {
     }
   }, [])
 
-  useEffect(() => { refresh() }, [refresh])
+  useEffect(() => { if (authed) refresh() }, [authed, refresh])
+
+  if (!authed) {
+    return <AdminLoginGate onLogin={() => setAuthed(true)} />
+  }
 
   const handleInstall = async (hfModelId: string, quant: string) => {
     setInstalling(true)
     setError(null)
     setProgress(null)
-    const sessionId = `install-${Date.now()}`
+    const sessionId = crypto.randomUUID()
 
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const wsHost = window.location.hostname
@@ -57,7 +101,6 @@ export function Models() {
       } catch {}
     }
 
-    // Wait for connection to open, then register this session for progress events
     await new Promise<void>((resolve) => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'register', sessionId }))
@@ -77,7 +120,7 @@ export function Models() {
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Installation failed')
     } finally {
-      ws.onmessage = null  // prevent buffered messages from firing after this point
+      ws.onmessage = null
       ws.close()
       setInstalling(false)
     }

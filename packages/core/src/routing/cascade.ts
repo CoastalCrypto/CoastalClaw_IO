@@ -54,13 +54,44 @@ export class CascadeRouter {
       // Ollama unavailable: use registry model as-is
     }
 
+    // Build fallback list: quant-level siblings → general domain model
+    const fallbackModels = this.buildFallbacks(model, domainResult.domain, signals.urgency)
+
     return {
       model,
+      fallbackModels,
       domain: domainResult.domain,
       signals,
       domainConfidence: domainResult.confidence,
       classifiedBy: domainResult.classifiedBy,
     }
+  }
+
+  private buildFallbacks(
+    primary: string,
+    domain: RouteDecision['domain'],
+    urgency: RouteDecision['signals']['urgency']
+  ): string[] {
+    const fallbacks: string[] = []
+
+    // Layer 1: alternative quant levels of the same base model
+    const [baseName] = primary.split(':')
+    const variants = this.models.getVariants(baseName)
+    const quantOrder = ['q5_k_m', 'q4_k_m', 'q8_0']
+    for (const q of quantOrder) {
+      const alt = `${baseName}:${q}`
+      if (alt !== primary && variants.some(v => v.id === alt)) {
+        fallbacks.push(alt)
+      }
+    }
+
+    // Layer 2: general domain model as last resort
+    const generalModel = this.registry.resolve('general', urgency)
+    if (generalModel && generalModel !== primary && !fallbacks.includes(generalModel)) {
+      fallbacks.push(generalModel)
+    }
+
+    return fallbacks
   }
 
   close(): void {

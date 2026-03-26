@@ -9,8 +9,9 @@ import { adminRoutes } from './api/routes/admin.js'
 export async function buildServer() {
   const fastify = Fastify({ logger: false })
 
-  // TODO: restrict CORS origins before any network-exposed deployment
-  await fastify.register(cors, { origin: true })
+  const allowedOrigins = process.env.CC_CORS_ORIGINS?.split(',').map(o => o.trim())
+    ?? ['http://localhost:5173', 'http://127.0.0.1:5173']
+  await fastify.register(cors, { origin: allowedOrigins })
   await fastify.register(websocket)
   await fastify.register(healthRoutes)
   await fastify.register(wsRoutes)

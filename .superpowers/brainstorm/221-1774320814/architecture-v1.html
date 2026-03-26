@@ -1,0 +1,167 @@
+<style>
+  .arch-wrap { max-width: 960px; margin: 0 auto; }
+  .layer { margin-bottom: 16px; }
+  .layer-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(0,200,255,0.5); margin-bottom: 8px; padding-left: 4px; }
+  .layer-row { display: flex; gap: 10px; }
+  .node {
+    flex: 1;
+    background: rgba(0,200,255,0.06);
+    border: 1px solid rgba(0,200,255,0.2);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 12px;
+    position: relative;
+  }
+  .node.highlight { border-color: rgba(0,200,255,0.6); background: rgba(0,200,255,0.12); }
+  .node.gold { border-color: rgba(255,200,0,0.5); background: rgba(255,200,0,0.06); }
+  .node.purple { border-color: rgba(160,100,255,0.5); background: rgba(160,100,255,0.06); }
+  .node.green { border-color: rgba(0,255,150,0.5); background: rgba(0,255,150,0.06); }
+  .node.red { border-color: rgba(255,100,100,0.5); background: rgba(255,100,100,0.06); }
+  .node h4 { margin: 0 0 4px 0; color: #00c8ff; font-size: 12px; }
+  .node.gold h4 { color: #ffc800; }
+  .node.purple h4 { color: #a064ff; }
+  .node.green h4 { color: #00ff96; }
+  .node.red h4 { color: #ff6464; }
+  .node p { margin: 0; color: #888; font-size: 11px; line-height: 1.4; }
+  .node .badge { display: inline-block; font-size: 9px; padding: 1px 6px; border-radius: 3px; margin-top: 6px; background: rgba(0,200,255,0.15); color: rgba(0,200,255,0.8); border: 1px solid rgba(0,200,255,0.2); }
+  .node.gold .badge { background: rgba(255,200,0,0.1); color: rgba(255,200,0,0.8); border-color: rgba(255,200,0,0.2); }
+  .node.purple .badge { background: rgba(160,100,255,0.1); color: rgba(160,100,255,0.8); border-color: rgba(160,100,255,0.2); }
+  .node.green .badge { background: rgba(0,255,150,0.1); color: rgba(0,255,150,0.8); border-color: rgba(0,255,150,0.2); }
+  .arrow { text-align: center; color: rgba(0,200,255,0.3); font-size: 18px; margin: 4px 0; line-height: 1; }
+  .connector { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 6px 0; }
+  .connector-line { flex: 1; height: 1px; background: linear-gradient(to right, transparent, rgba(0,200,255,0.2), transparent); }
+  .connector-label { font-size: 10px; color: rgba(0,200,255,0.4); white-space: nowrap; }
+  .question-node {
+    border: 2px dashed rgba(255,200,0,0.4);
+    background: rgba(255,200,0,0.04);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 11px;
+    color: rgba(255,200,0,0.7);
+    text-align: center;
+  }
+</style>
+
+<h2>Coastal Claw — System Architecture</h2>
+<p class="subtitle">How the pieces fit together. Does this match your vision? Tell me what's wrong or missing.</p>
+
+<div class="arch-wrap">
+
+  <!-- INTERFACES -->
+  <div class="layer">
+    <div class="layer-label">▸ Interface Layer — Three Surfaces, One Engine</div>
+    <div class="layer-row">
+      <div class="node highlight">
+        <h4>🌐 Web App</h4>
+        <p>Local server + Coastal Crypto site. Browser access, onboarding wizard, client portal.</p>
+        <span class="badge">React / WebRTC</span>
+      </div>
+      <div class="node highlight">
+        <h4>🖥️ Electron Desktop</h4>
+        <p>JARVIS HUD. Floating neural net, agent visualization, GPU animations, mic + camera.</p>
+        <span class="badge">Electron + WebGL</span>
+      </div>
+      <div class="node highlight">
+        <h4>⌨️ True TUI</h4>
+        <p>Sysadmin surface. Config, deployment, infra management, logs, agent status.</p>
+        <span class="badge">Go / Ink (Node)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">↕ ↕ ↕</div>
+
+  <!-- CORE ENGINE -->
+  <div class="layer">
+    <div class="layer-label">▸ Core Engine — OpenClaw + LosslessClaw</div>
+    <div class="layer-row">
+      <div class="node gold" style="flex:2">
+        <h4>⚙️ Coastal Claw Core</h4>
+        <p>OpenClaw runtime + LosslessClaw context plugin. DAG-based summarization — nothing is ever lost. Agent lifecycle manager: spin up, assign model, monitor, terminate.</p>
+        <span class="badge">OpenClaw 2026.x</span>
+        <span class="badge">LosslessClaw (SQLite DAG)</span>
+        <span class="badge">TypeScript / Node.js 22</span>
+      </div>
+      <div class="node gold">
+        <h4>🔄 Auto-Update</h4>
+        <p>Versioned blueprint system (from NemoClaw pattern). Pull latest core + plugin updates silently.</p>
+        <span class="badge">Blueprint artifacts</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">↕</div>
+
+  <!-- MEMORY LAYER -->
+  <div class="layer">
+    <div class="layer-label">▸ Hybrid Memory Layer</div>
+    <div class="layer-row">
+      <div class="node purple">
+        <h4>🧠 Mem0</h4>
+        <p>Personalized user + agent memory. Learns preferences, history, and context over time.</p>
+        <span class="badge">Active</span>
+      </div>
+      <div class="node purple">
+        <h4>📁 Always-On Consolidation</h4>
+        <p>Background agent consolidates memories every 30min. Ingest → Consolidate → Query pattern (Google ADK).</p>
+        <span class="badge">Multimodal inbox</span>
+      </div>
+      <div class="node purple">
+        <h4>🗂️ Unix-FS Layer</h4>
+        <p>Everything-is-a-file storage. Ken Thompson's philosophy applied to agent memory, sessions, and artifacts.</p>
+        <span class="badge">SQLite + flat files</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">↕</div>
+
+  <!-- AGENT SWARM + MIROFISH -->
+  <div class="layer">
+    <div class="layer-label">▸ Agent Swarm & Prediction</div>
+    <div class="layer-row">
+      <div class="node green" style="flex:2">
+        <h4>🐟 MiroFish Swarm Engine</h4>
+        <p>Multi-agent simulation layer. Agents with distinct personalities + memory. GraphRAG knowledge graph. "God's perspective" visualization. Predict outcomes, test scenarios before deploying.</p>
+        <span class="badge">OASIS / CAMEL-AI</span>
+        <span class="badge">GraphRAG</span>
+        <span class="badge">Zep Cloud memory</span>
+      </div>
+      <div class="node green">
+        <h4>👁️ Agent Visualizer</h4>
+        <p>Real-time map of active agents. What each is doing, model assigned, status, connections between agents.</p>
+        <span class="badge">Live in Electron + Web</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">↕</div>
+
+  <!-- MODEL + API LAYER -->
+  <div class="layer">
+    <div class="layer-label">▸ Model & API Layer</div>
+    <div class="layer-row">
+      <div class="node red">
+        <h4>🤖 Local Models</h4>
+        <p>Ollama / LM Studio. Llama, Mistral, Qwen, etc. Per-agent model designation.</p>
+        <span class="badge">Ollama API</span>
+      </div>
+      <div class="node red">
+        <h4>☁️ Cloud APIs</h4>
+        <p>Anthropic, OpenAI, Gemini, NVIDIA. Fallback or premium routing.</p>
+        <span class="badge">OpenAI-compat</span>
+      </div>
+      <div class="node red">
+        <h4>🎙️ Multimodal I/O</h4>
+        <p>Speech-to-text, text-to-speech, image + video ingestion routed to capable models.</p>
+        <span class="badge">Whisper / ElevenLabs</span>
+      </div>
+      <div class="node red">
+        <h4>🏢 Agency Suite</h4>
+        <p>Coastal Crypto agency deployment system. CoastalClaw as a managed service on top.</p>
+        <span class="badge">AI-Agent-Executive-Suite</span>
+      </div>
+    </div>
+  </div>
+
+</div>

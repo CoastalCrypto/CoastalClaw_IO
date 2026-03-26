@@ -42,6 +42,24 @@ export class UnifiedMemory {
     return this.mem0.search(userId, query)
   }
 
+  /**
+   * Flush entries beyond `windowSize` to mem0 before they fall out of the
+   * active context window. Call fire-and-forget from chatRoutes.
+   * No-op when mem0 is not configured.
+   */
+  async flushOldEntries(sessionId: string, windowSize = 20): Promise<void> {
+    if (!this.mem0) return
+    // Fetch one extra page beyond the window to find displaced entries
+    const overflow = await this.lossless.query({ sessionId, limit: windowSize * 2 })
+    const displaced = overflow.slice(windowSize)
+    if (displaced.length === 0) return
+    for (const entry of displaced) {
+      this.mem0
+        .remember(sessionId, `[${entry.role}]: ${entry.content}`)
+        .catch((err) => console.warn('[memory] flush to mem0 failed:', err))
+    }
+  }
+
   async close(): Promise<void> {
     await this.lossless.close()
     // Note: mem0ai MemoryClient has no close() — HTTP connections drain naturally

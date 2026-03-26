@@ -63,9 +63,11 @@ export class DomainClassifier {
 
     // Stage 2: LLM fallback
     try {
+      // Truncate to limit prompt injection surface; wrap to signal this is user input
+      const safeMsg = message.slice(0, 2000)
       const messages: ChatMessage[] = [
         { role: 'system', content: DOMAIN_PROMPT },
-        { role: 'user', content: message },
+        { role: 'user', content: `Classify the following message:\n\n${safeMsg}` },
       ]
       const raw = await this.ollama.chat(this.config.routerModel, messages)
       const parsed = JSON.parse(raw.trim()) as { domain: string; confidence: number }

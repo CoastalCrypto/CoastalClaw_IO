@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #050a12; color: #c0d0e0; font-family: 'IBM Plex Mono', monospace; padding: 28px 20px; }
+  h1 { color: #00c8ff; font-size: 16px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 4px; }
+  .sub { color: #2a5a6a; font-size: 11px; letter-spacing: 1px; margin-bottom: 28px; }
+
+  .ecosystem { display: flex; flex-direction: column; gap: 12px; max-width: 1060px; margin: 0 auto; }
+
+  .zone {
+    border-radius: 10px;
+    padding: 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .zone-title {
+    font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+    margin-bottom: 12px; padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .zone-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* Zone colors */
+  .zone.viz { border-color: rgba(0,200,255,0.25); background: rgba(0,200,255,0.03); }
+  .zone.viz .zone-title { color: rgba(0,200,255,0.6); }
+  .zone.orch { border-color: rgba(0,255,150,0.2); background: rgba(0,255,150,0.02); }
+  .zone.orch .zone-title { color: rgba(0,255,150,0.6); }
+  .zone.intel { border-color: rgba(160,100,255,0.25); background: rgba(160,100,255,0.02); }
+  .zone.intel .zone-title { color: rgba(160,100,255,0.6); }
+  .zone.mem { border-color: rgba(160,100,255,0.2); background: rgba(160,100,255,0.02); }
+  .zone.mem .zone-title { color: rgba(160,100,255,0.6); }
+  .zone.infra { border-color: rgba(255,160,0,0.2); background: rgba(255,160,0,0.02); }
+  .zone.infra .zone-title { color: rgba(255,160,0,0.6); }
+  .zone.core { border-color: rgba(255,200,0,0.35); background: rgba(255,200,0,0.03); }
+  .zone.core .zone-title { color: rgba(255,200,0,0.7); }
+
+  /* Project cards */
+  .proj {
+    flex: 1;
+    min-width: 160px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+    position: relative;
+  }
+  .proj-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+  .proj-icon { font-size: 18px; line-height: 1; flex-shrink: 0; }
+  .proj-name { font-size: 11px; font-weight: bold; line-height: 1.2; }
+  .proj-source { font-size: 9px; color: #2a4a5a; margin-top: 2px; }
+  .proj-role { font-size: 10px; color: #4a7a6a; line-height: 1.5; margin-bottom: 6px; }
+  .proj-contrib { font-size: 9px; line-height: 1.5; }
+
+  /* Color accents per zone */
+  .zone.viz .proj-name { color: #00c8ff; }
+  .zone.orch .proj-name { color: #00ff96; }
+  .zone.intel .proj-name { color: #a064ff; }
+  .zone.mem .proj-name { color: #c080ff; }
+  .zone.infra .proj-name { color: #ffa040; }
+  .zone.core .proj-name { color: #ffc800; }
+  .zone.viz .proj-contrib { color: rgba(0,200,255,0.5); }
+  .zone.orch .proj-contrib { color: rgba(0,255,150,0.5); }
+  .zone.intel .proj-contrib { color: rgba(160,100,255,0.5); }
+  .zone.mem .proj-contrib { color: rgba(192,128,255,0.5); }
+  .zone.infra .proj-contrib { color: rgba(255,160,0,0.5); }
+  .zone.core .proj-contrib { color: rgba(255,200,0,0.5); }
+
+  .tag {
+    display: inline-block; font-size: 8px; padding: 1px 5px;
+    border-radius: 3px; margin: 2px 2px 0 0;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #3a5a6a;
+  }
+
+  /* Role pill */
+  .role-pill {
+    position: absolute; top: 8px; right: 8px;
+    font-size: 8px; padding: 2px 6px; border-radius: 10px;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .zone.viz .role-pill { background: rgba(0,200,255,0.1); color: rgba(0,200,255,0.6); border: 1px solid rgba(0,200,255,0.2); }
+  .zone.orch .role-pill { background: rgba(0,255,150,0.08); color: rgba(0,255,150,0.6); border: 1px solid rgba(0,255,150,0.15); }
+  .zone.intel .role-pill { background: rgba(160,100,255,0.1); color: rgba(160,100,255,0.6); border: 1px solid rgba(160,100,255,0.2); }
+  .zone.mem .role-pill { background: rgba(192,128,255,0.1); color: rgba(192,128,255,0.6); border: 1px solid rgba(192,128,255,0.2); }
+  .zone.infra .role-pill { background: rgba(255,160,0,0.1); color: rgba(255,160,0,0.6); border: 1px solid rgba(255,160,0,0.2); }
+  .zone.core .role-pill { background: rgba(255,200,0,0.1); color: rgba(255,200,0,0.6); border: 1px solid rgba(255,200,0,0.2); }
+
+  .divider { text-align: center; color: rgba(0,200,255,0.15); font-size: 11px; letter-spacing: 4px; padding: 2px 0; }
+
+  .moat-bar {
+    border: 1px solid rgba(0,255,150,0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    background: rgba(0,255,150,0.02);
+    margin-top: 4px;
+    font-size: 10px;
+    color: #2a5a4a;
+    line-height: 1.8;
+  }
+  .moat-bar strong { color: rgba(0,255,150,0.5); }
+</style>
+</head>
+<body>
+
+<h1>Coastal Claw — Full Ecosystem Map</h1>
+<p class="sub">Every open-source project mapped to its role. No duplication. Clear separation of concerns.</p>
+
+<div class="ecosystem">
+
+  <!-- VISUALIZATION -->
+  <div class="zone viz">
+    <div class="zone-title">🎨 Visualization Layer — The JARVIS HUD &amp; Agent Map</div>
+    <div class="zone-row">
+      <div class="proj">
+        <div class="role-pill">GPU render</div>
+        <div class="proj-header">
+          <div class="proj-icon">🗺️</div>
+          <div><div class="proj-name">deck.gl</div><div class="proj-source">visgl / OpenJS Foundation</div></div>
+        </div>
+        <div class="proj-role">WebGL2/WebGPU agent network map. Renders thousands of agents as animated nodes. Arc layers for inter-agent communication. GPU-accelerated, handles massive datasets without frame drop.</div>
+        <div class="proj-contrib">→ The JARVIS ops screen live agent visualization<br>→ God's-eye view of swarm state from MiroFish<br>→ Geographic deploy map for CC facility clients</div>
+        <span class="tag">WebGL2</span><span class="tag">WebGPU</span><span class="tag">TypeScript</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider">· · · · · · · · ·</div>
+
+  <!-- CORE -->
+  <div class="zone core">
+    <div class="zone-title">⚡ Core Runtime — OpenClaw + CC Extensions</div>
+    <div class="zone-row">
+      <div class="proj">
+        <div class="role-pill">runtime</div>
+        <div class="proj-header">
+          <div class="proj-icon">🦀</div>
+          <div><div class="proj-name">OpenClaw + LosslessClaw</div><div class="proj-source">openclaw-ai / Martian-Engineering</div></div>
+        </div>
+        <div class="proj-role">Agent runtime backbone. LosslessClaw DAG ensures nothing is ever lost. QMD memory for 24/7 session continuity. The engine everything else plugs into.</div>
+        <div class="proj-contrib">→ Foundation layer. All agents run on this<br>→ LosslessClaw: lcm_grep / lcm_expand on all history</div>
+        <span class="tag">TypeScript</span><span class="tag">Node 22</span><span class="tag">SQLite DAG</span>
+      </div>
+      <div class="proj">
+        <div class="role-pill">dev workflow</div>
+        <div class="proj-header">
+          <div class="proj-icon">⚙️</div>
+          <div><div class="proj-name">gstack</div><div class="proj-source">garrytan / YC</div></div>
+        </div>
+        <div class="proj-role">28-skill engineering workflow toolkit. Think→Plan→Build→Review→Test→Ship→Reflect. Already powering this session. Pre-loads coding agents with enterprise-grade dev skills.</div>
+        <div class="proj-contrib">→ Pre-loaded skill library for all Coastal Claw coding agents<br>→ /cso security scan, /qa, /ship built into every agent</div>
+        <span class="tag">Skills system</span><span class="tag">Playwright</span><span class="tag">Bun</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider">· · · · · · · · ·</div>
+
+  <!-- ORCHESTRATION -->
+  <div class="zone orch">
+    <div class="zone-title">🤖 Orchestration Trinity — How Agents Self-Organize</div>
+    <div class="zone-row">
+      <div class="proj">
+        <div class="role-pill">middleware</div>
+        <div class="proj-header">
+          <div class="proj-icon">🔄</div>
+          <div><div class="proj-name">OpenMOSS</div><div class="proj-source">uluckyXH</div></div>
+        </div>
+        <div class="proj-role">Self-organizing agent middleware. Planner→Executor→Reviewer→Patrol roles. Agents wake via cron, claim tasks, execute, submit. Zero human intervention. Built on OpenClaw.</div>
+        <div class="proj-contrib">→ The autonomous ops loop inside CC facility<br>→ Patrol agent monitors stuck tasks, triggers recovery<br>→ Quality scoring + rework loop for deliverables</div>
+        <span class="tag">FastAPI</span><span class="tag">Vue 3</span><span class="tag">SQLite</span>
+      </div>
+      <div class="proj">
+        <div class="role-pill">governance</div>
+        <div class="proj-header">
+          <div class="proj-icon">📎</div>
+          <div><div class="proj-name">Paperclip</div><div class="proj-source">paperclipai</div></div>
+        </div>
+        <div class="proj-role">Enterprise governance layer. Org charts, budgets, approvals, audit logs for agent activity. Monthly spend caps per agent. Prevents runaway costs. Exactly what Exec Suite clients need.</div>
+        <div class="proj-contrib">→ COO/CFO/CTO agent budget enforcement<br>→ Approval gates for strategic decisions<br>→ Full audit trail for enterprise clients</div>
+        <span class="tag">Node.js</span><span class="tag">TypeScript</span><span class="tag">PostgreSQL</span>
+      </div>
+      <div class="proj">
+        <div class="role-pill">task runner</div>
+        <div class="proj-header">
+          <div class="proj-icon">🎵</div>
+          <div><div class="proj-name">Symphony</div><div class="proj-source">openai</div></div>
+        </div>
+        <div class="proj-role">Autonomous task execution with proof-of-work. Work items → agents → CI status + code review + walkthrough video as evidence. Auto-lands when accepted. Elixir reference impl + SPEC.md.</div>
+        <div class="proj-contrib">→ Client task delegation to agent teams<br>→ Proof-of-work receipts for each completed task<br>→ Auto-PR landing when quality gates pass</div>
+        <span class="tag">Elixir</span><span class="tag">SPEC.md</span><span class="tag">Apache 2.0</span>
+      </div>
+      <div class="proj">
+        <div class="role-pill">teams</div>
+        <div class="proj-header">
+          <div class="proj-icon">👥</div>
+          <div><div class="proj-name">CrewAI</div><div class="proj-source">crewAIInc</div></div>
+        </div>
+        <div class="proj-role">Python framework for agent team definitions. YAML-based role/task configs. 47k stars, battle-tested. Crews (autonomous) + Flows (event-driven). Defines the Exec Suite agent blueprints.</div>
+        <div class="proj-contrib">→ YAML blueprints for COO / CFO / CTO agent configs<br>→ Python-side orchestration for complex workflows<br>→ Conditional routing between agent roles</div>
+        <span class="tag">Python</span><span class="tag">YAML</span><span class="tag">47k ★</span>
+      </div>
+      <div class="proj">
+        <div class="role-pill">MCP layer</div>
+        <div class="proj-header">
+          <div class="proj-icon">🔌</div>
+          <div><div class="proj-name">Polsia</div><div class="proj-source">mcparkMCP</div></div>
+        </div>
+        <div class="proj-role">MCP server integration patterns for connecting agents to external tools. Next.js UI. Worker process architecture. Contributes MCP integration patterns for CC's tool connectivity layer.</div>
+        <div class="proj-contrib">→ MCP server blueprints for external tool connections<br>→ Worker process patterns for background agent tasks</div>
+        <span class="tag">Next.js</span><span class="tag">MCP</span><span class="tag">TypeScript</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider">· · · · · · · · ·</div>
+
+  <!-- INTELLIGENCE -->
+  <div class="zone intel">
+    <div class="zone-title">🧠 Intelligence &amp; Simulation Layer</div>
+    <div class="zone-row">
+      <div class="proj">
+        <div class="role-pill">prediction</div>
+        <div class="proj-header">
+          <div class="proj-icon">🐟</div>
+          <div><div class="proj-name">MiroFish</div><div class="proj-source">666ghj</div></div>
+        </div>
+        <div class="proj-role">Swarm simulation. Thousands of agents with distinct personalities and memory. GraphRAG knowledge graph. God's-eye prediction view. Test scenarios before deploying real agents.</div>
+        <div class="proj-contrib">→ Simulate client outcomes before live deployment<br>→ Feeds live state into deck.gl visualization<br>→ OASIS/CAMEL-AI swarm engine</div>
+        <span class="tag">Python</span><span class="tag">Vue</span><span class="tag">GraphRAG</span>
+      </div>
+      <div class="proj">
+        <div class="role-pill">consensus</div>
+        <div class="proj-header">
+          <div class="proj-icon">⚖️</div>
+          <div><div class="proj-name">LLM Council</div><div class="proj-source">karpathy</div></div>
+        </div>
+        <div class="proj-role">Multi-model consensus engine. Multiple LLMs independently answer, critique each other (blind), chairman synthesizes. Critical decisions go through the council — no single model trusted alone.</div>
+        <div class="proj-contrib">→ Quality gate for COO/CFO/CTO agent outputs<br>→ Strategic decisions validated by model council<br>→ "Chairman" model produces final synthesis</div>
+        <span class="tag">FastAPI</span><span class="tag">React</span><span class="tag">OpenRouter</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider">· · · · · · · · ·</div>
+
+  <!-- MEMORY -->
+  <div class="zone mem">
+    <div class="zone-title">💾 Hybrid Memory Stack</div>
+    <div class="zone-row">
+      <div class="proj" style="min-width:120px">
+        <div class="proj-header"><div class="proj-icon">🔵</div><div><div class="proj-name">QMD</div><div class="proj-source">OpenClaw native</div></div></div>
+        <div class="proj-contrib">Session continuity backbone. 24/7 cross-channel memory.</div>
+      </div>
+      <div class="proj" style="min-width:120px">
+        <div class="proj-header"><div class="proj-icon">📚</div><div><div class="proj-name">LosslessClaw</div><div class="proj-source">Martian-Engineering</div></div></div>
+        <div class="proj-contrib">DAG history. Nothing lost. lcm_grep any past context.</div>
+      </div>
+      <div class="proj" style="min-width:120px">
+        <div class="proj-header"><div class="proj-icon">🧠</div><div><div class="proj-name">Mem0</div><div class="proj-source">mem0ai</div></div></div>
+        <div class="proj-contrib">Personalized memory. Learns preferences over time.</div>
+      </div>
+      <div class="proj" style="min-width:120px">
+        <div class="proj-header"><div class="proj-icon">🌙</div><div><div class="proj-name">Always-On Agent</div><div class="proj-source">Google ADK</div></div></div>
+        <div class="proj-contrib">30-min consolidation. Multimodal ingest. Insight generation.</div>
+      </div>
+      <div class="proj" style="min-width:120px">
+        <div class="proj-header"><div class="proj-icon">📂</div><div><div class="proj-name">Unix-FS Layer</div><div class="proj-source">Ken Thompson</div></div></div>
+        <div class="proj-contrib">Everything-is-a-file spine. Inspectable. Debuggable.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider">· · · · · · · · ·</div>
+
+  <!-- INFRA -->
+  <div class="zone infra">
+    <div class="zone-title">🔧 On-Prem Infrastructure — CC Facility</div>
+    <div class="zone-row">
+      <div class="proj">
+        <div class="role-pill">models</div>
+        <div class="proj-header">
+          <div class="proj-icon">🤗</div>
+          <div><div class="proj-name">Transformers (Karpathy fork)</div><div class="proj-source">karpathy / HuggingFace</div></div>
+        </div>
+        <div class="proj-role">On-premise model fine-tuning and custom inference on CC's GPU cluster. Run and customize open-source models locally. No cloud API dependency for inference.</div>
+        <div class="proj-contrib">→ Fine-tune models on client-specific data at CC facility<br>→ Custom Coastal Claw model variants<br>→ Full GPU cluster utilization</div>
+        <span class="tag">PyTorch</span><span class="tag">Python</span><span class="tag">CUDA</span>
+      </div>
+      <div class="proj">
+        <div class="role-pill">security</div>
+        <div class="proj-header">
+          <div class="proj-icon">🛡️</div>
+          <div><div class="proj-name">NemoClaw / OpenShell</div><div class="proj-source">NVIDIA</div></div>
+        </div>
+        <div class="proj-role">Sandbox policy engine. Landlock + seccomp + network namespace isolation per client. Hot-reloadable network egress policy. The security spine of the facility deployment.</div>
+        <div class="proj-contrib">→ Per-client sandbox isolation on CC hardware<br>→ Policy-governed inference routing<br>→ Agent filesystem + network containment</div>
+        <span class="tag">TypeScript</span><span class="tag">Python blueprint</span><span class="tag">Docker</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOAT -->
+  <div class="moat-bar">
+    <strong>The Competitive Moat:</strong> No other service combines on-premise GPU privacy + LLM Council consensus quality + MiroFish predictive simulation + JARVIS-grade deck.gl visualization + lossless memory into one platform.
+    &nbsp;·&nbsp; <strong>The Exec Suite advantage:</strong> COO/CFO/CTO blueprints powered by CrewAI + Paperclip governance + Symphony proof-of-work = enterprise-grade AI executives clients can actually trust.
+    &nbsp;·&nbsp; <strong>Setup time:</strong> OpenMOSS auto-provisioning + guided wizard = 15-20 min from zero to running agents.
+  </div>
+
+</div>
+</body>
+</html>

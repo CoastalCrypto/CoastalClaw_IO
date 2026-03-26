@@ -1,7 +1,10 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { CoreClient } from './client'
 
 globalThis.fetch = vi.fn()
+
+// jsdom provides sessionStorage — seed it before creating admin clients
+const SESSION_TOKEN = 'test-session-token'
 
 describe('CoreClient', () => {
   const client = new CoreClient('http://localhost:4747')
@@ -27,7 +30,12 @@ describe('CoreClient', () => {
 })
 
 describe('CoreClient admin methods', () => {
-  const client = new CoreClient('http://localhost:4747', 'test-token')
+  let client: CoreClient
+
+  beforeEach(() => {
+    sessionStorage.setItem('cc_admin_session', SESSION_TOKEN)
+    client = new CoreClient('http://localhost:4747')
+  })
 
   it('listModels returns grouped model array', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
@@ -40,19 +48,19 @@ describe('CoreClient admin methods', () => {
     expect(result[0].hfSource).toBe('mistralai/Codestral-22B')
   })
 
-  it('removeModel sends DELETE request with admin token', async () => {
+  it('removeModel sends DELETE request with session token', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({ ok: true } as Response)
     await client.removeModel('codestral:22b-Q4_K_M')
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('/api/admin/models/'),
       expect.objectContaining({
         method: 'DELETE',
-        headers: expect.objectContaining({ 'x-admin-token': 'test-token' }),
+        headers: expect.objectContaining({ 'x-admin-session': SESSION_TOKEN }),
       })
     )
   })
 
-  it('updateRegistry sends PATCH request', async () => {
+  it('updateRegistry sends PATCH request with session token', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true, json: async () => ({ ok: true }),
     } as Response)
@@ -61,7 +69,7 @@ describe('CoreClient admin methods', () => {
       expect.stringContaining('/api/admin/registry'),
       expect.objectContaining({
         method: 'PATCH',
-        headers: expect.objectContaining({ 'x-admin-token': 'test-token' }),
+        headers: expect.objectContaining({ 'x-admin-session': SESSION_TOKEN }),
       })
     )
   })
@@ -76,7 +84,7 @@ describe('CoreClient admin methods', () => {
       expect.objectContaining({
         method: 'POST',
         body: expect.stringContaining('owner/mymodel'),
-        headers: expect.objectContaining({ 'x-admin-token': 'test-token' }),
+        headers: expect.objectContaining({ 'x-admin-session': SESSION_TOKEN }),
       })
     )
   })
@@ -92,7 +100,7 @@ describe('CoreClient admin methods', () => {
       expect.stringContaining('/api/admin/registry'),
       expect.objectContaining({
         method: 'GET',
-        headers: expect.objectContaining({ 'x-admin-token': 'test-token' }),
+        headers: expect.objectContaining({ 'x-admin-session': SESSION_TOKEN }),
       })
     )
   })

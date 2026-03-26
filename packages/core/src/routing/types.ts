@@ -8,6 +8,7 @@ export interface RouteSignals {
 
 export interface RouteDecision {
   model: string
+  fallbackModels: string[]   // ordered: try these if primary fails
   domain: 'coo' | 'cfo' | 'cto' | 'general'
   signals: RouteSignals
   domainConfidence: number

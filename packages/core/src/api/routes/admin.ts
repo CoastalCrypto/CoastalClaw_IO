@@ -4,7 +4,9 @@ import { ModelRegistry } from '../../models/registry.js'
 import { QuantizationPipeline } from '../../models/quantizer.js'
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { randomBytes, timingSafeEqual } from 'node:crypto'
+import { randomBytes, timingSafeEqual, createHmac } from 'node:crypto'
+
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
 
 function getOrCreateAdminToken(dataDir: string): string {
   const envToken = process.env.CC_ADMIN_TOKEN
@@ -15,9 +17,34 @@ function getOrCreateAdminToken(dataDir: string): string {
 
   const token = randomBytes(32).toString('hex')
   mkdirSync(dataDir, { recursive: true })
-  writeFileSync(tokenFile, token)
+  writeFileSync(tokenFile, token, { mode: 0o600 })
   console.log(`[coastal-claw] Admin token written to ${tokenFile}`)
   return token
+}
+
+function createSessionToken(adminToken: string): string {
+  const expiry = Date.now() + SESSION_TTL_MS
+  const nonce = randomBytes(16).toString('hex')
+  const payload = `${expiry}:${nonce}`
+  const sig = createHmac('sha256', adminToken).update(payload).digest('hex')
+  return `${payload}:${sig}`
+}
+
+function validateSessionToken(adminToken: string, sessionToken: string): boolean {
+  try {
+    const lastColon = sessionToken.lastIndexOf(':')
+    if (lastColon === -1) return false
+    const payload = sessionToken.slice(0, lastColon)
+    const sig = sessionToken.slice(lastColon + 1)
+    const expiry = Number(payload.split(':')[0])
+    if (isNaN(expiry) || Date.now() > expiry) return false
+    const expected = createHmac('sha256', adminToken).update(payload).digest('hex')
+    const a = Buffer.from(sig, 'hex')
+    const b = Buffer.from(expected, 'hex')
+    return a.length === b.length && timingSafeEqual(a, b)
+  } catch {
+    return false
+  }
 }
 
 export async function adminRoutes(fastify: FastifyInstance) {
@@ -26,15 +53,44 @@ export async function adminRoutes(fastify: FastifyInstance) {
   const modelRegistry = new ModelRegistry(config.dataDir)
   const registryPath = join(config.dataDir, 'model-registry.json')
 
-  // Auth hook for all admin routes
-  fastify.addHook('onRequest', async (req: FastifyRequest, reply: FastifyReply) => {
-    if (!req.url.startsWith('/api/admin')) return
-    const headerToken = req.headers['x-admin-token'] ?? ''
-    const a = Buffer.from(typeof headerToken === 'string' ? headerToken : headerToken[0] ?? '', 'utf8')
+  // POST /api/admin/login — validates admin token, returns a 24h session token
+  // This route is intentionally exempt from the auth hook below
+  fastify.post<{ Body: { token: string } }>('/api/admin/login', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['token'],
+        properties: { token: { type: 'string' } },
+      },
+    },
+  }, async (req, reply) => {
+    const { token } = req.body
+    const a = Buffer.from(token, 'utf8')
     const b = Buffer.from(adminToken, 'utf8')
     if (a.length !== b.length || !timingSafeEqual(a, b)) {
-      return reply.status(401).send({ error: 'Unauthorized' })
+      return reply.status(401).send({ error: 'Invalid admin token' })
     }
+    return reply.send({ sessionToken: createSessionToken(adminToken) })
+  })
+
+  // Auth hook — accepts either x-admin-token (raw) or x-admin-session (login-derived)
+  fastify.addHook('onRequest', async (req: FastifyRequest, reply: FastifyReply) => {
+    if (!req.url.startsWith('/api/admin')) return
+    if (req.url === '/api/admin/login') return // exempt: this IS the login endpoint
+
+    const rawHeader = req.headers['x-admin-token'] ?? ''
+    const raw = typeof rawHeader === 'string' ? rawHeader : rawHeader[0] ?? ''
+    if (raw) {
+      const a = Buffer.from(raw, 'utf8')
+      const b = Buffer.from(adminToken, 'utf8')
+      if (a.length === b.length && timingSafeEqual(a, b)) return
+    }
+
+    const sessionHeader = req.headers['x-admin-session'] ?? ''
+    const session = typeof sessionHeader === 'string' ? sessionHeader : sessionHeader[0] ?? ''
+    if (session && validateSessionToken(adminToken, session)) return
+
+    return reply.status(401).send({ error: 'Unauthorized' })
   })
 
   // GET /api/admin/models
@@ -45,6 +101,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // DELETE /api/admin/models/:quantId
   fastify.delete<{ Params: { quantId: string } }>('/api/admin/models/:quantId', async (req, reply) => {
     const { quantId } = req.params
+    if (!modelRegistry.isActive(quantId)) {
+      return reply.status(404).send({ error: `Model not found in registry: ${quantId}` })
+    }
     // Remove from Ollama (best-effort)
     try {
       await fetch(`${config.ollamaUrl}/api/delete`, {
@@ -67,7 +126,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
         required: ['hfModelId', 'quants', 'sessionId'],
         properties: {
           hfModelId: { type: 'string' },
-          quants: { type: 'array', items: { type: 'string' } },
+          quants: { type: 'array', items: { type: 'string', enum: ['Q4_K_M', 'Q5_K_M', 'Q8_0'] } },
           sessionId: { type: 'string' },
         },
       },

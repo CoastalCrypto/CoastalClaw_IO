@@ -1,5 +1,6 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { buildServer } from '../../src/server.js'
+import { ModelRegistry } from '../../src/models/registry.js'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -86,6 +87,11 @@ describe('Admin API', () => {
   })
 
   it('DELETE /api/admin/models/:quantId returns 204', async () => {
+    // Pre-register the model so the registry guard passes
+    const reg = new ModelRegistry(tmpDir)
+    reg.register({ id: 'mymodel:q4_k_m', hfSource: 'owner/mymodel', baseName: 'mymodel', quantLevel: 'Q4_K_M', sizeGb: 4.1 })
+    reg.close()
+
     const res = await server.inject({
       method: 'DELETE',
       url: '/api/admin/models/mymodel:q4_k_m',

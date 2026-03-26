@@ -28,8 +28,8 @@ export async function chatRoutes(fastify: FastifyInstance) {
         type: 'object',
         required: ['message'],
         properties: {
-          sessionId: { type: 'string' },
-          message: { type: 'string', minLength: 1 },
+          sessionId: { type: 'string', maxLength: 128, pattern: '^[a-zA-Z0-9_-]+$' },
+          message: { type: 'string', minLength: 1, maxLength: 8192 },
           model: { type: 'string' },
         },
       },
@@ -40,6 +40,8 @@ export async function chatRoutes(fastify: FastifyInstance) {
 
     // Get history first (before persisting user message, to avoid including it)
     const history = await memory.queryHistory({ sessionId, limit: 20 })
+    // Flush entries beyond the context window to mem0 (fire-and-forget)
+    memory.flushOldEntries(sessionId, 20).catch(() => {})
     const messages = history
       .slice()
       .reverse()

@@ -1,0 +1,177 @@
+<style>
+  .approach-grid { display: flex; flex-direction: column; gap: 20px; max-width: 960px; margin: 0 auto; }
+  .approach {
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid rgba(0,200,255,0.2);
+    background: rgba(0,200,255,0.04);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .approach:hover { border-color: rgba(0,200,255,0.5); transform: translateY(-1px); }
+  .approach.selected { border-color: #00c8ff; box-shadow: 0 0 24px rgba(0,200,255,0.2); }
+  .approach.recommended { border-color: rgba(0,255,150,0.5); background: rgba(0,255,150,0.04); }
+  .approach.recommended:hover { border-color: rgba(0,255,150,0.8); }
+  .approach.recommended.selected { border-color: #00ff96; box-shadow: 0 0 24px rgba(0,255,150,0.2); }
+  .approach-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+  .approach-letter { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; flex-shrink: 0; background: rgba(0,200,255,0.1); color: #00c8ff; border: 1px solid rgba(0,200,255,0.3); }
+  .approach.recommended .approach-letter { background: rgba(0,255,150,0.1); color: #00ff96; border-color: rgba(0,255,150,0.3); }
+  .approach-title { flex: 1; }
+  .approach-title h3 { margin: 0 0 4px 0; font-size: 16px; color: #fff; }
+  .approach-title .tagline { color: #888; font-size: 13px; }
+  .rec-badge { background: rgba(0,255,150,0.15); border: 1px solid rgba(0,255,150,0.4); color: #00ff96; font-size: 10px; letter-spacing: 1px; padding: 3px 10px; border-radius: 4px; text-transform: uppercase; white-space: nowrap; }
+  .approach-body { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .section-title { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(0,200,255,0.5); margin-bottom: 8px; }
+  .approach.recommended .section-title { color: rgba(0,255,150,0.5); }
+  .diagram { background: #000; border-radius: 8px; padding: 14px; font-family: monospace; font-size: 11px; line-height: 1.7; }
+  .d-blue { color: #00c8ff; }
+  .d-green { color: #00ff96; }
+  .d-gray { color: #555; }
+  .d-yellow { color: #ffc800; }
+  .d-orange { color: #ffa040; }
+  .d-dim { color: #444; }
+  .pros-cons { display: flex; gap: 12px; }
+  .pros, .cons { flex: 1; }
+  .pros h4 { color: #00ff96; font-size: 11px; margin: 0 0 6px 0; }
+  .cons h4 { color: #ff6464; font-size: 11px; margin: 0 0 6px 0; }
+  ul { margin: 0; padding-left: 16px; }
+  ul li { font-size: 12px; color: #888; margin-bottom: 4px; line-height: 1.4; }
+  .setup-bar { margin-top: 12px; }
+  .setup-label { font-size: 11px; color: #888; margin-bottom: 5px; }
+  .bar-track { background: rgba(255,255,255,0.05); border-radius: 4px; height: 6px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .bar-fill.bad { width: 95%; background: linear-gradient(to right, #ff4040, #ff8040); }
+  .bar-fill.ok { width: 55%; background: linear-gradient(to right, #ffc800, #ffaa00); }
+  .bar-fill.good { width: 20%; background: linear-gradient(to right, #00ff96, #00c8ff); }
+  .divider { height: 1px; background: rgba(0,200,255,0.1); margin: 16px 0; }
+</style>
+
+<h2>Three Approaches to Coastal Claw</h2>
+<p class="subtitle">Each solves the architecture differently. Click to select your preference — or mix them.</p>
+
+<div class="approach-grid">
+
+  <!-- APPROACH A -->
+  <div class="approach" data-choice="a" onclick="toggleSelect(this)">
+    <div class="approach-header">
+      <div class="approach-letter">A</div>
+      <div class="approach-title">
+        <h3>Desktop-First — Electron as Hub</h3>
+        <div class="tagline">Electron app is the primary product. Web and TUI connect to the running desktop instance.</div>
+      </div>
+    </div>
+    <div class="approach-body">
+      <div>
+        <div class="section-title">How it works</div>
+        <div class="diagram">
+<span class="d-blue">┌── Electron App ──────────────┐</span>
+<span class="d-blue">│  JARVIS HUD + Core Engine    │</span>
+<span class="d-blue">│  Voice / Video / GPU         │</span>
+<span class="d-blue">│  Exposes local port :7474    │</span>
+<span class="d-blue">└──────────────┬───────────────┘</span>
+               <span class="d-gray">│</span>
+    <span class="d-dim">┌──────┴──────┐</span>
+<span class="d-gray">Web App    TUI CLI</span>
+<span class="d-dim">(companion) (admin)</span>
+
+<span class="d-yellow">Cloud: Electron on a VM</span>
+<span class="d-yellow">Users access via browser</span>
+        </div>
+        <div class="setup-bar">
+          <div class="setup-label">Setup time for non-technical user</div>
+          <div class="bar-track"><div class="bar-fill ok"></div></div>
+          <div style="font-size:10px;color:#888;margin-top:3px;">~25-40 min — requires Electron install</div>
+        </div>
+      </div>
+      <div>
+        <div class="pros-cons">
+          <div class="pros"><h4>✓ Pros</h4><ul><li>Native GPU / mic / camera</li><li>Rich offline capability</li><li>Full JARVIS aesthetic control</li></ul></div>
+          <div class="cons"><h4>✗ Cons</h4><ul><li>Cloud story is awkward (VM per user)</li><li>Heavy download for casual users</li><li>Updates require re-download</li></ul></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPROACH B — RECOMMENDED -->
+  <div class="approach recommended" data-choice="b" onclick="toggleSelect(this)">
+    <div class="approach-header">
+      <div class="approach-letter">B</div>
+      <div class="approach-title">
+        <h3>Local API Server as Hub — Service-First ⭐</h3>
+        <div class="tagline">Core runs as a silent local service (like Ollama). All interfaces are thin clients. Cloud = same service on Coastal Crypto servers.</div>
+      </div>
+      <span class="rec-badge">Recommended</span>
+    </div>
+    <div class="approach-body">
+      <div>
+        <div class="section-title">How it works</div>
+        <div class="diagram">
+<span class="d-green">┌── Coastal Claw Service ──────┐</span>
+<span class="d-green">│  Core + Memory + Agents      │</span>
+<span class="d-green">│  REST + WebSocket :4747      │</span>
+<span class="d-green">│  Auto-starts on boot         │</span>
+<span class="d-green">└──┬──────────┬────────────┬───┘</span>
+   <span class="d-blue">│</span>          <span class="d-blue">│</span>            <span class="d-blue">│</span>
+<span class="d-blue">Web App  Electron   TUI CLI</span>
+<span class="d-dim">(browser) (JARVIS)  (admin)</span>
+
+<span class="d-yellow">Cloud: service on CC servers</span>
+<span class="d-yellow">Same web UI, zero install</span>
+        </div>
+        <div class="setup-bar">
+          <div class="setup-label">Setup time for non-technical user</div>
+          <div class="bar-track"><div class="bar-fill good"></div></div>
+          <div style="font-size:10px;color:#888;margin-top:3px;">~10-20 min self-hosted · 3 min cloud</div>
+        </div>
+      </div>
+      <div>
+        <div class="pros-cons">
+          <div class="pros"><h4>✓ Pros</h4><ul><li>All 3 interfaces share live state</li><li>Cloud = same code, different host</li><li>Abacus.ai-style web onboarding</li><li>Silent background updates</li><li>Ollama/Cursor-style familiarity</li></ul></div>
+          <div class="cons"><h4>✗ Cons</h4><ul><li>Service must be running (auto-start solves)</li><li>Voice/video needs Electron or browser perms</li></ul></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPROACH C -->
+  <div class="approach" data-choice="c" onclick="toggleSelect(this)">
+    <div class="approach-header">
+      <div class="approach-letter">C</div>
+      <div class="approach-title">
+        <h3>Progressive Web App + Local Bridge</h3>
+        <div class="tagline">PWA for everyone. Optional local "bridge" binary for local models + GPU. Closest to Abacus.ai's pattern.</div>
+      </div>
+    </div>
+    <div class="approach-body">
+      <div>
+        <div class="section-title">How it works</div>
+        <div class="diagram">
+<span class="d-blue">┌── Coastal Crypto Cloud ──────┐</span>
+<span class="d-blue">│  Hosted PWA (coastalcrypto)  │</span>
+<span class="d-blue">│  Accounts + billing + agents │</span>
+<span class="d-blue">└──────────────┬───────────────┘</span>
+               <span class="d-gray">│  optional</span>
+<span class="d-orange">┌──────────────┴───────────────┐</span>
+<span class="d-orange">│  Local Bridge (tiny binary)  │</span>
+<span class="d-orange">│  Local models + private data │</span>
+<span class="d-orange">└──────────────────────────────┘</span>
+
+<span class="d-yellow">TUI: separate power-user tool</span>
+<span class="d-yellow">Electron: optional premium app</span>
+        </div>
+        <div class="setup-bar">
+          <div class="setup-label">Setup time for non-technical user</div>
+          <div class="bar-track"><div class="bar-fill good"></div></div>
+          <div style="font-size:10px;color:#888;margin-top:3px;">~3-5 min cloud · 20-30 min with bridge</div>
+        </div>
+      </div>
+      <div>
+        <div class="pros-cons">
+          <div class="pros"><h4>✓ Pros</h4><ul><li>Absolute lowest entry barrier</li><li>No install for cloud users</li><li>Ties directly to Coastal Crypto site</li></ul></div>
+          <div class="cons"><h4>✗ Cons</h4><ul><li>Two separate codebases (cloud + bridge)</li><li>Local JARVIS experience diluted</li><li>Complex auth/sync between modes</li></ul></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

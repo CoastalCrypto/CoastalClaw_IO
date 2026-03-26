@@ -19,7 +19,7 @@
 
 ## What is Coastal Claw?
 
-Coastal Claw is an AI agent operating system built by [Coastal Crypto](https://coastalcrypto.com). It replaces the typical 4–6 hour AI infrastructure setup with a **15–20 minute onboarding** and delivers a JARVIS-grade experience backed by on-premise GPU hardware — no AWS middleman, no per-token cloud costs, no data leaving your facility.
+Coastal Claw is an AI agent operating system built by [Coastal Crypto](https://coastalcryptomining.com). It replaces the typical 4–6 hour AI infrastructure setup with a **15–20 minute onboarding** and delivers a JARVIS-grade experience backed by on-premise GPU hardware — no AWS middleman, no per-token cloud costs, no data leaving your facility.
 
 The flagship product is the **AI Executive Suite** — virtual COO, CFO, and CTO agents that work like a real leadership team: they remember context across sessions, route complex decisions through a multi-model consensus gate, and operate within defined budget and governance guardrails.
 

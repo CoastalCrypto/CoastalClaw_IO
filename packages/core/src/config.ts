@@ -9,6 +9,12 @@ export interface Config {
   tinyRouterModel: string
   quantRouterModel: string
   llamaCppDir: string
+  agentWorkdir: string
+  soulMaxTokens: number
+  agentMaxTurns: number
+  toolResultMaxChars: number
+  approvalTimeoutMs: number
+  defaultModel: string
 }
 
 export function loadConfig(): Config {
@@ -42,5 +48,11 @@ export function loadConfig(): Config {
     tinyRouterModel: process.env.CC_TINY_ROUTER_MODEL ?? './data/tiny-router.onnx',
     quantRouterModel: process.env.CC_QUANT_ROUTER_MODEL ?? 'qwen2.5:0.5b',
     llamaCppDir: process.env.CC_LLAMA_CPP_DIR ?? './data/llama-cpp/',
+    agentWorkdir: process.env.CC_AGENT_WORKDIR ?? './data/workspace',
+    soulMaxTokens: Number(process.env.CC_SOUL_MAX_TOKENS ?? '1500'),
+    agentMaxTurns: Number(process.env.CC_AGENT_MAX_TURNS ?? '10'),
+    toolResultMaxChars: Number(process.env.CC_TOOL_RESULT_MAX_CHARS ?? '4000'),
+    approvalTimeoutMs: Number(process.env.CC_APPROVAL_TIMEOUT_MS ?? '300000'),
+    defaultModel: process.env.CC_DEFAULT_MODEL ?? 'llama3.2',
   }
 }

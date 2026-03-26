@@ -1,0 +1,24 @@
+{
+  "name": "@coastal-claw/video",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/remotion/index.ts",
+    "render:promo": "remotion render src/remotion/index.ts PromoVideo out/promo.mp4",
+    "mc:dev": "mc-vite",
+    "mc:build": "mc-vite build"
+  },
+  "dependencies": {
+    "remotion": "^4.0.0",
+    "@remotion/cli": "^4.0.0",
+    "@remotion/player": "^4.0.0",
+    "@motion-canvas/core": "^3.0.0",
+    "@motion-canvas/2d": "^3.0.0",
+    "@motion-canvas/vite-plugin": "^3.0.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^8.0.1"
+  }
+}

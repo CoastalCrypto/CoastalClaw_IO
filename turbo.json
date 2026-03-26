@@ -12,6 +12,17 @@
     "test": {
       "dependsOn": ["build"]
     },
-    "lint": {}
+    "lint": {},
+    "studio": {
+      "cache": false,
+      "persistent": true
+    },
+    "render:promo": {
+      "outputs": ["out/**"]
+    },
+    "mc:dev": {
+      "cache": false,
+      "persistent": true
+    }
   }
 }

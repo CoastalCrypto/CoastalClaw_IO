@@ -7,6 +7,8 @@ export interface SendMessageOptions {
 export interface SendMessageResult {
   reply: string
   sessionId: string
+  domain?: string
+  model?: string
 }
 
 export interface ModelVariant {

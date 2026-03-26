@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChatBubble } from '../components/ChatBubble'
+import { AgentThinkingAnimation, guessDomain, type AgentDomain } from '../components/AgentThinkingAnimation'
 import { coreClient } from '../api/client'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
+  domain?: AgentDomain
 }
 
 export function Chat({ sessionId, onNav }: { sessionId: string; onNav: () => void }) {
@@ -13,6 +15,7 @@ export function Chat({ sessionId, onNav }: { sessionId: string; onNav: () => voi
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [thinkingDomain, setThinkingDomain] = useState<AgentDomain>('general')
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -24,10 +27,12 @@ export function Chat({ sessionId, onNav }: { sessionId: string; onNav: () => voi
     if (!text || loading) return
     setInput('')
     setMessages((m) => [...m, { role: 'user', content: text }])
+    setThinkingDomain(guessDomain(text))
     setLoading(true)
     try {
       const res = await coreClient.sendMessage({ message: text, sessionId })
-      setMessages((m) => [...m, { role: 'assistant', content: res.reply }])
+      const domain = (res.domain as AgentDomain | undefined) ?? 'general'
+      setMessages((m) => [...m, { role: 'assistant', content: res.reply, domain }])
     } catch {
       setMessages((m) => [...m, { role: 'assistant', content: 'Connection error. Please try again.' }])
     } finally {
@@ -51,9 +56,7 @@ export function Chat({ sessionId, onNav }: { sessionId: string; onNav: () => voi
         ))}
         {loading && (
           <div className="flex justify-start mb-3">
-            <div className="bg-gray-800 border border-gray-700 px-4 py-3 rounded-2xl">
-              <span className="text-cyan-500 font-mono text-sm animate-pulse">thinking...</span>
-            </div>
+            <AgentThinkingAnimation domain={thinkingDomain} />
           </div>
         )}
         <div ref={bottomRef} />

@@ -12,6 +12,9 @@ interface QuantProgress {
 }
 
 const adminClient = new CoreClient('/api', import.meta.env.VITE_ADMIN_TOKEN ?? '')
+if (!import.meta.env.VITE_ADMIN_TOKEN) {
+  console.warn('[Models] VITE_ADMIN_TOKEN is not set — admin API calls will return 401. Set it in packages/web/.env.local')
+}
 // Note: Set VITE_ADMIN_TOKEN in packages/web/.env.local to match CC_ADMIN_TOKEN from core startup output.
 
 export function Models() {
@@ -61,8 +64,9 @@ export function Models() {
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Installation failed')
     } finally {
-      setInstalling(false)
+      ws.onmessage = null  // prevent buffered messages from firing after this point
       ws.close()
+      setInstalling(false)
     }
   }
 

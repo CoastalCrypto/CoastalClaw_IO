@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="Coastal Claw" width="460"/>
+  <img src="assets/banner.png" alt="Coastal Claw" width="100%"/>
 </p>
 
 <p align="center">

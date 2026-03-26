@@ -1,0 +1,83 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Coastal Claw",
+  "logo": {
+    "dark": "/assets/logo.svg",
+    "light": "/assets/logo.svg"
+  },
+  "favicon": "/assets/logo.svg",
+  "colors": {
+    "primary": "#00e5ff",
+    "light": "#00e5ff",
+    "dark": "#0094c8",
+    "background": {
+      "dark": "#050d1a"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/CoastalCrypto/CoastalClaw_IO"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "API Reference",
+      "icon": "rectangle-terminal",
+      "url": "api"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": [
+        "introduction",
+        "getting-started",
+        "installation/prerequisites",
+        "installation/manual"
+      ]
+    },
+    {
+      "group": "Configuration",
+      "pages": [
+        "configuration/environment",
+        "configuration/model-registry"
+      ]
+    },
+    {
+      "group": "Architecture",
+      "pages": [
+        "architecture/overview",
+        "architecture/routing",
+        "architecture/memory"
+      ]
+    },
+    {
+      "group": "Administration",
+      "pages": [
+        "admin/overview",
+        "admin/model-management",
+        "admin/domain-assignment"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "api/chat",
+        "api/admin",
+        "api/websocket"
+      ]
+    },
+    {
+      "group": "Resources",
+      "pages": [
+        "security",
+        "troubleshooting",
+        "contributing"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/CoastalCrypto/CoastalClaw_IO"
+  }
+}

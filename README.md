@@ -7,6 +7,7 @@
 </p>
 
 <p align="center">
+  <a href="https://docs.coastalcryptomining.com"><strong>📖 Documentation</strong></a> ·
   <a href="#-quick-start">Quick Start</a> ·
   <a href="#-architecture">Architecture</a> ·
   <a href="#-features">Features</a> ·

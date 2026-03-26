@@ -9,10 +9,7 @@
   "colors": {
     "primary": "#00e5ff",
     "light": "#00e5ff",
-    "dark": "#0094c8",
-    "background": {
-      "dark": "#050d1a"
-    }
+    "dark": "#0094c8"
   },
   "topbarLinks": [
     {
@@ -22,13 +19,6 @@
     {
       "name": "coastalcryptomining.com",
       "url": "https://coastalcryptomining.com"
-    }
-  ],
-  "anchors": [
-    {
-      "name": "API Reference",
-      "icon": "rectangle-terminal",
-      "url": "api"
     }
   ],
   "navigation": [

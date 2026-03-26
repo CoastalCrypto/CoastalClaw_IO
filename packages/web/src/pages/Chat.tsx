@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChatBubble } from '../components/ChatBubble'
 import { AgentThinkingAnimation, guessDomain, type AgentDomain } from '../components/AgentThinkingAnimation'
+import { RiveAgent } from '../components/animations/RiveAgent'
 import { coreClient } from '../api/client'
 
 interface Message {
@@ -16,6 +17,7 @@ export function Chat({ sessionId, onNav }: { sessionId: string; onNav: () => voi
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [thinkingDomain, setThinkingDomain] = useState<AgentDomain>('general')
+  const [activeDomain, setActiveDomain] = useState<AgentDomain>('general')
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -32,6 +34,7 @@ export function Chat({ sessionId, onNav }: { sessionId: string; onNav: () => voi
     try {
       const res = await coreClient.sendMessage({ message: text, sessionId })
       const domain = (res.domain as AgentDomain | undefined) ?? 'general'
+      setActiveDomain(domain)
       setMessages((m) => [...m, { role: 'assistant', content: res.reply, domain }])
     } catch {
       setMessages((m) => [...m, { role: 'assistant', content: 'Connection error. Please try again.' }])
@@ -42,9 +45,12 @@ export function Chat({ sessionId, onNav }: { sessionId: string; onNav: () => voi
 
   return (
     <div className="flex flex-col h-screen bg-gray-950">
-      <header className="border-b border-gray-800 px-6 py-4 flex items-center gap-3">
-        <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-        <span className="text-sm text-gray-400 font-mono">COASTAL CLAW · SESSION {sessionId.slice(-8).toUpperCase()}</span>
+      <header className="border-b border-gray-800 px-6 py-3 flex items-center gap-4">
+        <RiveAgent domain={activeDomain} isThinking={loading} size={48} />
+        <div>
+          <div className="text-xs text-cyan-400 font-mono tracking-widest">{activeDomain.toUpperCase()}</div>
+          <div className="text-xs text-gray-500 font-mono">SESSION {sessionId.slice(-8).toUpperCase()}</div>
+        </div>
         <button onClick={onNav} className="text-xs text-gray-500 hover:text-gray-300 transition-colors ml-auto">
           Models
         </button>

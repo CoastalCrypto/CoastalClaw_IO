@@ -1,16 +1,26 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { Onboarding } from './pages/Onboarding'
 import { Chat } from './pages/Chat'
 import { Models } from './pages/Models'
 import './index.css'
+
+// Three.js is large — load it async so the onboarding form renders immediately
+const OceanScene = lazy(() =>
+  import('./components/animations/OceanScene').then((m) => ({ default: m.OceanScene }))
+)
 
 export default function App() {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [page, setPage] = useState<'chat' | 'models'>('chat')
 
   if (!sessionId) return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
-      <Onboarding onComplete={setSessionId} />
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ position: 'relative' }}>
+      <Suspense fallback={<div style={{ position: 'absolute', inset: 0, background: '#050d1a' }} />}>
+        <OceanScene />
+      </Suspense>
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <Onboarding onComplete={setSessionId} />
+      </div>
     </div>
   )
 

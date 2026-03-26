@@ -138,8 +138,13 @@ export async function adminRoutes(fastify: FastifyInstance) {
       try { existing = JSON.parse(readFileSync(registryPath, 'utf8')) } catch {}
     }
 
-    // Merge and write
-    const merged = { ...existing, ...updates }
+    // Merge and write (deep merge to preserve existing urgency keys within a domain)
+    const merged: Record<string, Record<string, string>> = { ...existing }
+    for (const [domain, urgencyMap] of Object.entries(updates)) {
+      if (urgencyMap && typeof urgencyMap === 'object') {
+        merged[domain] = { ...(merged[domain] ?? {}), ...urgencyMap }
+      }
+    }
     mkdirSync(config.dataDir, { recursive: true })
     writeFileSync(registryPath, JSON.stringify(merged, null, 2))
 

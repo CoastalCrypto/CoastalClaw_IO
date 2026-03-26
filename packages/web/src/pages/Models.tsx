@@ -57,6 +57,19 @@ export function Models() {
       } catch {}
     }
 
+    // Wait for connection to open, then register this session for progress events
+    await new Promise<void>((resolve) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'register', sessionId }))
+        resolve()
+      } else {
+        ws.onopen = () => {
+          ws.send(JSON.stringify({ type: 'register', sessionId }))
+          resolve()
+        }
+      }
+    })
+
     try {
       await adminClient.addModel(hfModelId, [quant], sessionId)
       await new Promise(r => setTimeout(r, 2000))

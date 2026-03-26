@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import type { ModelGroup, RegistryUpdate } from '../api/client'
 
 type Domain = 'coo' | 'cfo' | 'cto' | 'general'
@@ -20,7 +20,7 @@ const URGENCIES: { key: Urgency; label: string }[] = [
 interface DomainAssignerProps {
   models: ModelGroup[]
   registry: Record<string, Record<string, string>>
-  onChange: (update: RegistryUpdate) => void
+  onChange: (update: RegistryUpdate) => Promise<void>
 }
 
 type CellKey = `${Domain}.${Urgency}`
@@ -29,9 +29,14 @@ type CellState = 'idle' | 'success' | 'error'
 export function DomainAssigner({ models, registry, onChange }: DomainAssignerProps) {
   const allVariants = models.flatMap(g => g.variants)
   const [cellStates, setCellStates] = useState<Partial<Record<CellKey, CellState>>>({})
+  const timers = useRef<Partial<Record<CellKey, ReturnType<typeof setTimeout>>>>({})
 
   const handleChange = async (domain: Domain, urgency: Urgency, value: string) => {
     const key: CellKey = `${domain}.${urgency}`
+    // Clear any existing timer for this cell
+    if (timers.current[key]) {
+      clearTimeout(timers.current[key])
+    }
     try {
       await onChange({
         [domain]: { ...registry[domain], [urgency]: value },
@@ -40,7 +45,10 @@ export function DomainAssigner({ models, registry, onChange }: DomainAssignerPro
     } catch {
       setCellStates(s => ({ ...s, [key]: 'error' }))
     }
-    setTimeout(() => setCellStates(s => ({ ...s, [key]: 'idle' })), 1500)
+    timers.current[key] = setTimeout(() => {
+      setCellStates(s => ({ ...s, [key]: 'idle' }))
+      delete timers.current[key]
+    }, 1500)
   }
 
   return (

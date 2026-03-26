@@ -41,10 +41,14 @@ export interface LoopResult {
   reply: string
   actions: ActionSummary[]
   domain: string
+  status: 'complete' | 'error' | 'interrupted'
+  error?: string
 }
 
 export interface ActionSummary {
   tool: string
+  args: Record<string, unknown>
+  output: string
   decision: GateDecision
   durationMs: number
 }

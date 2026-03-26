@@ -1,4 +1,4 @@
-import { OllamaClient, type ChatMessage } from '../models/ollama.js'
+import { OllamaClient, type LocalChatMessage } from '../models/ollama.js'
 
 const DOMAIN_KEYWORDS = {
   cfo: ['burn rate', 'runway', 'arr', 'mrr', 'fundraising', 'cap table', 'revenue', 'budget', 'forecast'],
@@ -65,7 +65,7 @@ export class DomainClassifier {
     try {
       // Truncate to limit prompt injection surface; wrap to signal this is user input
       const safeMsg = message.slice(0, 2000)
-      const messages: ChatMessage[] = [
+      const messages: LocalChatMessage[] = [
         { role: 'system', content: DOMAIN_PROMPT },
         { role: 'user', content: `Classify the following message:\n\n${safeMsg}` },
       ]

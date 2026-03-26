@@ -1,4 +1,4 @@
-import { OllamaClient, type ChatMessage } from './ollama.js'
+import { OllamaClient, type LocalChatMessage } from './ollama.js'
 import { CascadeRouter } from '../routing/cascade.js'
 import type { RouteDecision } from '../routing/types.js'
 import { loadConfig } from '../config.js'
@@ -13,8 +13,8 @@ export interface ChatOptions {
 }
 
 export class ModelRouter {
-  private ollama: OllamaClient
-  private cascade: CascadeRouter
+  ollama: OllamaClient
+  cascade: CascadeRouter
 
   constructor(private config: RouterConfig) {
     this.ollama = new OllamaClient({ baseUrl: config.ollamaUrl })
@@ -30,7 +30,7 @@ export class ModelRouter {
   }
 
   async chat(
-    messages: ChatMessage[],
+    messages: LocalChatMessage[],
     options?: ChatOptions
   ): Promise<{ reply: string; decision: RouteDecision }> {
     const lastMessage = messages[messages.length - 1].content

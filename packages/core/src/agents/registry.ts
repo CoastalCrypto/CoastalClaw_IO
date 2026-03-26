@@ -91,7 +91,7 @@ export class AgentRegistry {
 
   list(): AgentConfig[] {
     const rows = this.db.prepare('SELECT * FROM agents WHERE active = 1 ORDER BY built_in DESC, created_at ASC').all() as any[]
-    return rows.map(this.rowToConfig)
+    return rows.map(row => this.rowToConfig(row))
   }
 
   get(id: string): AgentConfig | null {
@@ -123,12 +123,14 @@ export class AgentRegistry {
     if (fields.active !== undefined) { sets.push('active = ?'); values.push(fields.active ? 1 : 0) }
     if (sets.length === 0) return
     values.push(id)
-    this.db.prepare(`UPDATE agents SET ${sets.join(', ')} WHERE id = ?`).run(...values)
+    const result = this.db.prepare(`UPDATE agents SET ${sets.join(', ')} WHERE id = ?`).run(...values)
+    if (result.changes === 0) throw new Error(`Agent not found: ${id}`)
   }
 
   delete(id: string): void {
     const row = this.db.prepare('SELECT built_in FROM agents WHERE id = ?').get(id) as any
-    if (row?.built_in) throw new Error('Cannot delete built-in agent')
+    if (!row) throw new Error(`Agent not found: ${id}`)
+    if (row.built_in) throw new Error('Cannot delete built-in agent')
     this.db.prepare('DELETE FROM agents WHERE id = ?').run(id)
   }
 
@@ -140,11 +142,20 @@ export class AgentRegistry {
       name: row.name,
       role: row.role,
       soulPath: row.soul_path,
-      tools: JSON.parse(row.tools),
+      tools: this.parseTools(row.id, row.tools),
       modelPref: row.model_pref ?? undefined,
       builtIn: Boolean(row.built_in),
       active: Boolean(row.active),
       createdAt: row.created_at,
+    }
+  }
+
+  private parseTools(agentId: string, raw: string): string[] {
+    try {
+      return JSON.parse(raw) as string[]
+    } catch {
+      console.error(`[AgentRegistry] Failed to parse tools for agent ${agentId}, defaulting to []`)
+      return []
     }
   }
 }

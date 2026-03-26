@@ -70,4 +70,12 @@ describe('AgentRegistry', () => {
     const fallback = registry.getByDomain('unknown-domain')
     expect(fallback!.id).toBe('general')
   })
+
+  it('delete throws on non-existent agent', () => {
+    expect(() => registry.delete('nonexistent')).toThrow('Agent not found')
+  })
+
+  it('update throws on non-existent agent', () => {
+    expect(() => registry.update('nonexistent', { name: 'X' })).toThrow('Agent not found')
+  })
 })

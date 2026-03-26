@@ -70,6 +70,7 @@ describe('AgenticLoop', () => {
     const loop = new AgenticLoop(ollama, mockRegistry(), mockGate('allow'), mockLog())
     const result = await loop.run(mockSession(['read_file']), 'loop', 'sess-1', [])
     expect(result.reply).toContain('maximum turns')
+    expect(ollama.chatWithTools).toHaveBeenCalledTimes(2)  // ADD THIS
     delete process.env.CC_AGENT_MAX_TURNS
   })
 
@@ -87,7 +88,7 @@ describe('AgenticLoop', () => {
     expect(result.reply).toBe('understood')
   })
 
-  it('uses parallel execution for all-read tool calls', async () => {
+  it('executes all read tools in a batch turn', async () => {
     const executionOrder: string[] = []
     const ollama = {
       chatWithTools: vi.fn()
@@ -109,7 +110,6 @@ describe('AgenticLoop', () => {
     const result = await loop.run(mockSession(['read_file']), 'read both', 'sess-1', [])
     expect(result.reply).toBe('done')
     expect(executor).toHaveBeenCalledTimes(2)
-    // Both were called (order may vary due to parallelism)
     expect(executionOrder).toHaveLength(2)
   })
 

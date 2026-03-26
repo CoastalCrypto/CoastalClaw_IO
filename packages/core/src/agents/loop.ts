@@ -3,7 +3,7 @@ import type { AgentSession, ChatMessage } from './session.js'
 import type { ToolRegistry } from '../tools/registry.js'
 import type { PermissionGate } from './permission-gate.js'
 import type { ActionLog } from './action-log.js'
-import type { LoopResult } from './types.js'
+import type { LoopResult, GateDecision } from './types.js'
 
 const MAX_TURNS = () => Number(process.env.CC_AGENT_MAX_TURNS ?? 10)
 const MAX_RESULT_CHARS = () => Number(process.env.CC_TOOL_RESULT_MAX_CHARS ?? 4000)
@@ -26,57 +26,68 @@ export class AgenticLoop {
     const messages: ChatMessage[] = session.buildMessages(userMessage, history)
     let turns = 0
 
-    while (turns < MAX_TURNS()) {
-      const { content, toolCalls } = await this.ollama.chatWithTools(
-        session.agent.modelPref ?? process.env.CC_DEFAULT_MODEL ?? 'llama3.2',
-        messages,
-        session.toolSchemas,
-      )
+    try {
+      while (turns < MAX_TURNS()) {
+        const { content, toolCalls } = await this.ollama.chatWithTools(
+          session.agent.modelPref ?? process.env.CC_DEFAULT_MODEL ?? 'llama3.2',
+          messages,
+          session.toolSchemas,
+        )
 
-      if (!toolCalls.length) {
-        return {
-          reply: content + session.actionSummary(),
-          actions: [],
-          domain: session.agent.id,
-          status: 'complete',
+        if (!toolCalls.length) {
+          return {
+            reply: content + session.actionSummary(),
+            actions: [],
+            domain: session.agent.id,
+            status: 'complete',
+          }
         }
+
+        // Push assistant message with tool_calls
+        messages.push({
+          role: 'assistant',
+          content,
+          tool_calls: toolCalls.map(tc => ({
+            id: tc.id,
+            function: { name: tc.name, arguments: tc.args },
+          })),
+        })
+
+        // Separate reads and writes for parallel vs sequential execution
+        const hasWrite = toolCalls.some(tc => !this.registry.isReversible(tc.name, tc.args))
+
+        if (!hasWrite) {
+          // All reads — run concurrently
+          const results = await Promise.all(toolCalls.map(tc => this.executeOne(tc, session, sessionId)))
+          for (const { tc, output } of results) {
+            messages.push({ role: 'tool', tool_call_id: tc.id, content: output })
+          }
+        } else {
+          // Sequential — preserve ordering for writes
+          for (const tc of toolCalls) {
+            const { output } = await this.executeOne(tc, session, sessionId)
+            messages.push({ role: 'tool', tool_call_id: tc.id, content: output })
+          }
+        }
+
+        turns++
       }
 
-      // Push assistant message with tool_calls
-      messages.push({
-        role: 'assistant',
-        content,
-        tool_calls: toolCalls.map(tc => ({
-          id: tc.id,
-          function: { name: tc.name, arguments: tc.args },
-        })),
-      })
-
-      // Separate reads and writes for parallel vs sequential execution
-      const hasWrite = toolCalls.some(tc => !this.registry.isReversible(tc.name, tc.args))
-
-      if (!hasWrite) {
-        // All reads — run concurrently
-        const results = await Promise.all(toolCalls.map(tc => this.executeOne(tc, session, sessionId)))
-        for (const { tc, output } of results) {
-          messages.push({ role: 'tool', tool_call_id: tc.id, content: output })
-        }
-      } else {
-        // Sequential — preserve ordering for writes
-        for (const tc of toolCalls) {
-          const { output } = await this.executeOne(tc, session, sessionId)
-          messages.push({ role: 'tool', tool_call_id: tc.id, content: output })
-        }
+      return {
+        reply: `${session.actionSummary()}\n\n[Reached maximum turns (${MAX_TURNS()}). Stopping here.]`,
+        actions: [],
+        domain: session.agent.id,
+        status: 'interrupted',
       }
-
-      turns++
-    }
-
-    return {
-      reply: `${session.actionSummary()}\n\n[Reached maximum turns (${MAX_TURNS()}). Stopping here.]`,
-      actions: [],
-      domain: session.agent.id,
-      status: 'interrupted',
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      return {
+        reply: `Agent encountered an error: ${msg}`,
+        actions: [],
+        domain: session.agent.id,
+        status: 'error',
+        error: msg,
+      }
     }
   }
 
@@ -169,7 +180,7 @@ export class AgenticLoop {
 
     const truncated = raw.slice(0, MAX_RESULT_CHARS())
     const duration = Date.now() - start
-    const finalDecision = decision === 'queued' ? 'approved' : 'allow'
+    const finalDecision: GateDecision = decision === 'queued' ? 'approved' : decision
 
     this.log.record({
       sessionId,

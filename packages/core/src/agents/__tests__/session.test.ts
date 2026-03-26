@@ -77,4 +77,20 @@ describe('AgentSession', () => {
     session.invalidateSoulCache()
     expect(session.systemPrompt).toContain('updated')
   })
+
+  it('throws named error when soul file does not exist', () => {
+    const agent = makeAgent('/nonexistent/SOUL.md')
+    const session = new AgentSession(agent, [mockTool])
+    expect(() => session.systemPrompt).toThrow('Soul file not found for agent')
+  })
+
+  it('actionSummary deduplicates same tool with count', () => {
+    const soulPath = join(tmpDir, 'SOUL.md')
+    writeFileSync(soulPath, '# test')
+    const session = new AgentSession(makeAgent(soulPath), [mockTool])
+    session.recordAction({ tool: 'read_file', args: { path: '/a' }, output: 'a', decision: 'allow', durationMs: 10 })
+    session.recordAction({ tool: 'read_file', args: { path: '/b' }, output: 'b', decision: 'allow', durationMs: 20 })
+    const summary = session.actionSummary()
+    expect(summary).toContain('read_file×2')
+  })
 })

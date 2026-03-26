@@ -19,6 +19,7 @@ export interface ChatMessage {
 
 export class AgentSession {
   private _soulContent: string | null = null
+  private _systemPrompt: string | null = null
   private _actions: ActionSummary[] = []
 
   constructor(
@@ -27,14 +28,26 @@ export class AgentSession {
   ) {}
 
   get systemPrompt(): string {
+    if (this._systemPrompt) return this._systemPrompt
+
     if (!this._soulContent) {
-      this._soulContent = readFileSync(this.agent.soulPath, 'utf8')
+      try {
+        this._soulContent = readFileSync(this.agent.soulPath, 'utf8')
+      } catch (err: unknown) {
+        const code = (err as NodeJS.ErrnoException).code
+        if (code === 'ENOENT') {
+          throw new Error(`Soul file not found for agent "${this.agent.id}": ${this.agent.soulPath}`)
+        }
+        throw err
+      }
     }
+
     const toolLines = this.allowedTools
       .map(t => `- ${t.name}(${Object.keys(t.parameters.properties).join(', ')}): ${t.description}`)
       .join('\n')
     const now = new Date().toISOString()
-    return `${this._soulContent}\n\nAvailable tools:\n${toolLines}\n\nCurrent date/time: ${now}`
+    this._systemPrompt = `${this._soulContent}\n\nAvailable tools:\n${toolLines}\n\nCurrent date/time: ${now}`
+    return this._systemPrompt
   }
 
   get toolSchemas(): OllamaToolSchema[] {
@@ -72,5 +85,6 @@ export class AgentSession {
 
   invalidateSoulCache(): void {
     this._soulContent = null
+    this._systemPrompt = null
   }
 }

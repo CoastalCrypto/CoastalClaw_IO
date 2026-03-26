@@ -1,5 +1,8 @@
+import { randomUUID } from 'node:crypto'
 import type { ChatMessage, OllamaToolSchema } from '../agents/session.js'
 import type { ToolCall } from '../agents/types.js'
+
+export type { ChatMessage } from '../agents/session.js'
 
 export interface LocalChatMessage {
   role: 'user' | 'assistant' | 'system'
@@ -41,15 +44,17 @@ export class OllamaClient {
     const data = await res.json() as {
       message: {
         role: string
-        content: string
+        content: string | null
         tool_calls?: Array<{ function: { name: string; arguments: Record<string, unknown> } }>
-      }
+      } | undefined
     }
-    const toolCalls: ToolCall[] = (data.message.tool_calls ?? []).map((tc, i) => ({
-      id: `tc-${i}-${Date.now()}`,
+    const msg = data.message
+    if (!msg) throw new Error('Ollama returned no message in response')
+    const toolCalls: ToolCall[] = (msg.tool_calls ?? []).map((tc) => ({
+      id: randomUUID(),
       name: tc.function.name,
       args: tc.function.arguments ?? {},
     }))
-    return { content: data.message.content, toolCalls }
+    return { content: msg.content ?? '', toolCalls }
   }
 }

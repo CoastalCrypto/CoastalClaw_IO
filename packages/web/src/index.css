@@ -1,1 +1,59 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+
+  /* Custom Animations */
+  --animate-fade-in: fade-in 0.3s ease-out forwards;
+  --animate-slide-up: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-glow-pulse: glow-pulse 3s infinite alternate;
+
+  /* Console Neon Colors */
+  --color-console-cyan: #0ff;
+  --color-console-magenta: #f0f;
+  --color-console-amber: #ffb000;
+  --color-console-green: #0f0;
+
+  /* Glassmorphism utilities */
+  --backdrop-blur-glass: blur(12px);
+  --color-glass-bg: rgba(17, 24, 39, 0.6);
+  --color-glass-border: rgba(255, 255, 255, 0.1);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glow-pulse {
+  0% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); }
+  100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.5); }
+}
+
+@layer base {
+  body {
+    background-color: #0d1117;
+    color: #c9d1d9;
+    font-family: var(--font-sans);
+  }
+}
+
+/* Glassmorphic Panel Utility */
+@layer components {
+  .glass-panel {
+    background: var(--color-glass-bg);
+    backdrop-filter: var(--backdrop-blur-glass);
+    border: 1px solid var(--color-glass-border);
+    border-radius: 0.75rem;
+  }
+  .console-border {
+    border: 1px solid #30363d;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+  }
+}

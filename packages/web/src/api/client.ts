@@ -117,6 +117,19 @@ export class CoreClient {
       throw new Error(`Failed to update registry (${res.status}): ${text}`)
     }
   }
+
+  async resolveApproval(
+    approvalId: string,
+    decision: 'approve' | 'deny' | 'always_allow',
+    agentId: string,
+    toolName: string,
+  ): Promise<void> {
+    await fetch(`${this.baseUrl}/api/admin/approvals/${approvalId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify({ decision, agentId, toolName }),
+    })
+  }
 }
 
 export const coreClient = new CoreClient('/api')

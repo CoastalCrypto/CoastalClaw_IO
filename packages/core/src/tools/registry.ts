@@ -32,9 +32,17 @@ export class ToolRegistry {
     })
   }
 
+  registerTool(tool: CoreTool): void {
+    this.tools.set(tool.definition.name, tool)
+  }
+
   /** Returns true if this specific call is reversible (considers query_db mode) */
   isReversible(toolName: string, args: Record<string, unknown>): boolean {
     if (toolName === 'query_db') return args.mode === 'read'
+    const tool = this.tools.get(toolName)
+    if (tool?.definition.reversible !== undefined) {
+      return tool.definition.reversible
+    }
     return READ_ONLY_TOOLS.has(toolName)
   }
 

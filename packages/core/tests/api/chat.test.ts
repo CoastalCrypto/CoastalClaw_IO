@@ -3,16 +3,27 @@ import { buildServer } from '../../src/server.js'
 
 vi.mock('../../src/models/router.js', () => ({
   ModelRouter: vi.fn().mockImplementation(() => ({
-    chat: vi.fn().mockResolvedValue({
-      reply: 'Hello from the agent!',
-      decision: {
+    cascade: {
+      route: vi.fn().mockResolvedValue({
         model: 'llama3.2', domain: 'general',
         signals: { relation: 'new', urgency: 'medium', actionability: 'act', retention: 'useful', confidence: 0 },
         domainConfidence: 0.5, classifiedBy: 'llm',
-      },
-    }),
+      }),
+    },
+    ollama: {},
     listModels: vi.fn().mockResolvedValue(['llama3.2']),
     close: vi.fn(),
+  })),
+}))
+
+vi.mock('../../src/agents/loop.js', () => ({
+  AgenticLoop: vi.fn().mockImplementation(() => ({
+    run: vi.fn().mockResolvedValue({
+      reply: 'Hello from the agent!',
+      domain: 'general',
+      status: 'complete',
+      actions: [],
+    }),
   })),
 }))
 

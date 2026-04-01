@@ -2,6 +2,7 @@ import { useState, lazy, Suspense } from 'react'
 import { Onboarding } from './pages/Onboarding'
 import { Chat } from './pages/Chat'
 import { Models } from './pages/Models'
+import { Agents } from './pages/Agents'
 import './index.css'
 
 // Three.js is large — load it async so the onboarding form renders immediately
@@ -11,7 +12,7 @@ const OceanScene = lazy(() =>
 
 export default function App() {
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const [page, setPage] = useState<'chat' | 'models'>('chat')
+  const [page, setPage] = useState<'chat' | 'models' | 'agents'>('chat')
 
   if (!sessionId) return (
     <div className="min-h-screen flex items-center justify-center p-6" style={{ position: 'relative' }}>
@@ -24,20 +25,24 @@ export default function App() {
     </div>
   )
 
+  if (page === 'agents') return <Agents onNav={(p) => setPage(p as any)} />
+
   if (page === 'models') return (
-    <div>
-      <nav className="fixed top-0 left-0 right-0 z-10 bg-gray-950 border-b border-gray-800 px-6 py-3 flex justify-between items-center">
-        <span className="text-sm text-gray-400 font-mono">COASTAL CLAW</span>
-        <div className="flex gap-4">
-          <button onClick={() => setPage('chat')} className="text-sm text-gray-400 hover:text-white transition-colors">Chat</button>
-          <button className="text-sm text-cyan-400">Models</button>
+    <div className="min-h-screen text-white bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-fixed">
+      <div className="absolute inset-0 bg-[#0d1117]/80 backdrop-blur-sm -z-10" />
+      <nav className="fixed top-0 left-0 right-0 z-10 glass-panel border-b-0 rounded-none px-6 py-3 flex justify-between items-center shadow-md">
+        <span className="text-sm font-mono tracking-wider" style={{ color: 'var(--color-console-cyan)' }}>{'>'} EXECUTIVE_OS [MODELS]</span>
+        <div className="flex gap-6 font-mono text-sm">
+          <button onClick={() => setPage('chat')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/chat</button>
+          <button className="text-cyan-400 font-bold tracking-widest bg-cyan-950/30 px-3 py-1 rounded border border-cyan-800/50">/models</button>
+          <button onClick={() => setPage('agents')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/agents</button>
         </div>
       </nav>
-      <div className="pt-14">
+      <div className="pt-20 px-6 max-w-4xl mx-auto">
         <Models />
       </div>
     </div>
   )
 
-  return <Chat sessionId={sessionId} onNav={() => setPage('models')} />
+  return <Chat sessionId={sessionId} onNav={(p) => setPage(p as any)} />
 }

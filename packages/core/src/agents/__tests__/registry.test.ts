@@ -18,14 +18,19 @@ afterEach(() => {
 })
 
 describe('AgentRegistry', () => {
-  it('seeds four built-in agents on init', () => {
+  it('seeds nine built-in agents on init', () => {
     const agents = registry.list()
-    expect(agents).toHaveLength(4)
+    expect(agents).toHaveLength(9)
     const ids = agents.map(a => a.id)
     expect(ids).toContain('coo')
     expect(ids).toContain('cfo')
     expect(ids).toContain('cto')
     expect(ids).toContain('general')
+    expect(ids).toContain('product_manager')
+    expect(ids).toContain('frontend_wizard')
+    expect(ids).toContain('ux_architect')
+    expect(ids).toContain('qa_lead')
+    expect(ids).toContain('system_integrator')
   })
 
   it('get returns agent by id', () => {

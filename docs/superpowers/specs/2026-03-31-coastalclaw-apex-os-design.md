@@ -449,6 +449,69 @@ agents/
 - [ ] AWS / GCP Marketplace listings
 - [ ] `coastal-architect` submits self-improvement PRs to public repo
 
+### Phase 6 — Hardware Profiles + Edge AI Devices
+- [ ] Pluggable LLM inference backend interface (mirrors ShellBackend pattern)
+- [ ] `OllamaBackend` — current, easy setup (default)
+- [ ] `PowerInferBackend` — sparse hot/cold neuron inference, 175B+ on consumer GPU
+- [ ] `LlamaCppBackend` — direct GGUF, edge-optimized, zero daemon overhead
+- [ ] Hardware profile config (`hardwareProfile`, `inferenceBackend`, `unifiedMemoryGb`)
+- [ ] ClawOS ARM64 build pipeline (Tiiny AI Pocket Lab, Jetson AGX Orin, Apple Silicon)
+- [ ] ClawOS x86_64 Infplane Hilbert optimized build
+- [ ] Auto-detection: reads hardware spec at boot, selects optimal inference backend
+- [ ] Sparse activation flags: `sparseActivation: true` maps to PowerInfer TurboSparse
+- [ ] Target: 120B model on Tiiny AI Pocket Lab (80GB unified memory, $1,399)
+- [ ] Target: 260B model on next-gen unified memory devices (160GB+, ~2027)
+
+---
+
+## Layer 9 — Pluggable LLM Inference Backends (Phase 6)
+
+The same pluggability pattern used for ShellBackend applies to LLM inference. `ModelRouter` gains an `InferenceBackend` interface:
+
+```typescript
+interface InferenceBackend {
+  readonly name: string
+  isAvailable(): Promise<boolean>
+  chat(model: string, messages: ChatMessage[], tools: ToolDefinition[]): Promise<ChatResponse>
+  listModels(): Promise<string[]>
+}
+```
+
+| Backend           | Hardware Target                       | Max Model Size | Notes                                  |
+|-------------------|---------------------------------------|----------------|----------------------------------------|
+| `OllamaBackend`   | Any (current default)                 | ~70B           | Easy setup, HTTP API                   |
+| `PowerInferBackend` | RTX 4090 + large RAM                | 175B–260B+     | Sparse inference, hot/cold neuron split|
+| `LlamaCppBackend` | CPU / unified memory / edge devices  | 120B+ (Q4)     | Direct GGUF, ARM64 optimized           |
+| `VllmBackend`     | Multi-GPU server                      | 405B+          | Batched inference, high throughput     |
+
+Hardware profile in `config.json`:
+```json
+{
+  "hardwareProfile": "tiinyai-pocket-lab",
+  "inferenceBackend": "powerinfer",
+  "unifiedMemoryGb": 80,
+  "sparseActivation": true,
+  "maxModelParams": "120b",
+  "modelBits": 4
+}
+```
+
+---
+
+## Edge Device Targets
+
+| Device                    | Memory       | AI Compute  | Max Model  | ClawOS Build  | Status       |
+|---------------------------|-------------|-------------|------------|---------------|--------------|
+| **Tiiny AI Pocket Lab**   | 80GB LPDDR5X | 190 TOPS    | 120B       | ARM64         | Available now ($1,399) |
+| **Infplane Hilbert**      | TBD          | Server-grade | 200B+     | x86_64        | 2026         |
+| **NVIDIA DGX Spark**      | 128GB unified | 1 PFLOP    | 200B       | x86_64        | Available now |
+| **Ryzen AI Max+ mini-PC** | 96–128GB     | ~100 TOPS   | 100–120B  | x86_64        | Available now |
+| **Next-gen Tiiny AI**     | 160GB+       | 300+ TOPS   | 260B       | ARM64         | ~2027        |
+
+**The pocket vision:** A Tiiny AI Pocket Lab in your pocket — your entire Coastal Crypto AI team (CFO, CTO, Product Manager) running locally on a 300g device. No cloud. No subscription. No data leaving your hands. Voice conversations via earbuds. 120B model. $1,399.
+
+PowerInfer's TurboSparse technique (starred by CoastalCrypto) is the key enabler: by computing only activated neurons per token, it runs 175B models on 24GB VRAM via hot/cold neuron splitting — making 260B feasible on 80GB unified memory with Q4 quantization.
+
 ---
 
 ## What Makes This the Best in Class
@@ -457,9 +520,10 @@ agents/
 2. **First to combine voice + full-duplex interruption + visual desktop** in a single open-source project
 3. **Trust tiers** let it serve both paranoid and power users from the same codebase
 4. **Native Linux namespaces** on ClawOS give better isolation than Docker with zero overhead
-5. **Pluggable shell backends** mean the same architecture runs on Windows (Docker), Mac (Docker), and ClawOS (namespaces) — no forks
-6. **Ships as ISO + APT + AMI + Docker** — widest distribution of any agent OS project
+5. **Pluggable shell + inference backends** — same architecture on Windows, Mac, ClawOS, Tiiny AI, DGX Spark
+6. **Ships as ISO + APT + AMI + Docker + ARM64** — widest distribution of any agent OS project
 7. **Coastal Crypto native** — CFO, trading, and crypto domain knowledge built in from day one
+8. **Pocket AI company** — 120B model, 300g device, zero cloud dependency, always-on voice team
 
 ---
 

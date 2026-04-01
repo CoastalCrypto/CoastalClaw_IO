@@ -9,3 +9,6 @@ dist/
 coverage/
 # Runtime data — never commit secrets or downloaded model files
 packages/core/data/
+# Local tooling and security reports — never commit
+.gstack/
+.claude/

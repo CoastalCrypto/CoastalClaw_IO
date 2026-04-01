@@ -33,13 +33,14 @@ describe('ToolRegistry', () => {
     expect(registry.isReversible('read_file', {})).toBe(true)
     expect(registry.isReversible('list_dir', {})).toBe(true)
     expect(registry.isReversible('git_status', {})).toBe(true)
-    expect(registry.isReversible('http_get', {})).toBe(true)
   })
 
-  it('isReversible returns false for write tools', () => {
+  it('isReversible returns false for write tools and network tools', () => {
     expect(registry.isReversible('write_file', {})).toBe(false)
     expect(registry.isReversible('run_command', {})).toBe(false)
     expect(registry.isReversible('git_commit', {})).toBe(false)
+    // http_get is non-reversible: network requests have side effects and require approval
+    expect(registry.isReversible('http_get', {})).toBe(false)
   })
 
   it('isReversible handles query_db by mode', () => {

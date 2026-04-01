@@ -8,7 +8,7 @@ import { randomBytes, timingSafeEqual, createHmac } from 'node:crypto'
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
 
-function getOrCreateAdminToken(dataDir: string): string {
+export function getOrCreateAdminToken(dataDir: string): string {
   const envToken = process.env.CC_ADMIN_TOKEN
   if (envToken) return envToken
 
@@ -30,7 +30,7 @@ function createSessionToken(adminToken: string): string {
   return `${payload}:${sig}`
 }
 
-function validateSessionToken(adminToken: string, sessionToken: string): boolean {
+export function validateSessionToken(adminToken: string, sessionToken: string): boolean {
   try {
     const lastColon = sessionToken.lastIndexOf(':')
     if (lastColon === -1) return false

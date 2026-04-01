@@ -29,16 +29,18 @@ export async function chatRoutes(fastify: FastifyInstance) {
   const gate = new PermissionGate(db)
   const log = new ActionLog(db)
 
+  // Pass only PATH to MCP subprocesses — never expose secrets via process.env
+  const mcpEnv: Record<string, string> = { PATH: process.env.PATH ?? '' }
   const mcpThinking = new McpAdapter(
     process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    ['-y', '@modelcontextprotocol/server-sequential-thinking'],
-    { ...process.env } as Record<string, string>,
+    ['@modelcontextprotocol/server-sequential-thinking@2025.12.18'],
+    mcpEnv,
     'logic'
   )
   const mcpMemory = new McpAdapter(
     process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    ['-y', '@modelcontextprotocol/server-memory'],
-    { ...process.env } as Record<string, string>,
+    ['@modelcontextprotocol/server-memory@2026.1.26'],
+    mcpEnv,
     'memory'
   )
   mcpThinking.connect(toolRegistry).catch(e => console.error('MCP Thinking failed', e))

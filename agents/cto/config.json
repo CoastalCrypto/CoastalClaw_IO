@@ -1,0 +1,1 @@
+{ "id": "cto", "tools": ["read_file", "write_file", "list_dir", "delete_file", "run_command", "git_status", "git_diff", "git_commit", "git_log", "query_db", "http_get"], "hand": { "enabled": false } }

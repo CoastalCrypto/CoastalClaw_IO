@@ -1,0 +1,10 @@
+{
+  "id": "cfo",
+  "tools": ["read_file", "list_dir", "query_db", "http_get"],
+  "hand": {
+    "enabled": true,
+    "schedule": "daily at 08:00",
+    "triggers": ["price_alert BTC > 5%"],
+    "goal": "Review P&L, flag financial anomalies, and prepare a morning brief."
+  }
+}

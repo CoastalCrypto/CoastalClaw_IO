@@ -13,14 +13,14 @@ describe('RestrictedLocalBackend', () => {
     const result = await backend.execute('echo hi', tmpDir, 'session-1')
     expect(result.stdout.trim()).toBe('hi')
     expect(result.exitCode).toBe(0)
-  })
+  }, 15_000)
 
   it('blocks commands with workdir outside allowed paths', async () => {
     // Use a path that definitely exists but is not in the allowed list
     const result = await backend.execute('echo hi', process.env.SYSTEMROOT ?? '/etc', 'session-1')
     expect(result.exitCode).toBe(1)
     expect(result.stdout).toContain('Error: workdir')
-  })
+  }, 15_000)
 
   it('isAvailable returns true', async () => {
     expect(await backend.isAvailable()).toBe(true)

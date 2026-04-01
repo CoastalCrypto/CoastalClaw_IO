@@ -1,3 +1,6 @@
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 export type TrustLevel = 'sandboxed' | 'trusted' | 'autonomous'
 
 export interface Config {
@@ -58,9 +61,14 @@ export function loadConfig(): Config {
     approvalTimeoutMs: Number(process.env.CC_APPROVAL_TIMEOUT_MS ?? '300000'),
     defaultModel: process.env.CC_DEFAULT_MODEL ?? 'llama3.2',
     agentTrustLevel: (() => {
-      const raw = process.env.CC_TRUST_LEVEL ?? 'sandboxed'
+      // File-based override takes precedence over env var
+      const dataDir = process.env.CC_DATA_DIR ?? './data'
+      const trustFile = join(dataDir, '.trust-level')
+      const raw = (existsSync(trustFile)
+        ? readFileSync(trustFile, 'utf8').trim()
+        : null) ?? process.env.CC_TRUST_LEVEL ?? 'sandboxed'
       if (!['sandboxed', 'trusted', 'autonomous'].includes(raw)) {
-        throw new Error(`CC_TRUST_LEVEL must be 'sandboxed', 'trusted', or 'autonomous', got: "${raw}"`)
+        throw new Error(`Trust level must be 'sandboxed'|'trusted'|'autonomous', got: "${raw}"`)
       }
       return raw as TrustLevel
     })(),

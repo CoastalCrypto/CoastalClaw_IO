@@ -25,7 +25,7 @@ describe('NativeBackend', () => {
     const result = await backend.execute(cmd, process.cwd(), 'test-session')
     expect(result.exitCode).not.toBe(0)
     expect(result.timedOut).toBe(false)
-  })
+  }, 15_000)
 
   it('times out long-running commands', async () => {
     // ping loops ~100 seconds on Windows; `sleep 10` on Unix

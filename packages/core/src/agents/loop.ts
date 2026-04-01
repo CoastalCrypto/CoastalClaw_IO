@@ -4,19 +4,26 @@ import type { ToolRegistry } from '../tools/registry.js'
 import type { PermissionGate } from './permission-gate.js'
 import type { ActionLog } from './action-log.js'
 import type { LoopResult, GateDecision } from './types.js'
+import type { SkillGapsLog } from './skill-gaps.js'
+import { runBackgroundReview } from './learning-thread.js'
 import { IterationBudget } from './iteration-budget.js'
 
 const MAX_TURNS = () => Number(process.env.CC_AGENT_MAX_TURNS ?? 10)
 const MAX_RESULT_CHARS = () => Number(process.env.CC_TOOL_RESULT_MAX_CHARS ?? 4000)
 
 export class AgenticLoop {
+  private skillGaps?: SkillGapsLog
+
   constructor(
     private ollama: OllamaClient,
     private registry: ToolRegistry,
     private gate: PermissionGate,
     private log: ActionLog,
     private onApprovalNeeded?: (approvalId: string, agentName: string, toolName: string, cmd: string) => void,
-  ) {}
+    skillGaps?: SkillGapsLog,
+  ) {
+    this.skillGaps = skillGaps
+  }
 
   async run(
     session: AgentSession,
@@ -32,12 +39,16 @@ export class AgenticLoop {
     try {
       while (!iterBudget.isExhausted) {
         if (signal?.aborted) {
-          return {
+          const interruptedResult: LoopResult = {
             reply: `${session.actionSummary()}\n\n[Interrupted by parent signal.]`,
-            actions: [],
+            actions: session.actions,
             domain: session.agent.id,
             status: 'interrupted',
           }
+          if (this.skillGaps) {
+            runBackgroundReview(interruptedResult, sessionId, this.skillGaps).catch(() => {})
+          }
+          return interruptedResult
         }
         if (!iterBudget.consume()) break
 
@@ -48,12 +59,16 @@ export class AgenticLoop {
         )
 
         if (!toolCalls.length) {
-          return {
+          const completeResult: LoopResult = {
             reply: content + session.actionSummary(),
-            actions: [],
+            actions: session.actions,
             domain: session.agent.id,
             status: 'complete',
           }
+          if (this.skillGaps) {
+            runBackgroundReview(completeResult, sessionId, this.skillGaps).catch(() => {})
+          }
+          return completeResult
         }
 
         // Push assistant message with tool_calls
@@ -85,21 +100,29 @@ export class AgenticLoop {
 
       }
 
-      return {
+      const budgetResult: LoopResult = {
         reply: `${session.actionSummary()}\n\n[Budget exhausted after ${MAX_TURNS()} maximum turns. Stopping here.]`,
-        actions: [],
+        actions: session.actions,
         domain: session.agent.id,
         status: 'interrupted',
       }
+      if (this.skillGaps) {
+        runBackgroundReview(budgetResult, sessionId, this.skillGaps).catch(() => {})
+      }
+      return budgetResult
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
-      return {
+      const errorResult: LoopResult = {
         reply: `Agent encountered an error: ${msg}`,
-        actions: [],
+        actions: session.actions,
         domain: session.agent.id,
         status: 'error',
         error: msg,
       }
+      if (this.skillGaps) {
+        runBackgroundReview(errorResult, sessionId, this.skillGaps).catch(() => {})
+      }
+      return errorResult
     }
   }
 

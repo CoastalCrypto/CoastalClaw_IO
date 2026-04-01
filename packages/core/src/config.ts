@@ -1,3 +1,5 @@
+export type TrustLevel = 'sandboxed' | 'trusted' | 'autonomous'
+
 export interface Config {
   port: number
   host: string
@@ -15,6 +17,7 @@ export interface Config {
   toolResultMaxChars: number
   approvalTimeoutMs: number
   defaultModel: string
+  agentTrustLevel: TrustLevel
 }
 
 export function loadConfig(): Config {
@@ -54,5 +57,12 @@ export function loadConfig(): Config {
     toolResultMaxChars: Number(process.env.CC_TOOL_RESULT_MAX_CHARS ?? '4000'),
     approvalTimeoutMs: Number(process.env.CC_APPROVAL_TIMEOUT_MS ?? '300000'),
     defaultModel: process.env.CC_DEFAULT_MODEL ?? 'llama3.2',
+    agentTrustLevel: (() => {
+      const raw = process.env.CC_TRUST_LEVEL ?? 'sandboxed'
+      if (!['sandboxed', 'trusted', 'autonomous'].includes(raw)) {
+        throw new Error(`CC_TRUST_LEVEL must be 'sandboxed', 'trusted', or 'autonomous', got: "${raw}"`)
+      }
+      return raw as TrustLevel
+    })(),
   }
 }

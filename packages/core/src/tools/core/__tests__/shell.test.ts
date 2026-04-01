@@ -1,21 +1,45 @@
+// packages/core/src/tools/core/__tests__/shell.test.ts
 import { describe, it, expect } from 'vitest'
-import { shellTools } from '../shell.js'
+import { createShellTools } from '../shell.js'
+import type { ShellBackend } from '../../backends/types.js'
 
-const exec = shellTools.find(t => t.definition.name === 'run_command')!.execute
+function mockBackend(stdout: string, exitCode = 0): ShellBackend {
+  return {
+    name: 'mock',
+    isAvailable: async () => true,
+    execute: async () => ({ stdout, exitCode, timedOut: false }),
+  }
+}
 
-describe('run_command', () => {
-  it('runs a simple command and returns stdout', async () => {
-    const result = await exec({ cmd: 'echo hello', workdir: process.cwd() })
+const agentWorkdir = process.cwd()
+
+describe('run_command via ShellBackend', () => {
+  it('delegates to the backend and returns stdout', async () => {
+    const exec = createShellTools(mockBackend('hello\n'), agentWorkdir)[0].execute
+    const result = await exec({ cmd: 'echo hello', workdir: agentWorkdir })
     expect(result).toContain('hello')
   })
 
-  it('returns stderr on error', async () => {
-    const result = await exec({ cmd: 'cat /nonexistent_file_xyz', workdir: process.cwd() })
-    expect(result).toMatch(/error|no such|Error/i)
+  it('blocks workdir escape attempts', async () => {
+    const exec = createShellTools(mockBackend(''), agentWorkdir)[0].execute
+    const result = await exec({ cmd: 'ls', workdir: '/etc' })
+    expect(result).toContain('Error: cwd escape')
   })
 
-  it('blocks commands that escape the workdir via cd', async () => {
-    const result = await exec({ cmd: 'cd /etc && cat passwd', workdir: '/tmp' })
-    expect(result).toContain('Error: cwd escape')
+  it('returns error when backend is unavailable', async () => {
+    const unavailableBackend: ShellBackend = {
+      name: 'docker',
+      isAvailable: async () => false,
+      execute: async () => ({ stdout: '', exitCode: 0, timedOut: false }),
+    }
+    const exec = createShellTools(unavailableBackend, agentWorkdir)[0].execute
+    const result = await exec({ cmd: 'echo hi', workdir: agentWorkdir })
+    expect(result).toContain('Error: shell backend')
+  })
+
+  it('returns (no output) for empty stdout', async () => {
+    const exec = createShellTools(mockBackend(''), agentWorkdir)[0].execute
+    const result = await exec({ cmd: 'true', workdir: agentWorkdir })
+    expect(result).toBe('(no output)')
   })
 })

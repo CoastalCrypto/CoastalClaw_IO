@@ -7,6 +7,7 @@ import { AgenticLoop } from '../../agents/loop.js'
 import { PermissionGate } from '../../agents/permission-gate.js'
 import { ActionLog } from '../../agents/action-log.js'
 import { ToolRegistry } from '../../tools/registry.js'
+import { createBackend } from '../../tools/backends/index.js'
 import { McpAdapter } from '../../tools/mcp/adapter.js'
 import { loadConfig } from '../../config.js'
 import Database from 'better-sqlite3'
@@ -25,7 +26,8 @@ export async function chatRoutes(fastify: FastifyInstance) {
   const router = new ModelRouter({ ollamaUrl: config.ollamaUrl, defaultModel: config.defaultModel })
   const memory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey })
   const agentRegistry = new AgentRegistry(pathJoin(config.dataDir, 'agents.db'))
-  const toolRegistry = new ToolRegistry()
+  const backend = createBackend(config.agentTrustLevel, [config.agentWorkdir])
+  const toolRegistry = new ToolRegistry(backend)
   const gate = new PermissionGate(db)
   const log = new ActionLog(db)
 

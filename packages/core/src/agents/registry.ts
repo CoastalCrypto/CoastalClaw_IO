@@ -1,8 +1,9 @@
 import Database from 'better-sqlite3'
 import { randomUUID } from 'node:crypto'
+import { existsSync, readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { AgentConfig } from './types.js'
+import type { AgentConfig, AgentFileConfig, AgentHandConfig } from './types.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -181,17 +182,43 @@ export class AgentRegistry {
 
   close(): void { this.db.close() }
 
+  private loadFileConfig(agentId: string): AgentFileConfig | null {
+    const candidates = [
+      join(process.cwd(), 'agents', agentId, 'config.json'),
+      join(__dirname, '..', '..', '..', '..', 'agents', agentId, 'config.json'),
+    ]
+    for (const p of candidates) {
+      if (existsSync(p)) {
+        try { return JSON.parse(readFileSync(p, 'utf8')) as AgentFileConfig } catch {}
+      }
+    }
+    return null
+  }
+
+  private resolvedSoulPath(agentId: string, dbSoulPath: string): string {
+    const candidates = [
+      join(process.cwd(), 'agents', agentId, 'SYSTEM.md'),
+      join(__dirname, '..', '..', '..', '..', 'agents', agentId, 'SYSTEM.md'),
+    ]
+    for (const p of candidates) {
+      if (existsSync(p)) return p
+    }
+    return dbSoulPath
+  }
+
   private rowToConfig(row: any): AgentConfig {
+    const fileConfig = this.loadFileConfig(row.id)
     return {
       id: row.id,
       name: row.name,
       role: row.role,
-      soulPath: row.soul_path,
-      tools: this.parseTools(row.id, row.tools),
-      modelPref: row.model_pref ?? undefined,
+      soulPath: this.resolvedSoulPath(row.id, row.soul_path),
+      tools: fileConfig?.tools ?? this.parseTools(row.id, row.tools),
+      modelPref: fileConfig?.modelPref ?? row.model_pref ?? undefined,
       builtIn: Boolean(row.built_in),
       active: Boolean(row.active),
       createdAt: row.created_at,
+      hand: fileConfig?.hand,
     }
   }
 

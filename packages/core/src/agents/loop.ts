@@ -4,6 +4,7 @@ import type { ToolRegistry } from '../tools/registry.js'
 import type { PermissionGate } from './permission-gate.js'
 import type { ActionLog } from './action-log.js'
 import type { LoopResult, GateDecision } from './types.js'
+import { IterationBudget } from './iteration-budget.js'
 
 const MAX_TURNS = () => Number(process.env.CC_AGENT_MAX_TURNS ?? 10)
 const MAX_RESULT_CHARS = () => Number(process.env.CC_TOOL_RESULT_MAX_CHARS ?? 4000)
@@ -22,12 +23,24 @@ export class AgenticLoop {
     userMessage: string,
     sessionId: string,
     history: ChatMessage[],
+    budget?: IterationBudget,
+    signal?: AbortSignal,
   ): Promise<LoopResult> {
     const messages: ChatMessage[] = session.buildMessages(userMessage, history)
-    let turns = 0
+    const iterBudget = budget ?? new IterationBudget(MAX_TURNS())
 
     try {
-      while (turns < MAX_TURNS()) {
+      while (!iterBudget.isExhausted) {
+        if (signal?.aborted) {
+          return {
+            reply: `${session.actionSummary()}\n\n[Interrupted by parent signal.]`,
+            actions: [],
+            domain: session.agent.id,
+            status: 'interrupted',
+          }
+        }
+        if (!iterBudget.consume()) break
+
         const { content, toolCalls } = await this.ollama.chatWithTools(
           session.agent.modelPref ?? process.env.CC_DEFAULT_MODEL ?? 'llama3.2',
           messages,
@@ -70,11 +83,10 @@ export class AgenticLoop {
           }
         }
 
-        turns++
       }
 
       return {
-        reply: `${session.actionSummary()}\n\n[Reached maximum turns (${MAX_TURNS()}). Stopping here.]`,
+        reply: `${session.actionSummary()}\n\n[Budget exhausted after ${MAX_TURNS()} maximum turns. Stopping here.]`,
         actions: [],
         domain: session.agent.id,
         status: 'interrupted',

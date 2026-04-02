@@ -18,6 +18,31 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
+  packages/architect:
+    dependencies:
+      better-sqlite3:
+        specifier: ^11.10.0
+        version: 11.10.0
+      dotenv:
+        specifier: ^16.4.0
+        version: 16.6.1
+    devDependencies:
+      '@types/better-sqlite3':
+        specifier: ^7.6.0
+        version: 7.6.13
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.15
+      ts-node:
+        specifier: ^10.9.0
+        version: 10.9.2(@types/node@22.19.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@22.19.15)(jsdom@29.0.1)(lightningcss@1.32.0)(terser@5.46.1)
+
   packages/core:
     dependencies:
       '@fastify/cors':
@@ -6295,7 +6320,7 @@ snapshots:
 
   '@types/better-sqlite3@7.6.13':
     dependencies:
-      '@types/node': 22.19.15
+      '@types/node': 24.12.0
 
   '@types/chroma-js@2.4.4': {}
 
@@ -6401,7 +6426,7 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 22.19.15
+      '@types/node': 24.12.0
 
   '@types/yargs-parser@21.0.3': {}
 

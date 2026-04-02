@@ -69,6 +69,10 @@ export class AgentSession {
     ]
   }
 
+  get actions(): ActionSummary[] {
+    return this._actions.slice()
+  }
+
   recordAction(summary: ActionSummary): void {
     this._actions.push(summary)
   }

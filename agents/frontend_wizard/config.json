@@ -1,0 +1,1 @@
+{ "id": "frontend_wizard", "tools": ["read_file", "write_file", "list_dir", "delete_file", "git_status", "git_diff"], "hand": { "enabled": false } }

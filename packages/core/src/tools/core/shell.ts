@@ -1,51 +1,53 @@
-import { execSync } from 'node:child_process'
+// packages/core/src/tools/core/shell.ts
 import { resolve } from 'node:path'
 import type { CoreTool } from './file.js'
+import type { ShellBackend } from '../backends/types.js'
+import { NativeBackend } from '../backends/native.js'
 
-export const shellTools: CoreTool[] = [
-  {
-    definition: {
-      name: 'run_command',
-      description: 'Execute a shell command in the agent workspace directory. Returns stdout + stderr.',
-      parameters: {
-        type: 'object',
-        properties: {
-          cmd: { type: 'string', description: 'Shell command to run' },
-          workdir: { type: 'string', description: 'Working directory (must be within CC_AGENT_WORKDIR)' },
+export function createShellTools(backend: ShellBackend, agentWorkdir: string): CoreTool[] {
+  return [
+    {
+      definition: {
+        name: 'run_command',
+        description:
+          'Execute a shell command in the agent workspace directory. Returns stdout + stderr.',
+        parameters: {
+          type: 'object',
+          properties: {
+            cmd:     { type: 'string', description: 'Shell command to run' },
+            workdir: { type: 'string', description: 'Working directory (must be within agent workdir)' },
+          },
+          required: ['cmd'],
         },
-        required: ['cmd'],
+        reversible: false,
       },
-      reversible: false,
+      execute: async (args) => {
+        const rootWorkdir = resolve(agentWorkdir)
+        const requestedCwd = resolve(String(args.workdir ?? rootWorkdir))
+
+        // Block workdir escapes
+        if (!requestedCwd.startsWith(rootWorkdir)) {
+          return `Error: cwd escape attempt blocked. Requested: ${requestedCwd}, allowed: ${rootWorkdir}`
+        }
+
+        const available = await backend.isAvailable()
+        if (!available) {
+          const hint = backend.name === 'docker'
+            ? ' Ensure Docker Desktop is running (or set CC_TRUST_LEVEL=trusted).'
+            : ''
+          return `Error: shell backend '${backend.name}' is not available.${hint}`
+        }
+
+        const result = await backend.execute(
+          String(args.cmd),
+          requestedCwd,
+          String(args.sessionId ?? 'default'),
+        )
+        return result.stdout || '(no output)'
+      },
     },
-    execute: async (args) => {
-      const agentWorkdir = process.env.CC_AGENT_WORKDIR
-        ? resolve(process.env.CC_AGENT_WORKDIR)
-        : null
-      const requestedCwd = resolve(String(args.workdir ?? agentWorkdir ?? './data/workspace'))
+  ]
+}
 
-      // Block escape attempts via workdir (only when CC_AGENT_WORKDIR is explicitly set)
-      if (agentWorkdir && !requestedCwd.startsWith(agentWorkdir)) {
-        return `Error: cwd escape attempt blocked. Requested: ${requestedCwd}, allowed: ${agentWorkdir}`
-      }
-
-      // Block cd to outside workdir within the command
-      const cmd = String(args.cmd)
-      const effectiveWorkdir = agentWorkdir ?? requestedCwd
-      if (/cd\s+\//.test(cmd) && !cmd.includes(effectiveWorkdir)) {
-        return `Error: cwd escape attempt blocked in command: ${cmd}`
-      }
-
-      try {
-        const output = execSync(cmd, {
-          cwd: requestedCwd,
-          timeout: 30_000,
-          encoding: 'utf8',
-          stdio: ['ignore', 'pipe', 'pipe'],
-        })
-        return output || '(no output)'
-      } catch (e: any) {
-        return `Error (exit ${e.status ?? '?'}): ${e.stderr || e.message}`
-      }
-    },
-  },
-]
+// Backward-compat export for existing direct usages in tests
+export const shellTools = createShellTools(new NativeBackend(), process.cwd())

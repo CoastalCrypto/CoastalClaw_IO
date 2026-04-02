@@ -9,6 +9,7 @@ const mockSession = (tools: string[] = ['read_file']) => ({
   agent: { id: 'cto', tools, builtIn: true, active: true, createdAt: 0, name: 'CTO', role: 'Eng', soulPath: '' },
   systemPrompt: '# CTO',
   toolSchemas: [],
+  actions: [],
   buildMessages: (msg: string, hist: any[]) => [{ role: 'system', content: '# CTO' }, ...hist, { role: 'user', content: msg }],
   recordAction: vi.fn(),
   actionSummary: () => '',

@@ -25,6 +25,20 @@ export interface ToolResult {
 
 export type GateDecision = 'allow' | 'block' | 'queued' | 'approved' | 'denied' | 'timeout'
 
+export interface AgentHandConfig {
+  enabled: boolean
+  schedule?: string        // natural language: "daily at 08:00", "every 2h"
+  triggers?: string[]      // "email from @domain.com", "price_alert BTC > 5%"
+  goal?: string            // prose description of what the Hand should do
+}
+
+export interface AgentFileConfig {
+  id: string
+  tools?: string[]
+  modelPref?: string
+  hand?: AgentHandConfig
+}
+
 export interface AgentConfig {
   id: string
   name: string
@@ -35,6 +49,7 @@ export interface AgentConfig {
   builtIn: boolean
   active: boolean
   createdAt: number
+  hand?: AgentHandConfig
 }
 
 export interface LoopResult {

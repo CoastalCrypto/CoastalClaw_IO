@@ -6,7 +6,9 @@ import { AgentSession } from '../../agents/session.js'
 import { AgenticLoop } from '../../agents/loop.js'
 import { PermissionGate } from '../../agents/permission-gate.js'
 import { ActionLog } from '../../agents/action-log.js'
+import { SkillGapsLog } from '../../agents/skill-gaps.js'
 import { ToolRegistry } from '../../tools/registry.js'
+import { createBackend } from '../../tools/backends/index.js'
 import { McpAdapter } from '../../tools/mcp/adapter.js'
 import { loadConfig } from '../../config.js'
 import Database from 'better-sqlite3'
@@ -25,9 +27,11 @@ export async function chatRoutes(fastify: FastifyInstance) {
   const router = new ModelRouter({ ollamaUrl: config.ollamaUrl, defaultModel: config.defaultModel })
   const memory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey })
   const agentRegistry = new AgentRegistry(pathJoin(config.dataDir, 'agents.db'))
-  const toolRegistry = new ToolRegistry()
+  const backend = createBackend(config.agentTrustLevel, [config.agentWorkdir])
+  const toolRegistry = new ToolRegistry(backend)
   const gate = new PermissionGate(db)
   const log = new ActionLog(db)
+  const skillGaps = new SkillGapsLog(config.dataDir)
 
   // Pass only PATH to MCP subprocesses — never expose secrets via process.env
   const mcpEnv: Record<string, string> = { PATH: process.env.PATH ?? '' }
@@ -51,6 +55,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     router.close()
     agentRegistry.close()
     db.close()
+    skillGaps.close()
     await mcpThinking.close()
     await mcpMemory.close()
   })
@@ -94,7 +99,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
       })
     }
 
-    const loop = new AgenticLoop(router.ollama, toolRegistry, gate, log, onApprovalNeeded)
+    const loop = new AgenticLoop(router.ollama, toolRegistry, gate, log, onApprovalNeeded, skillGaps)
     const result = await loop.run(session, message, sessionId, messages)
 
     await memory.write({ id: randomUUID(), sessionId, role: 'user', content: message, timestamp: Date.now() }, decision.signals.retention)

@@ -215,6 +215,38 @@ export async function adminRoutes(fastify: FastifyInstance) {
     return reply.send({ ok: true })
   })
 
+  // PATCH /api/admin/trust-level — change the agent shell trust tier
+  fastify.patch<{ Body: { level: 'sandboxed' | 'trusted' | 'autonomous' } }>(
+    '/api/admin/trust-level',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['level'],
+          properties: {
+            level: { type: 'string', enum: ['sandboxed', 'trusted', 'autonomous'] },
+          },
+        },
+      },
+    },
+    async (req, reply) => {
+      const { level } = req.body
+      const trustFile = join(config.dataDir, '.trust-level')
+      mkdirSync(config.dataDir, { recursive: true })
+      writeFileSync(trustFile, level, { encoding: 'utf8', mode: 0o600 })
+      return reply.send({ ok: true, level, note: 'Restart the server for the new trust level to take effect.' })
+    },
+  )
+
+  // GET /api/admin/trust-level — read the current trust level
+  fastify.get('/api/admin/trust-level', async () => {
+    const trustFile = join(config.dataDir, '.trust-level')
+    const level = existsSync(trustFile)
+      ? readFileSync(trustFile, 'utf8').trim()
+      : (process.env.CC_TRUST_LEVEL ?? 'sandboxed')
+    return { level }
+  })
+
   fastify.addHook('onClose', async () => {
     modelRegistry.close()
   })

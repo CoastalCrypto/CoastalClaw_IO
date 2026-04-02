@@ -3,7 +3,7 @@ import { spawn, execSync } from 'node:child_process'
 import type { ShellBackend, ShellResult } from './types.js'
 
 export class NativeBackend implements ShellBackend {
-  readonly name = 'native'
+  readonly name: string = 'native'
 
   async isAvailable(): Promise<boolean> {
     return true

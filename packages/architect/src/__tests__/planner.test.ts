@@ -28,6 +28,13 @@ Here is the fix:
   it('returns null for empty response', () => {
     expect(parseDiffFromResponse('')).toBeNull()
   })
+
+  it('handles CRLF line endings in diff block', () => {
+    const response = '```diff\r\n--- a/file.ts\r\n+++ b/file.ts\r\n```'
+    const diff = parseDiffFromResponse(response)
+    expect(diff).not.toBeNull()
+    expect(diff).toContain('--- a/file.ts')
+  })
 })
 
 describe('buildPlannerPrompt', () => {

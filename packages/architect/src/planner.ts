@@ -17,7 +17,7 @@ export interface PlannerResult {
 
 /** Extract a unified diff from an Ollama response (looks for ```diff block). */
 export function parseDiffFromResponse(response: string): string | null {
-  const match = response.match(/```diff\n([\s\S]*?)```/)
+  const match = response.match(/```diff\r?\n([\s\S]*?)```/)
   if (!match) return null
   const diff = match[1].trim()
   return diff.length > 0 ? diff : null
@@ -81,7 +81,7 @@ export function readUnreviewedGaps(dataDir: string): Array<SkillGapRow & { id: s
     const rows = db
       .prepare('SELECT id, tool_name, failure_pattern FROM skill_gaps WHERE reviewed = 0 ORDER BY timestamp ASC LIMIT 20')
       .all() as Array<{ id: string; tool_name: string; failure_pattern: string }>
-    return rows.map(r => ({ id: r.id, toolName: r.tool_name, failurePattern: r.failure_pattern }))
+    return rows.map(r => ({ id: String(r.id), toolName: r.tool_name, failurePattern: r.failure_pattern }))
   } finally {
     db.close()
   }
@@ -122,6 +122,7 @@ export async function plan(opts: {
 
   const sourceFull = join(opts.repoRoot, targetRel)
   const sourceSnippet = existsSync(sourceFull) ? readFileSync(sourceFull, 'utf8') : ''
+  if (!sourceSnippet) return null
 
   const prompt = buildPlannerPrompt(gaps, sourceSnippet, targetRel)
   const response = await askOllama(prompt, opts.ollamaUrl, opts.model)

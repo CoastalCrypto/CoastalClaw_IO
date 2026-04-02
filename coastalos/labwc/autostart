@@ -1,0 +1,8 @@
+#!/bin/sh
+# CoastalClaw labwc autostart — launch Chromium in kiosk mode
+chromium-browser \
+  --kiosk \
+  --no-first-run \
+  --disable-translate \
+  --disable-features=TranslateUI \
+  --app=http://localhost:4747 &

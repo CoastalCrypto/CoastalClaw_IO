@@ -3,20 +3,23 @@ import { createShellTools, shellTools } from './core/shell.js'
 import { gitTools } from './core/git.js'
 import { sqliteTools } from './core/sqlite.js'
 import { webTools } from './core/web.js'
+import { createBrowserTools } from './browser/browser-tools.js'
 import type { CoreTool } from './core/file.js'
 import type { ToolDefinition } from '../agents/types.js'
 import type { ShellBackend } from './backends/types.js'
+import type { BrowserSessionManager } from './browser/session-manager.js'
 
 const READ_ONLY_TOOLS = new Set(['read_file', 'list_dir', 'git_status', 'git_diff', 'git_log', 'http_get'])
 
 export class ToolRegistry {
   private tools = new Map<string, CoreTool>()
 
-  constructor(backend?: ShellBackend) {
+  constructor(backend?: ShellBackend, browserManager?: BrowserSessionManager) {
     const shell = backend
       ? createShellTools(backend, process.env.CC_AGENT_WORKDIR ?? './data/workspace')
       : shellTools
-    for (const t of [...fileTools, ...shell, ...gitTools, ...sqliteTools, ...webTools]) {
+    const browser = browserManager ? createBrowserTools(browserManager) : []
+    for (const t of [...fileTools, ...shell, ...gitTools, ...sqliteTools, ...webTools, ...browser]) {
       this.tools.set(t.definition.name, t)
     }
   }

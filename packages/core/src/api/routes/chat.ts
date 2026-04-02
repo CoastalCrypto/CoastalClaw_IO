@@ -9,6 +9,7 @@ import { ActionLog } from '../../agents/action-log.js'
 import { SkillGapsLog } from '../../agents/skill-gaps.js'
 import { ToolRegistry } from '../../tools/registry.js'
 import { createBackend } from '../../tools/backends/index.js'
+import { BrowserSessionManager } from '../../tools/browser/session-manager.js'
 import { McpAdapter } from '../../tools/mcp/adapter.js'
 import { loadConfig } from '../../config.js'
 import Database from 'better-sqlite3'
@@ -28,7 +29,10 @@ export async function chatRoutes(fastify: FastifyInstance) {
   const memory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey })
   const agentRegistry = new AgentRegistry(pathJoin(config.dataDir, 'agents.db'))
   const backend = createBackend(config.agentTrustLevel, [config.agentWorkdir])
-  const toolRegistry = new ToolRegistry(backend)
+  const browserManager = config.agentTrustLevel !== 'sandboxed'
+    ? new BrowserSessionManager()
+    : undefined
+  const toolRegistry = new ToolRegistry(backend, browserManager)
   const gate = new PermissionGate(db)
   const log = new ActionLog(db)
   const skillGaps = new SkillGapsLog(config.dataDir)
@@ -58,6 +62,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     skillGaps.close()
     await mcpThinking.close()
     await mcpMemory.close()
+    await browserManager?.closeAll()
   })
 
   fastify.post<{

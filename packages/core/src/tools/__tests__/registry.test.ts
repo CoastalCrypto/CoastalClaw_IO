@@ -1,6 +1,7 @@
 // packages/core/src/tools/__tests__/registry.test.ts
 import { describe, it, expect } from 'vitest'
 import { ToolRegistry } from '../registry.js'
+import { BrowserSessionManager } from '../browser/session-manager.js'
 
 describe('ToolRegistry', () => {
   const registry = new ToolRegistry()
@@ -46,5 +47,25 @@ describe('ToolRegistry', () => {
   it('isReversible handles query_db by mode', () => {
     expect(registry.isReversible('query_db', { mode: 'read' })).toBe(true)
     expect(registry.isReversible('query_db', { mode: 'write' })).toBe(false)
+  })
+
+  it('browser tools registered when manager provided', async () => {
+    const mgr = new BrowserSessionManager()
+    const reg = new ToolRegistry(undefined, mgr)
+    expect(reg.get('browser_navigate')).toBeDefined()
+    expect(reg.get('browser_read')).toBeDefined()
+    await mgr.closeAll()
+  })
+
+  it('browser tools absent when no manager provided (sandboxed tier)', () => {
+    const reg = new ToolRegistry()
+    expect(reg.get('browser_navigate')).toBeUndefined()
+    expect(reg.get('browser_close')).toBeUndefined()
+  })
+
+  it('chat.ts does not create browserManager at sandboxed tier', () => {
+    const trustLevel = 'sandboxed'
+    const browserManager = trustLevel !== 'sandboxed' ? new BrowserSessionManager() : undefined
+    expect(browserManager).toBeUndefined()
   })
 })

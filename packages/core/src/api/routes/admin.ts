@@ -247,6 +247,108 @@ export async function adminRoutes(fastify: FastifyInstance) {
     return { level }
   })
 
+  // ── Architect routes ─────────────────────────────────────────────────────
+
+  // In-memory proposal store (one active proposal at a time)
+  const proposals = new Map<string, {
+    summary: string
+    diff: string
+    status: 'pending' | 'vetoed'
+    expiresAt: number
+  }>()
+
+  // POST /api/admin/architect/propose — coastal-architect announces a proposal
+  fastify.post<{ Body: { summary: string; diff: string } }>('/api/admin/architect/propose', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['summary', 'diff'],
+        properties: {
+          summary: { type: 'string', maxLength: 500 },
+          diff: { type: 'string', maxLength: 50000 },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { summary, diff } = req.body
+    const proposalId = randomBytes(8).toString('hex')
+    const expiresAt = Date.now() + 70_000 // 70s — slightly longer than architect's 60s veto window
+    proposals.set(proposalId, { summary, diff, status: 'pending', expiresAt })
+    // Broadcast to connected WebSocket clients
+    fastify.websocketServer?.clients.forEach((client: any) => {
+      client.send(JSON.stringify({
+        type: 'architect_proposal',
+        proposalId,
+        summary,
+        diff,
+        vetoDeadline: expiresAt,
+      }))
+    })
+    return reply.send({ proposalId })
+  })
+
+  // GET /api/admin/architect/proposal/:id — poll proposal status
+  fastify.get<{ Params: { id: string } }>('/api/admin/architect/proposal/:id', async (req, reply) => {
+    const proposal = proposals.get(req.params.id)
+    if (!proposal) return reply.status(404).send({ error: 'Not found' })
+    if (proposal.status === 'pending' && Date.now() > proposal.expiresAt) {
+      proposal.status = 'vetoed' // treat expired as vetoed for cleanup
+      return reply.send({ status: 'expired' })
+    }
+    return reply.send({ status: proposal.status })
+  })
+
+  // POST /api/admin/architect/veto — UI veto button
+  fastify.post<{ Body: { proposalId: string } }>('/api/admin/architect/veto', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['proposalId'],
+        properties: { proposalId: { type: 'string' } },
+      },
+    },
+  }, async (req, reply) => {
+    const proposal = proposals.get(req.body.proposalId)
+    if (!proposal) return reply.status(404).send({ error: 'Not found' })
+    proposal.status = 'vetoed'
+    fastify.websocketServer?.clients.forEach((client: any) => {
+      client.send(JSON.stringify({ type: 'architect_vetoed', proposalId: req.body.proposalId }))
+    })
+    return reply.send({ ok: true })
+  })
+
+  // POST /api/admin/architect/run — manual trigger (sends SIGUSR1 to architect process)
+  fastify.post('/api/admin/architect/run', async (_req, reply) => {
+    const pidFile = join(config.dataDir, '.architect-pid')
+    if (!existsSync(pidFile)) return reply.status(503).send({ error: 'coastal-architect not running' })
+    try {
+      const pid = Number(readFileSync(pidFile, 'utf8').trim())
+      process.kill(pid, 'SIGUSR1')
+      return reply.send({ ok: true, note: 'Triggered architect cycle via SIGUSR1' })
+    } catch {
+      return reply.status(500).send({ error: 'Failed to signal architect' })
+    }
+  })
+
+  // POST /api/admin/architect/applied — architect broadcasts successful merge to UI
+  fastify.post<{ Body: { summary: string; testsDelta: string } }>('/api/admin/architect/applied', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['summary', 'testsDelta'],
+        properties: {
+          summary: { type: 'string', maxLength: 500 },
+          testsDelta: { type: 'string', maxLength: 200 },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    fastify.websocketServer?.clients.forEach((client: any) => {
+      client.send(JSON.stringify({ type: 'architect_applied', ...req.body }))
+    })
+    return reply.send({ ok: true })
+  })
+
   fastify.addHook('onClose', async () => {
     modelRegistry.close()
   })

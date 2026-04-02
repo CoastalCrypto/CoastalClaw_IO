@@ -12,3 +12,4 @@ packages/core/data/
 # Local tooling and security reports — never commit
 .gstack/
 .claude/
+.superpowers/

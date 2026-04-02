@@ -1,0 +1,13 @@
+appId: com.coastalcrypto.coastalclaw
+productName: CoastalClaw
+directories:
+  output: dist-electron
+files:
+  - dist/**/*
+  - package.json
+win:
+  target: nsis
+mac:
+  target: dmg
+linux:
+  target: AppImage

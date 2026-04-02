@@ -1,0 +1,19 @@
+{
+  "name": "@coastal-claw/shell",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc && electron-builder build --config build/electron-builder.yml",
+    "dev": "tsc && electron dist/main.js",
+    "compile": "tsc"
+  },
+  "dependencies": {
+    "electron": "^30.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "electron-builder": "^24.0.0",
+    "typescript": "^5.4.0"
+  }
+}

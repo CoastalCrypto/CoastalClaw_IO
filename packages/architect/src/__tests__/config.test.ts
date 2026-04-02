@@ -23,4 +23,20 @@ describe('config', () => {
     expect(SKILL_GAPS_THRESHOLD).toBe(10)
     expect(VETO_TIMEOUT_MS).toBe(60_000)
   })
+
+  it('normalizes leading ./ prefix', () => {
+    expect(isLockedPath('./packages/architect/src/config.ts')).toBe(true)
+  })
+
+  it('normalizes Windows backslashes', () => {
+    expect(isLockedPath('packages\\architect\\src\\config.ts')).toBe(true)
+  })
+
+  it('normalizes mixed backslash and leading .\\', () => {
+    expect(isLockedPath('.\\packages\\architect\\src\\config.ts')).toBe(true)
+  })
+
+  it('normalizes double leading ./ prefix', () => {
+    expect(isLockedPath('././packages/architect/src/config.ts')).toBe(true)
+  })
 })

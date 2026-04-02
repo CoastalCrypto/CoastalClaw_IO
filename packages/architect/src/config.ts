@@ -1,6 +1,8 @@
 // packages/architect/src/config.ts
+import { posix } from 'node:path'
 
-export const LOCKED_PATHS = new Set([
+/** Paths the self-build loop is never allowed to modify. */
+export const LOCKED_PATHS: ReadonlySet<string> = new Set([
   'packages/architect/src/index.ts',
   'packages/architect/src/config.ts',
   'packages/architect/src/patcher.ts',
@@ -12,8 +14,12 @@ export const LOCKED_PATHS = new Set([
 
 /** Returns true if the normalized relative path is in the locked set. */
 export function isLockedPath(relPath: string): boolean {
-  // Normalize: strip leading ./ and replace backslashes
-  const norm = relPath.replace(/\\/g, '/').replace(/^\.\//, '')
+  const norm = posix.normalize(
+    relPath
+      .replace(/\\/g, '/')          // Windows backslashes → forward slashes
+      .replace(/^(\.\/)+/, '')       // strip one or more leading ./
+      .toLowerCase()                 // case-insensitive on Windows NTFS
+  )
   return LOCKED_PATHS.has(norm)
 }
 

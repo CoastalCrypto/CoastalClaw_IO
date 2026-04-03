@@ -1,10 +1,11 @@
 {
   "id": "cfo",
-  "tools": ["read_file", "list_dir", "query_db", "http_get"],
+  "tools": ["read_file", "write_file", "query_db", "http_get", "list_dir", "browser_navigate", "browser_read", "browser_click", "browser_fill", "browser_screenshot", "browser_close"],
+  "voiceModel": "en_US-lessac-medium",
   "hand": {
     "enabled": true,
     "schedule": "daily at 08:00",
     "triggers": ["price_alert BTC > 5%"],
-    "goal": "Review P&L, flag financial anomalies, and prepare a morning brief."
+    "goal": "Review overnight P&L, check BTC price movement, and prepare morning briefing."
   }
 }

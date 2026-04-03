@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<labwc_config>
+  <keyboard>
+    <!-- Ctrl+Alt+T → open Alacritty terminal -->
+    <keybind key="C-A-t">
+      <action name="Execute">
+        <command>alacritty</command>
+      </action>
+    </keybind>
+  </keyboard>
+</labwc_config>

@@ -48,7 +48,11 @@ export function createBrowserTools(manager: BrowserSessionManager): CoreTool[] {
         const { agentId } = args as { agentId: string }
         try {
           const page = await manager.getOrCreate(agentId)
-          const text = await page.evaluate(() => document.body.innerText ?? '')
+          const text = await page.evaluate(() => {
+            // Runs in browser context — `document` exists there
+            const d = (globalThis as unknown as { document: { body: { innerText: string } } }).document
+            return d?.body?.innerText ?? ''
+          })
           return text.slice(0, 8000) || '(empty page)'
         } catch (e: any) {
           return `Error: browser_read failed — ${e.message}`

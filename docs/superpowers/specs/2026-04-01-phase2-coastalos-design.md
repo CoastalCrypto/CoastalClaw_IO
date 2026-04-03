@@ -1,7 +1,7 @@
 # CoastalClaw Phase 2 — CoastalOS Design Spec
 
 **Date:** 2026-04-01
-**Status:** Approved for implementation planning
+**Status:** Implementation complete — v0.3.0-phase2-coastalos
 **Scope:** coastal-architect (self-build loop) → CoastalOS (Ubuntu kiosk + browser control) → Voice Pipeline (all local)
 
 ---

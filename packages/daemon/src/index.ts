@@ -4,6 +4,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { ProactiveScheduler, parseCronExpression } from './scheduler.js'
 import { HandRunner } from './hand-runner.js'
+import { VoicePipeline } from './voice/pipeline.js'
 import { randomUUID } from 'node:crypto'
 
 const AGENTS_DIR = join(process.cwd(), 'agents')
@@ -71,8 +72,32 @@ async function main() {
   scheduler.start(CHECK_INTERVAL_MS)
   console.log(`[coastal-daemon] Running. Check interval: ${CHECK_INTERVAL_MS}ms`)
 
-  process.on('SIGTERM', () => { scheduler.stop(); process.exit(0) })
-  process.on('SIGINT',  () => { scheduler.stop(); process.exit(0) })
+  const trustLevel = process.env.CC_TRUST_LEVEL ?? 'sandboxed'
+  let voicePipeline: VoicePipeline | null = null
+
+  if (trustLevel === 'autonomous') {
+    console.log('[coastal-daemon] AUTONOMOUS tier — starting voice pipeline...')
+    voicePipeline = new VoicePipeline({
+      onTranscript: async (text: string) => {
+        const sessionId = `voice-${randomUUID().slice(0, 8)}`
+        const result = await runner.run('general', text, sessionId)
+        return result.reply ?? 'I could not process that.'
+      },
+    })
+    voicePipeline.start()
+    console.log('[coastal-daemon] Voice pipeline active. Say "Hey Coastal" to begin.')
+  }
+
+  process.on('SIGTERM', async () => {
+    voicePipeline?.stop()
+    scheduler.stop()
+    process.exit(0)
+  })
+  process.on('SIGINT', async () => {
+    voicePipeline?.stop()
+    scheduler.stop()
+    process.exit(0)
+  })
 }
 
 main().catch(e => { console.error('[coastal-daemon] Fatal:', e); process.exit(1) })

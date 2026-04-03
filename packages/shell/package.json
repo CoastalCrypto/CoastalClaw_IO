@@ -8,11 +8,10 @@
     "dev": "tsc && electron dist/main.js",
     "compile": "tsc"
   },
-  "dependencies": {
-    "electron": "^30.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "electron": "^30.0.0",
     "electron-builder": "^24.0.0",
     "typescript": "^5.4.0"
   }

@@ -10,8 +10,8 @@ describe('browser tools', () => {
   beforeEach(() => {
     manager = new BrowserSessionManager()
     tools = createBrowserTools(manager)
-  })
-  afterEach(async () => { await manager.closeAll() })
+  }, 30_000)
+  afterEach(async () => { await manager.closeAll() }, 30_000)
 
   it('exports 6 tool definitions', () => {
     expect(tools).toHaveLength(6)

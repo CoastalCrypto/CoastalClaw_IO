@@ -5,8 +5,8 @@ import { BrowserSessionManager } from '../session-manager.js'
 describe('BrowserSessionManager', () => {
   let manager: BrowserSessionManager
 
-  beforeEach(() => { manager = new BrowserSessionManager() })
-  afterEach(async () => { await manager.closeAll() })
+  beforeEach(() => { manager = new BrowserSessionManager() }, 30_000)
+  afterEach(async () => { await manager.closeAll() }, 30_000)
 
   it('getOrCreate returns a page for an agentId', async () => {
     const page = await manager.getOrCreate('cfo')

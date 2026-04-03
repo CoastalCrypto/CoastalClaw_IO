@@ -37,6 +37,7 @@ export interface AgentFileConfig {
   tools?: string[]
   modelPref?: string
   hand?: AgentHandConfig
+  voiceModel?: string  // e.g. "en_US-lessac-medium" — Piper .onnx model name
 }
 
 export interface AgentConfig {

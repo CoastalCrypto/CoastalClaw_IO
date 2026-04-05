@@ -25,10 +25,10 @@ export async function chatRoutes(fastify: FastifyInstance) {
   mkdirSync(config.agentWorkdir, { recursive: true })
 
   const db = new Database(pathJoin(config.dataDir, 'coastal-claw.db'))
-  const router = new ModelRouter({ ollamaUrl: config.ollamaUrl, defaultModel: config.defaultModel })
+  const router = new ModelRouter({ ollamaUrl: config.ollamaUrl, vllmUrl: config.vllmUrl, defaultModel: config.defaultModel })
   const memory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey })
   const agentRegistry = new AgentRegistry(pathJoin(config.dataDir, 'agents.db'))
-  const backend = createBackend(config.agentTrustLevel, [config.agentWorkdir])
+  const backend = await createBackend(config.agentTrustLevel, [config.agentWorkdir])
   const browserManager = config.agentTrustLevel !== 'sandboxed'
     ? new BrowserSessionManager()
     : undefined

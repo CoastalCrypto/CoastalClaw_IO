@@ -3,8 +3,14 @@ set -e
 
 echo "[post-install] Installing CoastalClaw..."
 
+# Install Node.js 22 via NodeSource (packages.list only ships the distro nodejs which may be < 22)
+if ! node --version 2>/dev/null | grep -qE '^v2[2-9]'; then
+  curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+  apt-get install -y nodejs
+fi
+
 # Install pnpm
-npm install -g pnpm
+npm install -g pnpm@latest
 
 # Install Ollama (always — CPU fallback)
 curl -fsSL https://ollama.com/install.sh | sh
@@ -37,9 +43,20 @@ else
   echo "[post-install] No GPU detected — vLLM/VibeVoice/AirLLM skipped, using Ollama"
 fi
 
-# Create coastal user
+# Create coastal user and install project
 useradd -m -s /bin/bash coastal || true
 mkdir -p /opt/coastalclaw /var/lib/coastalclaw/data /var/lib/coastalclaw/workspace
+
+# Clone and build CoastalClaw
+REPO_URL="${CC_REPO_URL:-https://github.com/CoastalCrypto/CoastalClaw_IO.git}"
+REPO_REF="${CC_REPO_REF:-master}"
+if [[ ! -f /opt/coastalclaw/package.json ]]; then
+  git clone --depth=1 --branch "$REPO_REF" "$REPO_URL" /opt/coastalclaw
+fi
+cd /opt/coastalclaw
+pnpm install --frozen-lockfile
+pnpm build
+
 chown -R coastal:coastal /opt/coastalclaw /var/lib/coastalclaw
 
 # Set up cgroup slice for namespace sandbox

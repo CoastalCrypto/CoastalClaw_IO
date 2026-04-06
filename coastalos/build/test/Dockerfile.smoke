@@ -1,0 +1,39 @@
+# Smoke-test image — mirrors the CoastalOS post-install environment on Ubuntu 24.04
+# Build context: repo root
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV CC_PORT=4747
+ENV CC_HOST=0.0.0.0
+ENV CC_DATA_DIR=/var/lib/coastalclaw/data
+ENV CC_AGENT_WORKDIR=/var/lib/coastalclaw/workspace
+ENV CC_OLLAMA_URL=http://127.0.0.1:11434
+ENV CC_DEFAULT_MODEL=llama3.2
+
+# Base packages
+RUN apt-get update && apt-get install -y \
+  curl git build-essential python3 python3-pip sqlite3 ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+# Node.js 22
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+  && apt-get install -y nodejs \
+  && npm install -g pnpm@latest \
+  && rm -rf /var/lib/apt/lists/*
+
+# Create data directories
+RUN useradd -m -s /bin/bash coastal || true \
+  && mkdir -p /var/lib/coastalclaw/data /var/lib/coastalclaw/workspace \
+  && chown -R coastal:coastal /var/lib/coastalclaw
+
+# Copy repo and build (build context = repo root)
+WORKDIR /opt/coastalclaw
+COPY . .
+RUN pnpm install --frozen-lockfile && pnpm build
+
+RUN chown -R coastal:coastal /opt/coastalclaw
+
+USER coastal
+EXPOSE 4747
+
+CMD ["node", "packages/core/dist/main.js"]

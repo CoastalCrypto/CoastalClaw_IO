@@ -213,7 +213,7 @@ mkdir -p "$CC_BIN_DIR"
 
 cat > "${CC_BIN_DIR}/coastal-claw" <<SCRIPT
 #!/usr/bin/env bash
-cd "${INSTALL_DIR}" && node packages/core/dist/index.js "\$@"
+cd "${INSTALL_DIR}" && node packages/core/dist/main.js "\$@"
 SCRIPT
 chmod +x "${CC_BIN_DIR}/coastal-claw"
 
@@ -238,7 +238,7 @@ step "⑨ Launching Coastal Claw"
 # Start core in background
 info "Starting core service on :4747..."
 cd "$INSTALL_DIR"
-nohup node packages/core/dist/index.js > /tmp/coastal-claw-core.log 2>&1 &
+nohup node packages/core/dist/main.js > /tmp/coastal-claw-core.log 2>&1 &
 CORE_PID=$!
 echo $CORE_PID > /tmp/coastal-claw-core.pid
 

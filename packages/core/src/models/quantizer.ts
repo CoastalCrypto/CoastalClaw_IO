@@ -24,9 +24,9 @@ const LLAMA_CPP_RELEASE = 'b3178'
 const LLAMA_CPP_ARCHIVE_WIN = `llama-${LLAMA_CPP_RELEASE}-bin-win-cuda-cu12.2.0-x64.zip`
 const LLAMA_CPP_ARCHIVE_LINUX = `llama-${LLAMA_CPP_RELEASE}-bin-ubuntu-x64.zip`
 
-function runCommand(cmd: string, args: string[], cwd?: string, useShell = false): Promise<void> {
+function runCommand(cmd: string, args: string[], cwd?: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const proc = spawn(cmd, args, { cwd, shell: useShell })
+    const proc = spawn(cmd, args, { cwd, shell: false })
     proc.stdout.on('data', (d: Buffer) => process.stdout.write(d))
     proc.stderr.on('data', (d: Buffer) => process.stderr.write(d))
     proc.on('close', (code) => {
@@ -60,10 +60,11 @@ async function ensureLlamaCppBinaries(llamaCppDir: string): Promise<void> {
   await runCommand('curl', ['-L', '-o', zipPath, releaseUrl])
 
   if (process.platform === 'win32') {
-    await runCommand('powershell', [
-      '-Command',
-      `Expand-Archive -Force -Path '${zipPath}' -DestinationPath '${llamaCppDir}'`,
-    ], undefined, true)
+    // Use powershell.exe with explicit args — no shell:true needed
+    await runCommand('powershell.exe', [
+      '-NoProfile', '-NonInteractive', '-Command',
+      'Expand-Archive', '-Force', '-Path', zipPath, '-DestinationPath', llamaCppDir,
+    ])
   } else {
     await runCommand('unzip', ['-o', zipPath, '-d', llamaCppDir])
   }

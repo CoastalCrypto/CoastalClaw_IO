@@ -28,8 +28,9 @@ jobs:
           sudo apt-get install -y live-build qemu-system-x86 ovmf curl
 
       - name: Build ISO
+        env:
+          VERSION: ${{ github.event.inputs.version || 'ci' }}
         run: |
-          VERSION="${{ github.event.inputs.version || 'ci' }}"
           sudo bash coastalos/build/build.sh "$VERSION"
           ls -lh coastalos-*.iso
 

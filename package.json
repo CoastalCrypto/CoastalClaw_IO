@@ -26,6 +26,10 @@
     "onlyBuiltDependencies": [
       "better-sqlite3",
       "esbuild"
-    ]
+    ],
+    "overrides": {
+      "@xmldom/xmldom": ">=0.9.9",
+      "loader-utils": ">=2.0.4"
+    }
   }
 }

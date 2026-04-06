@@ -120,6 +120,22 @@ Ollama (always available, CPU fallback)
 
 ### 1. Install
 
+**One-line installer:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/main/install.sh | bash
+```
+
+**APT (Ubuntu 22.04 / 24.04):**
+```bash
+curl -fsSL https://CoastalCrypto.github.io/CoastalClaw_IO/coastalclaw-release.asc \
+  | sudo gpg --dearmor -o /usr/share/keyrings/coastalclaw.gpg
+echo "deb [signed-by=/usr/share/keyrings/coastalclaw.gpg] \
+  https://CoastalCrypto.github.io/CoastalClaw_IO stable main" \
+  | sudo tee /etc/apt/sources.list.d/coastalclaw.list
+sudo apt update && sudo apt install coastalclaw
+```
+
+**From source:**
 ```bash
 git clone https://github.com/CoastalCrypto/CoastalClaw_IO.git
 cd CoastalClaw_IO

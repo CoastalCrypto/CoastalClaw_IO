@@ -290,6 +290,47 @@ PUT  /api/persona          → { persona, configured }
 POST /api/chat
 { "message": "...", "sessionId": "optional-uuid" }
 → { "sessionId": "...", "reply": "...", "domain": "cfo" }
+
+POST /api/chat/stream                  ← SSE streaming
+{ "message": "...", "sessionId": "optional-uuid" }
+→ text/event-stream
+
+  event: domain  data: { "domain": "cfo" }
+  event: token   data: { "token": "..." }     ← one per chunk
+  event: reply   data: { "reply": "..." }     ← tool-use path (full reply)
+  event: approval data: { "approvalId": "...", "toolName": "...", "cmd": "..." }
+  event: done    data: { "sessionId": "...", "domain": "cfo" }
+  event: error   data: { "message": "..." }
+```
+
+### Sessions
+
+```
+GET    /api/sessions?limit=20          → [{ id, title, created_at, updated_at }]
+PUT    /api/sessions/:id               { "title": "..." }
+DELETE /api/sessions/:id
+```
+
+### Upload
+
+```
+POST /api/upload  (multipart/form-data, field: "file")
+Allowed: text/plain, text/markdown, text/csv, application/json, application/xml, text/html
+Max: 5 MB
+→ { "filename": "...", "mimeType": "...", "size": 1234, "text": "..." }
+```
+
+### System (admin)
+
+```
+GET  /api/system/stats
+→ { cpu, memory, disk, gpu, loadedModels, uptimeSeconds }
+
+GET  /api/admin/logs?service=coastalclaw-server&lines=100
+→ { service, lines: ["..."] }
+
+POST /api/admin/update
+→ { ok: true }    (async: git pull → pnpm install → pnpm build → systemctl restart)
 ```
 
 ### Team (multi-agent)
@@ -322,6 +363,8 @@ Events:
 { "type": "proactive_suggestion", "suggestion": "..." }
 { "type": "approval_request", "approvalId": "...", "toolName": "...", "cmd": "..." }
 { "type": "quant_progress", "step": 3, "total": 11, "message": "..." }
+{ "type": "architect_proposal", "summary": "...", "diff": "..." }
+{ "type": "architect_applied", "summary": "..." }
 ```
 
 ---
@@ -346,7 +389,7 @@ MOCK_NAMESPACE=1 pnpm test            # skip real Linux namespace tests
 | CoastalOS | ✅ | `v0.3.0-phase2-coastalos` | Voice pipeline, architect self-build, Electron kiosk |
 | ClawOS Native | ✅ | `v0.4.0-phase3-clawos` | NamespaceBackend, VllmClient, ISO build + GitHub Actions CI |
 | ClawTeam | ✅ | `v0.5.0-phase4-clawteam` | AirLLM, Infinity, VibeVoice, BossAgent swarm, MetaAgent, generic persona |
-| **Launch** | 🔜 | `v1.0.0` | APT repo, cloud AMI, open source, public docs |
+| **Launch** | ✅ | `v1.0.0` | APT repo, cloud AMI, open source, SSE streaming, Waybar, security audit |
 
 ---
 

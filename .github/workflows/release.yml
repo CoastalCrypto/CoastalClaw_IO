@@ -3,7 +3,13 @@ name: Release
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v1.0.0)"
+        required: true
+        default: "v1.0.0"
 
 permissions:
   contents: write
@@ -17,14 +23,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
 
@@ -53,14 +56,16 @@ jobs:
 
       - name: Extract version from tag
         id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: |
+          REF="${{ github.ref_name }}"
+          echo "version=${REF#v}" >> "$GITHUB_OUTPUT"
 
       - name: Build .deb
         id: build
         run: |
           bash packaging/build-deb.sh "${{ steps.version.outputs.version }}"
           DEB=$(ls dist-deb/*.deb | head -1)
-          echo "deb_path=${DEB}"  >> "$GITHUB_OUTPUT"
+          echo "deb_path=${DEB}" >> "$GITHUB_OUTPUT"
           echo "deb_name=$(basename $DEB)" >> "$GITHUB_OUTPUT"
 
       - name: Upload .deb artifact
@@ -77,7 +82,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # full history for changelog
+          fetch-depth: 0
 
       - name: Download .deb
         uses: actions/download-artifact@v4
@@ -101,26 +106,24 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          name: CoastalClaw ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          name: "CoastalClaw ${{ github.ref_name }}"
           body: |
             ## What's changed
             ${{ steps.changelog.outputs.log }}
 
             ## Install
 
-            **One-line installer (Linux/macOS):**
-            ```bash
+            **One-line installer:**
+            ```
             curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/${{ github.ref_name }}/install.sh | bash
             ```
 
             **APT (Ubuntu/Debian):**
-            ```bash
-            curl -fsSL https://CoastalCrypto.github.io/CoastalClaw_IO/setup.sh | sudo bash
             ```
-
-            **Docker smoke test:**
-            ```bash
-            bash scripts/smoke-test-docker.sh
+            curl -fsSL https://CoastalCrypto.github.io/CoastalClaw_IO/coastalclaw-release.asc | sudo gpg --dearmor -o /usr/share/keyrings/coastalclaw.gpg
+            echo "deb [signed-by=/usr/share/keyrings/coastalclaw.gpg] https://CoastalCrypto.github.io/CoastalClaw_IO stable main" | sudo tee /etc/apt/sources.list.d/coastalclaw.list
+            sudo apt update && sudo apt install coastalclaw
             ```
           files: dist-deb/*.deb
           draft: false
@@ -146,7 +149,7 @@ jobs:
         run: sudo apt-get install -y dpkg-dev
 
       - name: Import GPG signing key
-        if: ${{ secrets.GPG_PRIVATE_KEY != '' }}
+        if: "${{ secrets.GPG_PRIVATE_KEY != '' }}"
         run: |
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
           echo "GPG_KEY_ID=${{ secrets.GPG_KEY_ID }}" >> "$GITHUB_ENV"

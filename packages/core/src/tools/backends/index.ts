@@ -3,17 +3,29 @@ export type { ShellBackend, ShellResult } from './types.js'
 export { NativeBackend } from './native.js'
 export { RestrictedLocalBackend } from './restricted-local.js'
 export { DockerBackend } from './docker.js'
+export { NamespaceBackend } from './namespace.js'
 
 import type { ShellBackend } from './types.js'
 import type { TrustLevel } from '../../config.js'
 import { NativeBackend } from './native.js'
 import { RestrictedLocalBackend } from './restricted-local.js'
 import { DockerBackend } from './docker.js'
+import { NamespaceBackend } from './namespace.js'
 
-export function createBackend(trustLevel: TrustLevel, allowedPaths: string[]): ShellBackend {
-  switch (trustLevel) {
-    case 'sandboxed':  return new DockerBackend()
-    case 'trusted':    return new RestrictedLocalBackend(allowedPaths)
-    case 'autonomous': return new NativeBackend()
+/**
+ * Returns the best ShellBackend for the given trust level.
+ * At 'sandboxed' tier: prefers NamespaceBackend on Linux, falls back to DockerBackend.
+ * Now async because NamespaceBackend.isAvailable() checks the kernel.
+ */
+export async function createBackend(
+  trustLevel: TrustLevel,
+  allowedPaths: string[],
+): Promise<ShellBackend> {
+  if (trustLevel === 'sandboxed') {
+    const ns = new NamespaceBackend()
+    if (await ns.isAvailable()) return ns
+    return new DockerBackend()
   }
+  if (trustLevel === 'trusted') return new RestrictedLocalBackend(allowedPaths)
+  return new NativeBackend()
 }

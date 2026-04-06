@@ -21,6 +21,7 @@ export interface Config {
   approvalTimeoutMs: number
   defaultModel: string
   agentTrustLevel: TrustLevel
+  vllmUrl: string
 }
 
 export function loadConfig(): Config {
@@ -60,6 +61,7 @@ export function loadConfig(): Config {
     toolResultMaxChars: Number(process.env.CC_TOOL_RESULT_MAX_CHARS ?? '4000'),
     approvalTimeoutMs: Number(process.env.CC_APPROVAL_TIMEOUT_MS ?? '300000'),
     defaultModel: process.env.CC_DEFAULT_MODEL ?? 'llama3.2',
+    vllmUrl: process.env.CC_VLLM_URL ?? 'http://127.0.0.1:8000',
     agentTrustLevel: (() => {
       // File-based override takes precedence over env var
       const dataDir = process.env.CC_DATA_DIR ?? './data'

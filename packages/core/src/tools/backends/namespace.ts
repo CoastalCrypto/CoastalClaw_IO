@@ -5,8 +5,6 @@ import { join } from 'node:path'
 import { NativeBackend } from './native.js'
 import type { ShellBackend, ShellResult } from './types.js'
 
-const SANDBOX_BASE = process.env.CC_SANDBOX_DIR ?? '/var/lib/coastalclaw/workspace'
-
 /**
  * Linux namespace-based sandbox. Uses unshare(1) for mount/pid/net/ipc/uts isolation.
  * Each session gets an isolated workdir under CC_SANDBOX_DIR.
@@ -22,8 +20,12 @@ export class NamespaceBackend implements ShellBackend {
     if (process.platform !== 'linux') return false
     try {
       execSync('which unshare', { stdio: 'ignore' })
-      // Check kernel supports user namespaces (required for --map-root-user)
-      execSync('unshare --user true', { stdio: 'ignore', timeout: 2_000 })
+      // Probe with the same flags used in execute — requires CAP_SYS_ADMIN
+      // (granted via AmbientCapabilities in coastal-server.service)
+      execSync('unshare --mount --pid --net --ipc --uts --fork --map-root-user true', {
+        stdio: 'ignore',
+        timeout: 2_000,
+      })
       return true
     } catch {
       return false
@@ -41,7 +43,8 @@ export class NamespaceBackend implements ShellBackend {
       return new NativeBackend().execute(cmd, workdir, sessionId, timeoutMs)
     }
 
-    const sessionDir = join(SANDBOX_BASE, `ns-${sessionId.slice(0, 12)}-${Date.now()}`)
+    const sandboxBase = process.env.CC_SANDBOX_DIR ?? '/var/lib/coastalclaw/workspace'
+    const sessionDir = join(sandboxBase, `ns-${sessionId.slice(0, 12)}-${Date.now()}`)
     mkdirSync(sessionDir, { recursive: true })
 
     return new Promise((resolve_) => {

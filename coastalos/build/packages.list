@@ -25,6 +25,7 @@ cgroup-tools
 
 # Voice pipeline dependencies
 curl
+wget
 ffmpeg
 
 # Development / build tools (for pnpm install on first boot)

@@ -142,6 +142,7 @@ export function Chat({ sessionId, onNav }: { sessionId: string; onNav: (page: st
           <button className="text-cyan-400 font-bold tracking-widest bg-cyan-950/30 px-3 py-1 rounded border border-cyan-800/50">/chat</button>
           <button onClick={() => onNav('models')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/models</button>
           <button onClick={() => onNav('agents')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/agents</button>
+          <button onClick={() => onNav('settings')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/settings</button>
         </div>
       </header>
 

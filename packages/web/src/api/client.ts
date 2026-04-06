@@ -1,3 +1,12 @@
+export interface Persona {
+  agentName: string
+  agentRole: string
+  personality: string
+  orgName: string
+  orgContext: string
+  ownerName: string
+}
+
 export interface SendMessageOptions {
   message: string
   sessionId?: string
@@ -116,6 +125,22 @@ export class CoreClient {
       const text = await res.text()
       throw new Error(`Failed to update registry (${res.status}): ${text}`)
     }
+  }
+
+  async getPersona(): Promise<{ persona: Persona; configured: boolean }> {
+    const res = await fetch(`${this.baseUrl}/api/persona`)
+    if (!res.ok) throw new Error(`Failed to get persona (${res.status})`)
+    return res.json()
+  }
+
+  async setPersona(updates: Partial<Persona>): Promise<{ persona: Persona; configured: boolean }> {
+    const res = await fetch(`${this.baseUrl}/api/persona`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    })
+    if (!res.ok) throw new Error(`Failed to set persona (${res.status})`)
+    return res.json()
   }
 
   async resolveApproval(

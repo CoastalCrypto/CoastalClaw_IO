@@ -60,6 +60,7 @@ export function Agents({ onNav }: { onNav: (page: string) => void }) {
           <button onClick={() => onNav('chat')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/chat</button>
           <button onClick={() => onNav('models')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/models</button>
           <button className="text-cyan-400 font-bold tracking-widest bg-cyan-950/30 px-3 py-1 rounded border border-cyan-800/50">/agents</button>
+          <button onClick={() => onNav('settings')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/settings</button>
         </div>
       </nav>
 

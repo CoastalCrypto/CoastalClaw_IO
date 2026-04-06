@@ -1,19 +1,21 @@
 import { useState } from 'react'
 
 export interface OnboardingData {
-  companyName: string
-  challenges: string
-  focusArea: 'coo' | 'cfo' | 'cto' | ''
-  hasPitchDeck: boolean
+  orgName: string
+  orgContext: string
+  ownerName: string
+  agentName: string
+  personality: string
 }
 
 export function useOnboarding() {
   const [step, setStep] = useState(1)
   const [data, setData] = useState<OnboardingData>({
-    companyName: '',
-    challenges: '',
-    focusArea: '',
-    hasPitchDeck: false,
+    orgName: '',
+    orgContext: '',
+    ownerName: '',
+    agentName: '',
+    personality: '',
   })
 
   const update = (patch: Partial<OnboardingData>) =>

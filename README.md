@@ -1,30 +1,28 @@
 <p align="center">
-  <img src="assets/banner.png" alt="Coastal Claw" width="100%"/>
+  <img src="assets/banner.png" alt="CoastalClaw" width="100%"/>
 </p>
 
 <p align="center">
-  <strong>A self-improving AI Agent OS — running on your hardware, your data never leaves the facility.</strong>
+  <strong>A self-improving AI Agent OS — runs on your hardware, your data never leaves.</strong>
 </p>
 
 <p align="center">
-  <a href="https://docs.coastalcryptomining.com"><strong>📖 Documentation</strong></a> ·
   <a href="#-quick-start">Quick Start</a> ·
-  <a href="#-architecture">Architecture</a> ·
   <a href="#-features">Features</a> ·
+  <a href="#-architecture">Architecture</a> ·
   <a href="#%EF%B8%8F-configuration">Configuration</a> ·
+  <a href="#-api-reference">API</a> ·
   <a href="#-security">Security</a> ·
   <a href="#-roadmap">Roadmap</a>
 </p>
 
 ---
 
-## What is Coastal Claw?
+## What is CoastalClaw?
 
-Coastal Claw is an AI **Agent Operating System** built by [Coastal Crypto](https://coastalcryptomining.com). It's not just an agent chatbot — it's a self-improving, always-on OS that runs your business 24/7, with real-time voice, proactive Agent Hands, and a self-build loop that can fix and improve itself.
+CoastalClaw is an open-source **AI Agent Operating System** you deploy on your own hardware. It's not a chatbot — it's a self-improving OS that runs your business 24/7: real-time voice, autonomous scheduled agents, a multi-agent swarm, and a self-build loop that patches and improves its own code.
 
-The **AI Executive Suite** — virtual COO, CFO, and CTO agents — works like a real leadership team: they remember context across sessions, route complex decisions through a multi-model consensus gate, operate within defined governance guardrails, and fire autonomously on schedules and event triggers without any human intervention.
-
-**Phase 1 APEX is complete** — pluggable shell sandbox, trust tiers, Agent Hands, daemon scaffold, and the learning loop are all live.
+**You configure it.** Set your agent's name, personality, and org context once. Every agent in the system — COO, CFO, CTO, and your primary assistant — knows who it's working for.
 
 ---
 
@@ -32,99 +30,82 @@ The **AI Executive Suite** — virtual COO, CFO, and CTO agents — works like a
 
 | Feature | Description |
 |---------|-------------|
+| **Generic Agent Persona** | Name your agent, set its personality, describe your org. Stored in SQLite, injected into every soul at render time. Configure via API or setup wizard. |
 | **Intelligent Model Routing** | Two-stage cascade: tiny ONNX classifier first, LLM fallback only when needed. Routes by domain (COO / CFO / CTO / General) and urgency. |
-| **Two-Layer Failover** | Primary model → quant-level siblings → general domain fallback. Never a dead request. |
-| **Lossless Memory** | Every conversation stored in SQLite DAG. Nothing is ever lost. Older entries automatically promoted to Mem0 personalization before they leave the active context window. |
-| **Model Quantization Pipeline** | Install any HuggingFace model in Q4\_K\_M / Q5\_K\_M / Q8\_0. Download → GGUF → Ollama → registry in one API call. Progress streamed live over WebSocket. |
-| **Admin UI** | Web-based model manager with session-authenticated login, quant selector, domain-urgency model assigner, and live install progress bar. |
-| **Privacy First** | Runs entirely on local hardware. Ollama for inference, no external API required. WireGuard VPN per client tenant in production. |
-| **VRAM-Aware Scheduling** | VRAMManager queries Ollama's running models and selects the largest quant that fits within your configured VRAM budget. |
-| **Pluggable ShellBackend** ✅ NEW | Three execution tiers: DockerBackend (sandboxed), RestrictedLocalBackend (trusted), NativeBackend (autonomous). Same codebase on Win/Mac/Linux. |
-| **Trust Tiers** ✅ NEW | SANDBOXED → TRUSTED → AUTONOMOUS. Change at runtime via Admin API or `data/.trust-level` file. No restart required. |
-| **Agent Hands** ✅ NEW | Every agent has a `hand` block in its `config.json` — natural language schedule, event triggers, fires AgenticLoop without user interaction. |
-| **Proactive Daemon** ✅ NEW | `coastal-daemon` process auto-registers enabled Hands, parses NL cron ("daily at 08:00"), fires HTTP requests to the server on schedule. |
-| **IterationBudget** ✅ NEW | Replaces raw `MAX_TURNS` — supports `abort()` for interrupt propagation, parent-to-child cancellation via AbortSignal. |
-| **Learning Loop** ✅ NEW | Background review thread records tool failures into `skill-gaps.db` after every agentic loop. Foundation for self-improvement. |
+| **AI Executive Suite** | Virtual COO, CFO, and CTO — domain specialists that remember context across sessions and fire autonomously on schedule. |
+| **Multi-Agent Swarm** | BossAgent decomposes complex tasks into parallel subtasks, fans out to specialist agents, synthesizes a unified reply. |
+| **VibeVoice Pipeline** | Wake word → VibeVoice ASR (diarization + timestamps) → agent → streaming TTS. Falls back to whisper-cpp + piper on CPU. |
+| **Self-Build Loop** | `coastal-architect` nightly loop reads its own source, proposes improvements, runs tests, and opens PRs automatically. MetaAgent archives every iteration. |
+| **NamespaceBackend** | Linux `unshare` + overlayfs + cgroups v2 sandbox — no Docker daemon needed on ClawOS. Auto-detected on Linux, falls back to DockerBackend elsewhere. |
+| **Three Inference Backends** | Lazy probe order: vLLM (GPU, fastest) → AirLLM (layer-stream, big models on small VRAM) → Ollama (CPU fallback). Zero config required. |
+| **Infinity Hybrid Search** | Dense + sparse + full-text vector search via Infinity DB. Falls back to SQLite LIKE when Infinity isn't running. |
+| **Lossless Memory** | Every message stored in SQLite. Older entries promoted to Mem0 personalization before they leave the context window. |
+| **Trust Tiers** | `sandboxed` (Docker) → `trusted` (restricted shell) → `autonomous` (full host). Change at runtime. |
+| **Agent Hands** | Agents fire on NL schedules ("daily at 08:00") or event triggers — no user required. |
+| **Proactive Suggestions** | After every reply, a background thread predicts what you'll need next. |
+| **Privacy First** | Entirely local inference. No external API required. All data on your hardware. |
 
 ---
 
 ## 🏗 Architecture
 
-Coastal Claw APEX runs as three cooperating processes:
+CoastalClaw runs as three cooperating processes:
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│  coastal-server  (packages/core :4747)                           │
-│                                                                  │
-│  CascadeRouter ──► DomainClassifier ──► AgentRegistry           │
-│       │                                      │                  │
-│  TinyRouter (ONNX)              AgenticLoop ◄─┘                  │
-│       │                              │                          │
-│  DomainModelRegistry         PermissionGate                     │
-│       │                              │                          │
-│  VRAMManager ──► OllamaClient   ToolRegistry                    │
-│       │              │               │                          │
-│  ModelRouter ◄───────┘          ShellBackend (tier-aware)       │
-│                                      │                          │
-│  UnifiedMemory                  SkillGapsLog ◄── BackgroundReview│
-│    ├── LosslessAdapter (SQLite)                                  │
-│    └── Mem0Adapter (personalization)                            │
-│                                                                  │
-│  Admin API ── JWT session auth ── trust-level control           │
-└──────────────┬───────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────┐
+│  coastal-server  (packages/core :4747)                             │
+│                                                                    │
+│  PersonaManager ──► AgentSession (soul template interpolation)    │
+│                                                                    │
+│  CascadeRouter ──► DomainClassifier ──► AgentRegistry             │
+│       │                                      │                    │
+│  TinyRouter (ONNX)              AgenticLoop ◄─┘                    │
+│       │                              │                            │
+│  ModelRouter                   PermissionGate                     │
+│    vLLM → AirLLM → Ollama          │                             │
+│                              ToolRegistry                          │
+│                                    │                              │
+│                              ShellBackend                          │
+│                     Namespace / Docker / Local                     │
+│                                                                    │
+│  UnifiedMemory + InfinityClient    BossAgent + TeamChannel        │
+│  ├── LosslessAdapter (SQLite)      MetaAgent (self-improve)       │
+│  └── Mem0Adapter + SemanticSearch                                 │
+│                                                                    │
+│  POST /api/persona  ·  POST /api/chat  ·  POST /api/team/run      │
+└──────────────┬─────────────────────────────────────────────────────┘
                │  REST + WebSocket (:4747)
     ┌──────────┼──────────┐
     │          │          │
-┌───┴──────┐ ┌─┴──────────┴──────────────┐
-│ Web UI   │ │  coastal-daemon            │
-│ React 19 │ │  ProactiveScheduler        │
-│ + Tailwind│ │  HandRunner (HTTP POST)   │
-│ Vite 5   │ │  reads agents/*/config.json│
-└──────────┘ └────────────────────────────┘
+┌───┴──────┐ ┌─┴──────────┴──────────────────────┐
+│ Web UI   │ │  coastal-daemon                    │
+│ React 19 │ │  ProactiveScheduler (NL cron)      │
+│ Tailwind │ │  HandRunner (HTTP POST to /api/chat│
+│ Vite 5   │ │  VibeVoiceClient (streaming voice) │
+└──────────┘ └───────────────────────────────────┘
 ```
 
 ### Trust Tiers
 
 | Tier | Backend | What agents can do |
 |------|---------|--------------------|
-| `sandboxed` (default) | `DockerBackend` — Alpine container, no network, 256 MB RAM | Workspace-only commands in isolated container |
-| `trusted` | `RestrictedLocalBackend` — host shell, workspace-only | Commands inside `CC_AGENT_WORKDIR` only |
-| `autonomous` | `NativeBackend` — full host shell | Unrestricted shell access |
+| `sandboxed` (default) | `DockerBackend` or `NamespaceBackend` (Linux) | Isolated container, workspace-only |
+| `trusted` | `RestrictedLocalBackend` | Host shell, workspace directory only |
+| `autonomous` | `NativeBackend` | Unrestricted host shell |
 
-Change trust level at runtime:
-```bash
-curl -X PATCH http://localhost:4747/api/admin/trust-level \
-  -H "x-admin-session: <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"level": "trusted"}'
-# Restart coastal-server to apply
-```
-
-### Routing Pipeline
+### Inference Backend Probe Order
 
 ```
-User message
-     │
-     ▼
-TinyRouter (ONNX)          ← signals: urgency, retention, actionability
-     │
-     ▼
-DomainClassifier           ← rules pass (keywords) → LLM fallback
-     │
-     ▼
-AgentRegistry              ← file-based overrides: agents/<id>/config.json + SYSTEM.md
-     │
-     ▼
-AgenticLoop                ← IterationBudget, AbortSignal
-     │            │
-     ▼            ▼
-ToolRegistry   PermissionGate
-     │
-     ▼
-ShellBackend               ← tier-aware (Docker / RestrictedLocal / Native)
-     │
-     ▼
-BackgroundReview           ← SkillGapsLog records tool failures → skill-gaps.db
+Start request
+    │
+    ▼
+vLLM available?  ──yes──► GPU inference (fastest, full VRAM)
+    │ no
+    ▼
+AirLLM available? ──yes──► Layer-stream (70B on 4GB VRAM)
+    │ no
+    ▼
+Ollama (always available, CPU fallback)
 ```
 
 ---
@@ -133,13 +114,11 @@ BackgroundReview           ← SkillGapsLog records tool failures → skill-gaps
 
 ### Prerequisites
 
-- [Node.js 22+](https://nodejs.org)
-- [pnpm 9+](https://pnpm.io) — `npm install -g pnpm`
-- [Ollama](https://ollama.com) — running locally on port `11434`
-- At least one Ollama model pulled (e.g. `ollama pull llama3.2`)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) — optional, required for SANDBOXED trust tier
+- Node.js 22+, pnpm 9+
+- [Ollama](https://ollama.com) running locally — `ollama pull llama3.2`
+- Docker (optional — required for `sandboxed` tier on non-Linux)
 
-### 1. Clone and install
+### 1. Install
 
 ```bash
 git clone https://github.com/CoastalCrypto/CoastalClaw_IO.git
@@ -147,89 +126,100 @@ cd CoastalClaw_IO
 pnpm install
 ```
 
-### 2. Configure environment
+### 2. Configure
 
 ```bash
 cp packages/core/.env.example packages/core/.env.local
 ```
 
-Edit `packages/core/.env.local`:
-
+Minimal config:
 ```env
-CC_PORT=4747
-CC_HOST=127.0.0.1
-CC_DATA_DIR=./data
 CC_OLLAMA_URL=http://127.0.0.1:11434
 CC_DEFAULT_MODEL=llama3.2
-
-# Trust tier: sandboxed (Docker) | trusted (restricted shell) | autonomous (full shell)
 CC_TRUST_LEVEL=sandboxed
-
-# Agent workspace — agents are restricted to this directory in trusted tier
-CC_AGENT_WORKDIR=./data/workspace
-
-# Optional: Mem0 for personalized memory
-# MEM0_API_KEY=your_key_here
 ```
 
-```bash
-cp packages/web/.env.example packages/web/.env.local
-# Edit: VITE_CORE_PORT=4747
-```
-
-### 3. Build and run
+### 3. Run
 
 ```bash
-pnpm build
+# Terminal 1 — core API server
+node packages/core/dist/main.js
+# → http://127.0.0.1:4747
 
-# Terminal 1 — core server
-node packages/core/dist/index.js
-# → Server listening on http://127.0.0.1:4747
-
-# Terminal 2 — web portal
+# Terminal 2 — web UI
 cd packages/web && pnpm dev
 # → http://localhost:5173
 
-# Terminal 3 — proactive daemon (optional)
+# Terminal 3 — autonomous daemon (optional)
 node packages/daemon/dist/index.js
-# → coastal-daemon started — registered N hand jobs
 ```
 
-### 4. First run
+### 4. Set up your agent
 
-1. Open `http://localhost:5173`
-2. Complete the 5-step onboarding wizard
-3. Start chatting with your AI agents
+Open `http://localhost:5173` and complete the setup wizard — name your agent, describe your org, set a personality. This hits `PUT /api/persona` and configures every agent in the system.
 
-### 5. Admin panel
+Or set directly via API:
+```bash
+curl -X PUT http://localhost:4747/api/persona \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agentName": "JARVIS",
+    "agentRole": "Executive Assistant",
+    "personality": "Direct and concise. Lead with data. No filler.",
+    "orgName": "Stark Industries",
+    "orgContext": "Engineering and defense contractor. 12,000 employees.",
+    "ownerName": "Tony"
+  }'
+```
 
-1. Navigate to the **Models** tab
-2. Enter your admin token — find it at `./data/.admin-token`
-3. Install a model: enter a HuggingFace model ID, select quant levels, click Install
-4. Assign models to agent domains in the **Domain Assigner** table
+---
+
+## 🎭 Agent Persona
+
+Every agent soul is a template. Configure once, applied everywhere.
+
+| Field | What it does |
+|-------|-------------|
+| `agentName` | What your primary agent calls itself |
+| `agentRole` | One-line role (e.g. "Executive Assistant") |
+| `personality` | Free-text personality traits injected into the system prompt |
+| `orgName` | Organization name — injected into all agent souls |
+| `orgContext` | 2–4 sentence org description all agents share |
+| `ownerName` | Your name — agents use this to address you |
+
+Defaults ship as `"Assistant"` / `"Your Organization"` — functional immediately, nudges you to configure.
 
 ---
 
 ## 🤖 Agent Hands
 
-Every agent can have a `hand` block in `agents/<id>/config.json` that fires the agent autonomously on a schedule or event trigger — no user required.
+Agents fire autonomously on schedules or event triggers:
 
 ```json
 {
   "id": "cfo",
-  "tools": ["read_file", "query_db", "http_get"],
   "hand": {
     "enabled": true,
     "schedule": "daily at 08:00",
     "triggers": ["price_alert BTC > 5%"],
-    "goal": "Review overnight P&L, check BTC price movement, and prepare morning briefing."
+    "goal": "Review overnight P&L and prepare morning briefing."
   }
 }
 ```
 
-Supported schedule formats: `"daily at 08:00"`, `"every 2h"`, `"weekly on monday"`, or raw cron `"0 8 * * *"`.
+Schedule formats: `"daily at 08:00"`, `"every 2h"`, `"weekly on monday"`, raw cron `"0 8 * * *"`.
 
-Per-agent system prompts live in `agents/<id>/SYSTEM.md` and override the database soul at runtime.
+---
+
+## 🐝 Multi-Agent Swarm
+
+```bash
+curl -X POST http://localhost:4747/api/team/run \
+  -H "Content-Type: application/json" \
+  -d '{"task": "Analyze Q2 financials and prepare a board summary"}'
+```
+
+BossAgent decomposes the task, fans out to COO/CFO/CTO in parallel, synthesizes a single reply. All sub-agent messages flow through `TeamChannel`.
 
 ---
 
@@ -239,25 +229,20 @@ Per-agent system prompts live in `agents/<id>/SYSTEM.md` and override the databa
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CC_PORT` | `4747` | Port for the core service |
+| `CC_PORT` | `4747` | API server port |
 | `CC_HOST` | `127.0.0.1` | Bind address |
-| `CC_DATA_DIR` | `./data` | Storage root (SQLite, admin token, registry) |
+| `CC_DATA_DIR` | `./data` | SQLite, persona, admin token, registry |
 | `CC_OLLAMA_URL` | `http://127.0.0.1:11434` | Ollama endpoint |
-| `CC_DEFAULT_MODEL` | `llama3.2` | Fallback model when routing fails |
-| `CC_ADMIN_TOKEN` | auto-generated | Admin API token — printed to `CC_DATA_DIR/.admin-token` on first run |
+| `CC_DEFAULT_MODEL` | `llama3.2` | Fallback when routing fails |
+| `CC_TRUST_LEVEL` | `sandboxed` | `sandboxed` \| `trusted` \| `autonomous` |
+| `CC_AGENT_WORKDIR` | `./data/workspace` | Agent sandbox root |
+| `CC_VLLM_URL` | `http://127.0.0.1:8000` | vLLM endpoint (auto-probed) |
+| `CC_AIRLLM_URL` | `http://127.0.0.1:8002` | AirLLM endpoint (auto-probed) |
+| `CC_INFINITY_URL` | `http://127.0.0.1:23817` | Infinity vector DB (auto-probed) |
+| `CC_VIBEVOICE_URL` | `http://127.0.0.1:8001` | VibeVoice ASR+TTS (auto-probed) |
 | `CC_CORS_ORIGINS` | `localhost:5173` | Comma-separated allowed CORS origins |
 | `CC_VRAM_BUDGET_GB` | `24` | VRAM ceiling for quant selection |
-| `CC_TRUST_LEVEL` | `sandboxed` | Shell execution tier: `sandboxed` \| `trusted` \| `autonomous` |
-| `CC_AGENT_WORKDIR` | `./data/workspace` | Workspace root agents are restricted to |
-| `CC_ROUTER_CONFIDENCE` | `0.7` | Minimum confidence to trust the rules-based domain classifier |
-| `MEM0_API_KEY` | — | Optional Mem0 API key for personalized memory |
-
-### Daemon environment variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `CC_SERVER_URL` | `http://localhost:4747` | coastal-server base URL for HandRunner HTTP calls |
-| `CC_DAEMON_INTERVAL_MS` | `60000` | Scheduler tick interval in milliseconds |
+| `MEM0_API_KEY` | — | Optional Mem0 API key |
 
 ---
 
@@ -265,84 +250,78 @@ Per-agent system prompts live in `agents/<id>/SYSTEM.md` and override the databa
 
 ### Admin authentication
 
-The admin API uses a two-step session flow:
+```bash
+# 1. Get a session token (24h TTL)
+curl -X POST http://localhost:4747/api/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{"token": "<your-admin-token>"}'
+# → {"sessionToken": "..."}
 
-1. **Obtain a session token** (24h TTL):
-   ```bash
-   curl -X POST http://localhost:4747/api/admin/login \
-     -H "Content-Type: application/json" \
-     -d '{"token": "<your-admin-token>"}'
-   # → {"sessionToken": "..."}
-   ```
+# 2. Use it on all admin endpoints
+curl http://localhost:4747/api/admin/models \
+  -H "x-admin-session: <sessionToken>"
+```
 
-2. **Use the session token** on all admin endpoints via `x-admin-session` header.
+Admin token is auto-generated on first run at `CC_DATA_DIR/.admin-token`.
 
-### Production deployment checklist
+### Production checklist
 
-- [ ] Set `CC_CORS_ORIGINS` to your specific frontend domain
-- [ ] Run behind a reverse proxy (nginx/caddy) with TLS
-- [ ] Set `CC_ADMIN_TOKEN` to a strong random value (`openssl rand -hex 32`)
-- [ ] Restrict `CC_OLLAMA_URL` to localhost — Ollama has no auth by default
-- [ ] Start with `CC_TRUST_LEVEL=sandboxed` (requires Docker Desktop)
-- [ ] Only promote to `trusted` or `autonomous` when you understand the implications
-- [ ] Deploy behind WireGuard VPN for multi-tenant production use
-- [ ] Ensure `CC_DATA_DIR` is on encrypted storage
+- [ ] Set `CC_CORS_ORIGINS` to your domain
+- [ ] Run behind nginx/caddy with TLS
+- [ ] Set `CC_ADMIN_TOKEN` to `openssl rand -hex 32`
+- [ ] Keep `CC_OLLAMA_URL` on localhost
+- [ ] Start with `sandboxed` trust tier
+- [ ] Put `CC_DATA_DIR` on encrypted storage
 
 ---
 
 ## 📡 API Reference
 
+### Persona
+
+```
+GET  /api/persona          → { persona, configured }
+PUT  /api/persona          → { persona, configured }
+```
+
 ### Chat
 
 ```
 POST /api/chat
-Content-Type: application/json
-
-{
-  "message": "What's our current burn rate?",
-  "sessionId": "optional-uuid",
-  "model": "optional-model-override"
-}
+{ "message": "...", "sessionId": "optional-uuid" }
+→ { "sessionId": "...", "reply": "...", "domain": "cfo" }
 ```
 
-Response:
-```json
-{
-  "sessionId": "uuid",
-  "reply": "Based on your last financials...",
-  "domain": "cfo"
-}
+### Team (multi-agent)
+
+```
+POST /api/team/run
+{ "task": "..." }
+→ { "reply": "...", "subtaskCount": 3, "subtasks": [...] }
 ```
 
-### Admin endpoints (require `x-admin-session` header)
+### Admin (require `x-admin-session`)
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/admin/login` | Exchange admin token for session token |
-| `GET` | `/api/admin/models` | List all installed models grouped by base |
+| `POST` | `/api/admin/login` | Exchange token for session |
+| `GET` | `/api/admin/models` | List installed models |
 | `POST` | `/api/admin/models/add` | Start quantization pipeline |
-| `DELETE` | `/api/admin/models/:quantId` | Remove a model variant |
-| `GET` | `/api/admin/registry` | Get domain-model assignments |
-| `PATCH` | `/api/admin/registry` | Update domain-model assignments |
-| `GET` | `/api/admin/trust-level` | Get current trust tier |
-| `PATCH` | `/api/admin/trust-level` | Set trust tier (restart required to apply) |
+| `DELETE` | `/api/admin/models/:id` | Remove model variant |
+| `GET` | `/api/admin/registry` | Domain-model assignments |
+| `PATCH` | `/api/admin/registry` | Update assignments |
+| `GET/PATCH` | `/api/admin/trust-level` | Get/set trust tier |
 
 ### WebSocket
 
 ```
 ws://localhost:4747/ws/session
-```
+→ { "type": "register", "sessionId": "..." }
 
-Register a session to receive pipeline progress and proactive suggestions:
-```json
-{ "type": "register", "sessionId": "your-uuid" }
-```
-
-Receive events:
-```json
-{ "type": "quant_progress", "step": 3, "total": 11, "message": "Quantizing to Q4_K_M..." }
-{ "type": "proactive_suggestion", "suggestion": "Review overnight P&L", "sessionId": "..." }
-{ "type": "approval_request", "approvalId": "...", "agentName": "cfo", "toolName": "run_command", "cmd": "..." }
+Events:
+{ "type": "proactive_suggestion", "suggestion": "..." }
+{ "type": "approval_request", "approvalId": "...", "toolName": "...", "cmd": "..." }
+{ "type": "quant_progress", "step": 3, "total": 11, "message": "..." }
 ```
 
 ---
@@ -350,64 +329,58 @@ Receive events:
 ## 🧪 Testing
 
 ```bash
-# Run all tests
-pnpm test
-
-# Core tests only (134 tests)
-cd packages/core && pnpm test
-
-# Daemon tests only (6 tests)
-cd packages/daemon && pnpm test
+pnpm test                              # all packages
+pnpm --filter @coastal-claw/core test  # 197 tests
+pnpm --filter @coastal-claw/daemon test
+MOCK_NAMESPACE=1 pnpm test            # skip real Linux namespace tests
 ```
-
-The suite covers: routing pipeline, memory adapters, admin API (auth, CRUD, pipeline, trust-level), chat route, WebSocket session, ShellBackend (native, restricted-local, docker), AgenticLoop (IterationBudget, AbortSignal, skill-gaps), Agent Registry file overrides, ProactiveScheduler (NL cron parsing, minute-level matching), HandRunner, React components.
 
 ---
 
 ## 🗺 Roadmap
 
-### Phase 0 — Foundation ✅
-- Coastal Claw core service (REST + WebSocket)
-- Intelligent routing with CascadeRouter + VRAMManager
-- LosslessAdapter (SQLite) + Mem0 memory stack
-- Model quantization pipeline (HF → GGUF → Ollama)
-- React web portal — onboarding wizard, chat, model management
-- Admin API with session auth
+| Phase | Status | Tag | What shipped |
+|-------|--------|-----|-------------|
+| Foundation | ✅ | `v0.1.0-phase1` | CascadeRouter, LosslessMemory, model quant pipeline, web portal |
+| APEX OS | ✅ | `v0.2.0-phase1-apex` | ShellBackend tiers, trust system, Agent Hands, daemon, skill-gaps loop |
+| CoastalOS | ✅ | `v0.3.0-phase2-coastalos` | Voice pipeline, architect self-build, Electron kiosk |
+| ClawOS Native | ✅ | `v0.4.0-phase3-clawos` | NamespaceBackend, VllmClient, ISO build + GitHub Actions CI |
+| ClawTeam | ✅ | `v0.5.0-phase4-clawteam` | AirLLM, Infinity, VibeVoice, BossAgent swarm, MetaAgent, generic persona |
+| **Launch** | 🔜 | `v1.0.0` | APT repo, cloud AMI, open source, public docs |
 
-### Phase 1 — APEX OS Scaffold ✅ `v0.2.0-phase1-apex`
-- **Pluggable ShellBackend**: DockerBackend (sandboxed) + RestrictedLocalBackend (trusted) + NativeBackend (autonomous)
-- **Trust tier system**: `sandboxed | trusted | autonomous` with Admin API + file-based override
-- **IterationBudget**: Replaces `MAX_TURNS`, supports `abort()` and AbortSignal propagation
-- **SkillGapsLog**: SQLite `skill-gaps.db` recording tool failure patterns
-- **BackgroundReviewThread**: Non-blocking post-loop review that feeds SkillGapsLog
-- **Agent Hands**: NL cron schedule + event triggers per agent — fires AgenticLoop autonomously
-- **coastal-daemon**: Standalone process with ProactiveScheduler + HandRunner
-- **agents/ directory**: 9 agents × `config.json` + `SYSTEM.md` at project root
-- **AgentRegistry file overrides**: Runtime tools/soul/hand config from filesystem
+---
 
-### Phase 2 — Voice Pipeline
-- Wake word detection → Whisper STT → AgenticLoop → ElevenLabs TTS
-- Full-duplex voice with interruption (personaplex-mlx pattern)
-- `coastal-daemon` voice integration
-- ClawShell Electron kiosk with visual desktop + voice UI
+## 📂 Project Structure
 
-### Phase 3 — Self-Build + ClawOS
-- `coastal-architect` nightly self-build loop (reads own source, proposes improvements, runs tests, hot-reloads)
-- NamespaceBackend (Linux `unshare` — ClawOS native alternative to Docker)
-- ClawOS Ubuntu 24.04 LTS distribution — ISO + APT package + Cloud AMI + Docker image
-- Cubic/live-build pipeline
-
-### Phase 4 — ClawTeam Swarm
-- HKUDS/ClawTeam integration — boss agent fan-out/merge
-- Session tools for agent-to-agent communication
-- Per-agent git worktree isolation
-- Dependency-aware parallel execution graph
-
-### Phase 5 — Open Source Launch
-- APT repository
-- Cloud marketplace listings (AWS AMI, GCP, Azure)
-- `coastal-architect` submits PRs to its own repo
-- Public launch
+```
+CoastalClaw_IO/
+├── agents/                     # Per-agent config (runtime overrides)
+│   ├── cfo/config.json + SYSTEM.md
+│   └── coo/ cto/ general/ ...
+├── packages/
+│   ├── core/                   # Fastify API server (:4747)
+│   │   └── src/
+│   │       ├── main.ts         # Server entry point
+│   │       ├── lib.ts          # Side-effect-free library exports
+│   │       ├── persona/        # PersonaManager — configurable agent identity
+│   │       ├── agents/         # AgenticLoop, BossAgent, MetaAgent, TeamChannel
+│   │       │   └── souls/      # Soul templates with {{persona.*}} tokens
+│   │       ├── models/         # ModelRouter (vLLM→AirLLM→Ollama), AirLLMClient, VllmClient
+│   │       ├── memory/         # UnifiedMemory + InfinityClient hybrid search
+│   │       ├── voice/          # VibeVoiceClient
+│   │       ├── tools/backends/ # Namespace / Docker / RestrictedLocal / Native
+│   │       └── api/routes/     # chat, persona, team, admin, agents
+│   ├── daemon/                 # coastal-daemon: voice + proactive scheduler
+│   ├── architect/              # Self-build loop: Planner, Patcher, Validator
+│   ├── shell/                  # Electron kiosk (ClawShell)
+│   └── web/                    # React 19 + Tailwind + Vite
+├── coastalos/                  # ClawOS ISO build
+│   ├── build/                  # live-build config, packages.list, post-install.sh
+│   ├── systemd/                # All service units
+│   └── vibevoice/              # Python FastAPI VibeVoice service
+├── docs/superpowers/           # Design specs and implementation plans
+└── .github/workflows/          # ISO build + QEMU smoke test CI
+```
 
 ---
 
@@ -415,78 +388,23 @@ The suite covers: routing pipeline, memory adapters, admin API (auth, CRUD, pipe
 
 | Project | How we use it |
 |---------|--------------|
-| **[Ollama](https://github.com/ollama/ollama)** | Local inference engine. Serves all quantized models via OpenAI-compatible API. |
-| **[Fastify](https://github.com/fastify/fastify)** | Core HTTP/WebSocket server. Schema-validated routes, plugin architecture. |
-| **[OpenClaw](https://github.com/openclaw/openclaw)** | Gateway pattern, Docker-per-session, ElevenLabs voice, session tools inspiration. |
-| **[Hermes Agent](https://github.com/nousresearch/hermes-agent)** | Pluggable backends (6 types), IterationBudget, automatic skill creation, background review thread, NL cron patterns. |
-| **[OpenFang](https://github.com/RightNow-AI/openfang)** | WASM dual-metered sandbox, defense layers, autonomous Hands, kernel RBAC concepts. |
-| **[llama.cpp](https://github.com/ggerganov/llama.cpp)** | GGUF quantization engine. Powers the Q4\_K\_M / Q5\_K\_M / Q8\_0 pipeline. |
-| **[Mem0](https://github.com/mem0ai/mem0)** | Personalized memory layer. Cross-session context promoted from SQLite to vector search. |
-| **[ClawTeam / HKUDS](https://github.com/HKUDS/ClawTeam)** | Phase 4 multi-agent swarm: boss fan-out/merge, git worktree isolation per agent. |
-| **[better-sqlite3](https://github.com/WiseLibs/better-sqlite3)** | Synchronous SQLite driver for lossless message store and skill-gaps.db. |
-
----
-
-## 📂 Project Structure
-
-```
-CoastalClaw/
-├── agents/                           # Per-agent config (override DB at runtime)
-│   ├── cfo/
-│   │   ├── config.json               # tools, modelPref, hand (schedule + goal)
-│   │   └── SYSTEM.md                 # domain soul — overrides DB soulPath
-│   ├── cto/ coo/ general/ ...        # 9 agents total
-│   └── ...
-├── packages/
-│   ├── core/                         # Fastify backend service (:4747)
-│   │   └── src/
-│   │       ├── agents/
-│   │       │   ├── loop.ts           # AgenticLoop — IterationBudget, AbortSignal
-│   │       │   ├── iteration-budget.ts
-│   │       │   ├── skill-gaps.ts     # SQLite skill-gaps.db
-│   │       │   ├── learning-thread.ts# BackgroundReviewThread
-│   │       │   ├── registry.ts       # file-override support
-│   │       │   └── permission-gate.ts
-│   │       ├── tools/
-│   │       │   ├── backends/         # ShellBackend interface + implementations
-│   │       │   │   ├── types.ts      # ShellBackend interface, ShellResult
-│   │       │   │   ├── native.ts     # NativeBackend (full shell)
-│   │       │   │   ├── restricted-local.ts # RestrictedLocalBackend
-│   │       │   │   ├── docker.ts     # DockerBackend (sandboxed container)
-│   │       │   │   └── index.ts      # createBackend(trustLevel, allowedPaths)
-│   │       │   └── registry.ts       # ToolRegistry — backend injection
-│   │       ├── api/routes/
-│   │       │   ├── chat.ts           # POST /api/chat + proactive thread
-│   │       │   └── admin.ts          # trust-level PATCH/GET endpoints
-│   │       ├── memory/               # LosslessAdapter + Mem0Adapter
-│   │       ├── models/               # OllamaClient, ModelRouter, QuantizationPipeline
-│   │       └── config.ts             # TrustLevel, loadConfig()
-│   ├── daemon/                       # coastal-daemon process
-│   │   └── src/
-│   │       ├── scheduler.ts          # ProactiveScheduler — NL cron, setInterval
-│   │       ├── hand-runner.ts        # HandRunner — HTTP POST to /api/chat
-│   │       └── index.ts              # loadHandJobs, SIGTERM/SIGINT handlers
-│   └── ui/                           # React 19 + Vite + Tailwind v4
-│       └── src/
-│           ├── api/                  # CoreClient (chat + admin)
-│           ├── components/           # ModelCard, ModelInstaller, DomainAssigner
-│           └── pages/                # Chat, Models, onboarding steps
-├── docs/
-│   └── superpowers/
-│       ├── specs/                    # Design documents
-│       └── plans/                   # Implementation plans
-└── README.md
-```
+| **[Ollama](https://github.com/ollama/ollama)** | Local inference engine |
+| **[Fastify](https://github.com/fastify/fastify)** | HTTP/WebSocket server |
+| **[vLLM](https://github.com/vllm-project/vllm)** | GPU-accelerated inference |
+| **[AirLLM](https://github.com/lyogavin/airllm)** | Layer-streaming inference for large models |
+| **[Infinity](https://github.com/infiniflow/infinity)** | Hybrid vector database |
+| **[llama.cpp](https://github.com/ggerganov/llama.cpp)** | GGUF quantization engine |
+| **[Mem0](https://github.com/mem0ai/mem0)** | Personalized memory layer |
+| **[better-sqlite3](https://github.com/WiseLibs/better-sqlite3)** | Synchronous SQLite driver |
+| **[HyperAgents](https://arxiv.org/abs/2603.19461)** | MetaAgent self-improvement pattern |
 
 ---
 
 ## 🤝 Contributing
 
-Coastal Claw is under active development by Coastal Crypto. Contributions, feedback, and issues are welcome.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feat/your-feature`)
-3. Commit with clear messages (`git commit -m "feat: add X"`)
+1. Fork the repo
+2. `git checkout -b feat/your-feature`
+3. `pnpm test` — keep it green
 4. Open a pull request
 
 ---
@@ -494,9 +412,3 @@ Coastal Claw is under active development by Coastal Crypto. Contributions, feedb
 ## 📄 License
 
 MIT — see [LICENSE](LICENSE) for details.
-
----
-
-<p align="center">
-  Built with purpose by <strong>Coastal Crypto</strong> · Privacy-first AI Agent OS
-</p>

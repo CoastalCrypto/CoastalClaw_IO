@@ -7,7 +7,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "node --watch --loader ts-node/esm src/index.ts",
+    "dev": "node --watch --loader ts-node/esm src/main.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

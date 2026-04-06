@@ -1,0 +1,160 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  # ── Tests ────────────────────────────────────────────────────
+  test:
+    name: Test suite
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+
+  # ── Docker smoke test ────────────────────────────────────────
+  smoke:
+    name: Docker smoke test
+    runs-on: ubuntu-24.04
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/smoke-test-docker.sh
+
+  # ── Build .deb ───────────────────────────────────────────────
+  deb:
+    name: Build .deb
+    runs-on: ubuntu-24.04
+    needs: smoke
+    outputs:
+      deb_path: ${{ steps.build.outputs.deb_path }}
+      deb_name: ${{ steps.build.outputs.deb_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dpkg tools
+        run: sudo apt-get install -y dpkg-dev
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build .deb
+        id: build
+        run: |
+          bash packaging/build-deb.sh "${{ steps.version.outputs.version }}"
+          DEB=$(ls dist-deb/*.deb | head -1)
+          echo "deb_path=${DEB}"  >> "$GITHUB_OUTPUT"
+          echo "deb_name=$(basename $DEB)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build.outputs.deb_name }}
+          path: ${{ steps.build.outputs.deb_path }}
+
+  # ── GitHub Release ───────────────────────────────────────────
+  release:
+    name: GitHub Release
+    runs-on: ubuntu-24.04
+    needs: deb
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history for changelog
+
+      - name: Download .deb
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.deb.outputs.deb_name }}
+          path: dist-deb/
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]' | sed -n '2p')
+          if [[ -n "$PREV_TAG" ]]; then
+            LOG=$(git log "${PREV_TAG}..HEAD" --pretty='- %s' --no-merges)
+          else
+            LOG=$(git log --pretty='- %s' --no-merges | head -20)
+          fi
+          echo "log<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$LOG"     >> "$GITHUB_OUTPUT"
+          echo "EOF"      >> "$GITHUB_OUTPUT"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: CoastalClaw ${{ github.ref_name }}
+          body: |
+            ## What's changed
+            ${{ steps.changelog.outputs.log }}
+
+            ## Install
+
+            **One-line installer (Linux/macOS):**
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/${{ github.ref_name }}/install.sh | bash
+            ```
+
+            **APT (Ubuntu/Debian):**
+            ```bash
+            curl -fsSL https://CoastalCrypto.github.io/CoastalClaw_IO/setup.sh | sudo bash
+            ```
+
+            **Docker smoke test:**
+            ```bash
+            bash scripts/smoke-test-docker.sh
+            ```
+          files: dist-deb/*.deb
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+
+  # ── Publish APT repo ─────────────────────────────────────────
+  apt:
+    name: Publish APT repo
+    runs-on: ubuntu-24.04
+    needs: [release, deb]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download .deb
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.deb.outputs.deb_name }}
+          path: dist-deb/
+
+      - name: Install dpkg-scanpackages
+        run: sudo apt-get install -y dpkg-dev
+
+      - name: Import GPG signing key
+        if: ${{ secrets.GPG_PRIVATE_KEY != '' }}
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          echo "GPG_KEY_ID=${{ secrets.GPG_KEY_ID }}" >> "$GITHUB_ENV"
+
+      - name: Publish to APT branch
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          bash packaging/publish-apt.sh dist-deb/${{ needs.deb.outputs.deb_name }}

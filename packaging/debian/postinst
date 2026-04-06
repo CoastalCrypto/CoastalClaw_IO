@@ -1,0 +1,29 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+  configure)
+    # Create coastal user if needed
+    if ! id coastal &>/dev/null; then
+      useradd -r -m -s /bin/bash -d /opt/coastalclaw coastal
+    fi
+
+    # Data directories
+    mkdir -p /var/lib/coastalclaw/data /var/lib/coastalclaw/workspace
+    chown -R coastal:coastal /var/lib/coastalclaw /opt/coastalclaw
+
+    # Install Node dependencies and build
+    cd /opt/coastalclaw
+    sudo -u coastal pnpm install --frozen-lockfile
+    sudo -u coastal pnpm build
+
+    # Enable and start services
+    systemctl daemon-reload
+    systemctl enable coastalclaw-server.service coastalclaw-daemon.service
+    systemctl start coastalclaw-server.service coastalclaw-daemon.service || true
+
+    echo ""
+    echo "CoastalClaw installed. Web UI: http://localhost:4747"
+    echo "Admin token: $(cat /var/lib/coastalclaw/data/.admin-token 2>/dev/null || echo '(starts on first boot)')"
+    ;;
+esac

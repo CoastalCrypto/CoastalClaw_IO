@@ -1,10 +1,11 @@
 {
   "name": "coastal-claw",
-  "version": "0.1.0",
+  "version": "0.6.0",
+  "license": "MIT",
   "private": true,
   "packageManager": "pnpm@10.32.1",
   "scripts": {
-    "start": "concurrently --kill-others-on-fail --prefix-colors \"cyan,magenta\" --names \"core,web\" \"node packages/core/dist/index.js\" \"pnpm --filter web dev\"",
+    "start": "concurrently --kill-others-on-fail --prefix-colors \"cyan,magenta\" --names \"core,web\" \"node packages/core/dist/main.js\" \"pnpm --filter web dev\"",
     "start:fresh": "pnpm build && pnpm start",
     "stop": "kill $(cat /tmp/coastal-claw-core.pid 2>/dev/null) 2>/dev/null; true",
     "dev": "turbo dev",

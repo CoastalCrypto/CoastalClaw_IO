@@ -7,7 +7,7 @@ Wants=ollama.service
 Type=simple
 User=coastal
 WorkingDirectory=/opt/coastalclaw
-ExecStart=/usr/bin/node packages/core/dist/index.js
+ExecStart=/usr/bin/node packages/core/dist/main.js
 Restart=always
 RestartSec=5
 Environment=CC_PORT=4747

@@ -11,6 +11,7 @@ import { ToolRegistry } from '../../tools/registry.js'
 import { createBackend } from '../../tools/backends/index.js'
 import { BrowserSessionManager } from '../../tools/browser/session-manager.js'
 import { McpAdapter } from '../../tools/mcp/adapter.js'
+import { PersonaManager } from '../../persona/manager.js'
 import { loadConfig } from '../../config.js'
 import Database from 'better-sqlite3'
 import { randomUUID } from 'node:crypto'
@@ -25,7 +26,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
   mkdirSync(config.agentWorkdir, { recursive: true })
 
   const db = new Database(pathJoin(config.dataDir, 'coastal-claw.db'))
-  const router = new ModelRouter({ ollamaUrl: config.ollamaUrl, vllmUrl: config.vllmUrl, defaultModel: config.defaultModel })
+  const router = new ModelRouter({ ollamaUrl: config.ollamaUrl, vllmUrl: config.vllmUrl, airllmUrl: config.airllmUrl, defaultModel: config.defaultModel })
   const memory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey })
   const agentRegistry = new AgentRegistry(pathJoin(config.dataDir, 'agents.db'))
   const backend = await createBackend(config.agentTrustLevel, [config.agentWorkdir])
@@ -36,6 +37,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
   const gate = new PermissionGate(db)
   const log = new ActionLog(db)
   const skillGaps = new SkillGapsLog(config.dataDir)
+  const personaMgr = new PersonaManager(pathJoin(config.dataDir, 'persona.db'))
 
   // Pass only PATH to MCP subprocesses — never expose secrets via process.env
   const mcpEnv: Record<string, string> = { PATH: process.env.PATH ?? '' }
@@ -58,6 +60,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     await memory.close()
     router.close()
     agentRegistry.close()
+    personaMgr.close()
     db.close()
     skillGaps.close()
     await mcpThinking.close()
@@ -91,7 +94,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     const decision = await router.cascade.route(message)
     const agent = agentRegistry.getByDomain(decision.domain) ?? agentRegistry.get('general')!
     const toolDefs = toolRegistry.getDefinitionsFor(agent.tools)
-    const session = new AgentSession(agent, toolDefs)
+    const session = new AgentSession(agent, toolDefs, personaMgr.get())
 
     // Pending approval callback — sends WS event to client
     const pendingApprovals = new Map<string, string>()
@@ -114,7 +117,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     setTimeout(async () => {
       try {
         const predictiveAgent = agentRegistry.get('general')!
-        const predSession = new AgentSession(predictiveAgent, toolDefs)
+        const predSession = new AgentSession(predictiveAgent, toolDefs, personaMgr.get())
         const prompt = `Based on the latest user message "${message}" and your reply "${result.reply}", proactively predict the single most helpful next action or follow-up question the user might need. Respond ONLY with a short, actionable phrasing (max 6 words). Do not execute tools. Just provide the suggestion string.`
         const predLoop = new AgenticLoop(router.ollama, toolRegistry, gate, log, onApprovalNeeded)
         const pResult = await predLoop.run(predSession, prompt, sessionId, [])

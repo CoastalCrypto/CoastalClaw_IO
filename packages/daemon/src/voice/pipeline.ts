@@ -6,6 +6,7 @@ import { synthesize } from './tts.js'
 import { createRecorder, createPlayer } from './audio.js'
 import { VAD } from './vad.js'
 import { InterruptHandler } from './interrupt-handler.js'
+import { VibeVoiceClient } from './vibevoice-client.js'
 
 export enum PipelineState {
   Idle         = 'idle',
@@ -21,6 +22,7 @@ export interface PipelineOptions {
   voiceModel?: string
   voicesDir?: string   // passed to TTSOptions.voicesDir — directory containing .onnx Piper models
   mockMode?: boolean
+  vibeVoiceUrl?: string
 }
 
 export class VoicePipeline extends EventEmitter {
@@ -33,6 +35,8 @@ export class VoicePipeline extends EventEmitter {
   private player = createPlayer()
   private vad: VAD
   private running = false
+  private vibeVoice: VibeVoiceClient
+  private vibeVoiceAvailable = false
 
   constructor(opts: PipelineOptions) {
     super()
@@ -40,6 +44,13 @@ export class VoicePipeline extends EventEmitter {
     this.wakeWord = new WakeWordDetector({ mockMode: opts.mockMode })
     this.interruptHandler = new InterruptHandler()
     this.vad = new VAD()
+    this.vibeVoice = new VibeVoiceClient(opts.vibeVoiceUrl ?? 'http://127.0.0.1:8001')
+    if (!opts.mockMode) {
+      this.vibeVoice.isAvailable().then(ok => {
+        this.vibeVoiceAvailable = ok
+        if (ok) console.log('[voice-pipeline] VibeVoice backend connected')
+      }).catch(() => {})
+    }
   }
 
   get state(): PipelineState { return this._state }
@@ -103,7 +114,16 @@ export class VoicePipeline extends EventEmitter {
     await new Promise<void>(resolve => setTimeout(resolve, this.opts.mockMode ? 50 : 3_000))
 
     const pcm = Buffer.concat(this.audioBuffer)
-    const { text } = await transcribe(pcm, { mockMode: this.opts.mockMode })
+
+    let text: string
+    if (this.vibeVoiceAvailable) {
+      const transcript = await this.vibeVoice.transcribe(pcm)
+      text = transcript.text
+    } else {
+      const result = await transcribe(pcm, { mockMode: this.opts.mockMode })
+      text = result.text
+    }
+
     if (!text.trim()) {
       if (this.running) {
         this.setState(PipelineState.Listening)
@@ -116,12 +136,20 @@ export class VoicePipeline extends EventEmitter {
     const reply = await this.opts.onTranscript(text)
 
     this.setState(PipelineState.Speaking)
-    const audio = await synthesize(reply, {
-      voiceModel: this.opts.voiceModel,
-      voicesDir: this.opts.voicesDir,
-      mockMode: this.opts.mockMode,
-    })
-    await this.player.play(audio, 22_050)
+    if (this.vibeVoiceAvailable) {
+      const chunks: Buffer[] = []
+      for await (const chunk of this.vibeVoice.speak(reply)) {
+        chunks.push(chunk)
+      }
+      await this.player.play(Buffer.concat(chunks), 24_000)
+    } else {
+      const audio = await synthesize(reply, {
+        voiceModel: this.opts.voiceModel,
+        voicesDir: this.opts.voicesDir,
+        mockMode: this.opts.mockMode,
+      })
+      await this.player.play(audio, 22_050)
+    }
 
     if (this.running) {
       this.setState(PipelineState.Listening)

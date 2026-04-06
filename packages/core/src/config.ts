@@ -22,6 +22,9 @@ export interface Config {
   defaultModel: string
   agentTrustLevel: TrustLevel
   vllmUrl: string
+  airllmUrl: string
+  infinityUrl: string
+  vibeVoiceUrl: string
 }
 
 export function loadConfig(): Config {
@@ -62,6 +65,9 @@ export function loadConfig(): Config {
     approvalTimeoutMs: Number(process.env.CC_APPROVAL_TIMEOUT_MS ?? '300000'),
     defaultModel: process.env.CC_DEFAULT_MODEL ?? 'llama3.2',
     vllmUrl: process.env.CC_VLLM_URL ?? 'http://127.0.0.1:8000',
+    airllmUrl: process.env.CC_AIRLLM_URL ?? 'http://127.0.0.1:8002',
+    infinityUrl: process.env.CC_INFINITY_URL ?? 'http://127.0.0.1:23817',
+    vibeVoiceUrl: process.env.CC_VIBEVOICE_URL ?? 'http://127.0.0.1:8001',
     agentTrustLevel: (() => {
       // File-based override takes precedence over env var
       const dataDir = process.env.CC_DATA_DIR ?? './data'

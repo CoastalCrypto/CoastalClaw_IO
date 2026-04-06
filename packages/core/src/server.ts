@@ -6,6 +6,8 @@ import { wsRoutes } from './api/routes/ws.js'
 import { chatRoutes } from './api/routes/chat.js'
 import { adminRoutes, getOrCreateAdminToken, validateSessionToken } from './api/routes/admin.js'
 import { agentRoutes } from './api/routes/agents.js'
+import { teamRoutes } from './api/routes/team.js'
+import { personaRoutes } from './api/routes/persona.js'
 import { AgentRegistry } from './agents/registry.js'
 import { PermissionGate } from './agents/permission-gate.js'
 import { loadConfig } from './config.js'
@@ -52,6 +54,8 @@ export async function buildServer() {
   const gate = new PermissionGate(db)
 
   await fastify.register(agentRoutes, { registry: agentRegistry, gate })
+  await fastify.register(teamRoutes)
+  await fastify.register(personaRoutes)
 
   fastify.addHook('onClose', async () => {
     agentRegistry.close()

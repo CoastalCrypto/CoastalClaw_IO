@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import type { AgentConfig, ToolDefinition, ActionSummary } from './types.js'
+import { PersonaManager, DEFAULT_PERSONA, type Persona } from '../persona/manager.js'
 
 export interface OllamaToolSchema {
   type: 'function'
@@ -25,6 +26,7 @@ export class AgentSession {
   constructor(
     readonly agent: AgentConfig,
     readonly allowedTools: ToolDefinition[],
+    private persona: Persona = DEFAULT_PERSONA,
   ) {}
 
   get systemPrompt(): string {
@@ -42,11 +44,12 @@ export class AgentSession {
       }
     }
 
+    const interpolated = PersonaManager.interpolate(this._soulContent, this.persona)
     const toolLines = this.allowedTools
       .map(t => `- ${t.name}(${Object.keys(t.parameters.properties).join(', ')}): ${t.description}`)
       .join('\n')
     const now = new Date().toISOString()
-    this._systemPrompt = `${this._soulContent}\n\nAvailable tools:\n${toolLines}\n\nCurrent date/time: ${now}`
+    this._systemPrompt = `${interpolated}\n\nAvailable tools:\n${toolLines}\n\nCurrent date/time: ${now}`
     return this._systemPrompt
   }
 

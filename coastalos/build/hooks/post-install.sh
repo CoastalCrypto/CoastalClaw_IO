@@ -15,13 +15,26 @@ pip3 install piper-tts --break-system-packages
 # Install openwakeword
 pip3 install openwakeword --break-system-packages
 
-# Install vLLM only if GPU present (CUDA or ROCm)
+# Always-on: Infinity vector DB
+curl -L https://github.com/infiniflow/infinity/releases/latest/download/infinity-linux-x86_64 \
+  -o /usr/local/bin/infinity && chmod +x /usr/local/bin/infinity
+mkdir -p /var/lib/coastalclaw/infinity
+chown coastal:coastal /var/lib/coastalclaw/infinity
+systemctl enable coastal-infinity.service
+
+# Install vLLM, VibeVoice, and AirLLM only if GPU present (CUDA or ROCm)
 if nvidia-smi &>/dev/null 2>&1 || rocm-smi &>/dev/null 2>&1; then
-  echo "[post-install] GPU detected — installing vLLM..."
+  echo "[post-install] GPU detected — installing vLLM, VibeVoice, AirLLM..."
   pip3 install vllm --break-system-packages || echo "[post-install] vLLM install failed — Ollama fallback active"
   systemctl enable coastal-vllm.service || true
+  pip3 install -r /opt/coastalclaw/coastalos/vibevoice/requirements.txt --break-system-packages \
+    || echo "[post-install] VibeVoice install failed — whisper-cpp/piper fallback active"
+  systemctl enable coastal-vibevoice.service || true
+  pip3 install airllm --break-system-packages \
+    || echo "[post-install] AirLLM install failed — Ollama fallback active"
+  systemctl enable coastal-airllm.service || true
 else
-  echo "[post-install] No GPU detected — vLLM skipped, using Ollama"
+  echo "[post-install] No GPU detected — vLLM/VibeVoice/AirLLM skipped, using Ollama"
 fi
 
 # Create coastal user

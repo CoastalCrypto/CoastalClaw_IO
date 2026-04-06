@@ -1,0 +1,16 @@
+[Unit]
+Description=CoastalClaw AirLLM Inference Server (layer-streaming)
+After=network.target
+ConditionPathExists=/usr/local/bin/airllm-server
+
+[Service]
+Type=simple
+User=coastal
+WorkingDirectory=/opt/coastalclaw
+Environment=CC_AIRLLM_MODEL=meta-llama/Meta-Llama-3-70B-Instruct
+ExecStart=/usr/local/bin/airllm-server --model ${CC_AIRLLM_MODEL} --port 8002
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

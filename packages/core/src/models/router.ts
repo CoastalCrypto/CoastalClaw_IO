@@ -1,6 +1,7 @@
 // packages/core/src/models/router.ts
 import { OllamaClient, type LocalChatMessage } from './ollama.js'
 import { VllmClient } from './vllm.js'
+import { AirLLMClient } from './airllm.js'
 import { CascadeRouter } from '../routing/cascade.js'
 import type { RouteDecision } from '../routing/types.js'
 import type { ChatMessage, OllamaToolSchema } from '../agents/session.js'
@@ -10,6 +11,7 @@ import { loadConfig } from '../config.js'
 export interface RouterConfig {
   ollamaUrl: string
   vllmUrl?: string
+  airllmUrl?: string
   defaultModel: string
 }
 
@@ -20,12 +22,15 @@ export interface ChatOptions {
 export class ModelRouter {
   ollama: OllamaClient
   vllm: VllmClient
+  airllm: AirLLMClient
   cascade: CascadeRouter
   private vllmAvailable: boolean | null = null
+  private airllmAvailable = false
 
   constructor(private config: RouterConfig) {
     this.ollama = new OllamaClient({ baseUrl: config.ollamaUrl })
     this.vllm = new VllmClient(config.vllmUrl ?? 'http://localhost:8000')
+    this.airllm = new AirLLMClient(config.airllmUrl ?? 'http://localhost:8002')
     const appConfig = loadConfig()
     this.cascade = new CascadeRouter({
       ollamaUrl: config.ollamaUrl,
@@ -37,13 +42,19 @@ export class ModelRouter {
     })
   }
 
-  /** Lazy probe: checks vLLM once, caches result. */
-  private async inferenceClient(): Promise<OllamaClient | VllmClient> {
+  /** Lazy probe: checks vLLM → AirLLM → Ollama once, caches result. */
+  private async inferenceClient(): Promise<OllamaClient | VllmClient | AirLLMClient> {
     if (this.vllmAvailable === null) {
       this.vllmAvailable = await this.vllm.isAvailable()
-      console.log(`[model-router] inference backend: ${this.vllmAvailable ? 'vLLM (GPU)' : 'Ollama (CPU)'}`)
+      if (!this.vllmAvailable) {
+        this.airllmAvailable = await this.airllm.isAvailable()
+      }
+      const backend = this.vllmAvailable ? 'vLLM (GPU)' : this.airllmAvailable ? 'AirLLM (layer-stream)' : 'Ollama (CPU)'
+      console.log(`[model-router] inference backend: ${backend}`)
     }
-    return this.vllmAvailable ? this.vllm : this.ollama
+    if (this.vllmAvailable) return this.vllm
+    if (this.airllmAvailable) return this.airllm
+    return this.ollama
   }
 
   async chat(

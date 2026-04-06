@@ -149,10 +149,13 @@ jobs:
         run: sudo apt-get install -y dpkg-dev
 
       - name: Import GPG signing key
-        if: "${{ secrets.GPG_PRIVATE_KEY != '' }}"
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-          echo "GPG_KEY_ID=${{ secrets.GPG_KEY_ID }}" >> "$GITHUB_ENV"
+          if [[ -n "$GPG_PRIVATE_KEY" ]]; then
+            echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+            echo "GPG_KEY_ID=${{ secrets.GPG_KEY_ID }}" >> "$GITHUB_ENV"
+          fi
 
       - name: Publish to APT branch
         run: |

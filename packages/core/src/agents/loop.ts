@@ -21,6 +21,7 @@ export class AgenticLoop {
     private log: ActionLog,
     private onApprovalNeeded?: (approvalId: string, agentName: string, toolName: string, cmd: string) => void,
     skillGaps?: SkillGapsLog,
+    private onToken?: (token: string) => void,
   ) {
     this.skillGaps = skillGaps
   }
@@ -59,8 +60,17 @@ export class AgenticLoop {
         )
 
         if (!toolCalls.length) {
+          // If streaming, the content here is empty — stream the final reply token-by-token
+          let finalContent = content
+          if (this.onToken && !content) {
+            const model = session.agent.modelPref ?? process.env.CC_DEFAULT_MODEL ?? 'llama3.2'
+            for await (const token of this.ollama.chatStream(model, messages)) {
+              this.onToken(token)
+              finalContent += token
+            }
+          }
           const completeResult: LoopResult = {
-            reply: content + session.actionSummary(),
+            reply: finalContent + session.actionSummary(),
             actions: session.actions,
             domain: session.agent.id,
             status: 'complete',

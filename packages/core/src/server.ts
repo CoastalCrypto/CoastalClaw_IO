@@ -11,6 +11,7 @@ import { personaRoutes } from './api/routes/persona.js'
 import { systemRoutes } from './api/routes/system.js'
 import { sessionRoutes } from './api/routes/sessions.js'
 import { uploadRoutes } from './api/routes/upload.js'
+import { streamRoutes } from './api/routes/stream.js'
 import { AgentRegistry } from './agents/registry.js'
 import { PermissionGate } from './agents/permission-gate.js'
 import { loadConfig } from './config.js'
@@ -62,6 +63,7 @@ export async function buildServer() {
   await fastify.register(systemRoutes)
   await fastify.register(sessionRoutes)
   await fastify.register(uploadRoutes)
+  await fastify.register(streamRoutes)
 
   fastify.addHook('onClose', async () => {
     agentRegistry.close()

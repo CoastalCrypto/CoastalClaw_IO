@@ -26,6 +26,12 @@ for i in $(seq 1 15); do
   sleep 1
 done
 
+# ── Launch Waybar ────────────────────────────────────────────
+mkdir -p "$HOME/.config/waybar"
+cp /opt/coastalclaw/coastalos/waybar/config.jsonc "$HOME/.config/waybar/config"
+cp /opt/coastalclaw/coastalos/waybar/style.css    "$HOME/.config/waybar/style.css"
+waybar &
+
 # ── Launch Chromium kiosk ─────────────────────────────────────
 chromium-browser \
   --kiosk \

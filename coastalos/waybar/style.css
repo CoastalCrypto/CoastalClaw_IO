@@ -1,0 +1,116 @@
+* {
+  border: none;
+  border-radius: 0;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 13px;
+  min-height: 0;
+}
+
+window#waybar {
+  background-color: rgba(10, 14, 20, 0.95);
+  border-bottom: 1px solid rgba(0, 200, 180, 0.25);
+  color: #c0ccd8;
+}
+
+#custom-logo {
+  color: #00c8b4;
+  font-weight: bold;
+  padding: 0 12px;
+  letter-spacing: 0.04em;
+}
+
+#custom-agent-status {
+  padding: 0 10px;
+  color: #7a8a96;
+}
+
+#custom-agent-status.online {
+  color: #00c8b4;
+}
+
+#custom-agent-status.offline {
+  color: #e05a5a;
+}
+
+#clock {
+  color: #c0ccd8;
+  padding: 0 12px;
+  font-weight: 500;
+}
+
+#cpu,
+#memory,
+#network,
+#pulseaudio,
+#custom-gpu,
+#custom-model,
+#custom-power {
+  padding: 0 10px;
+  color: #7a8a96;
+}
+
+#cpu {
+  color: #5bc8af;
+}
+
+#cpu.warning {
+  color: #e0a050;
+}
+
+#cpu.critical {
+  color: #e05a5a;
+}
+
+#memory {
+  color: #5b9ac8;
+}
+
+#memory.warning {
+  color: #e0a050;
+}
+
+#memory.critical {
+  color: #e05a5a;
+}
+
+#custom-gpu {
+  color: #9a78d4;
+}
+
+#network {
+  color: #5bc8af;
+}
+
+#network.disconnected {
+  color: #e05a5a;
+}
+
+#pulseaudio {
+  color: #c8a05b;
+}
+
+#pulseaudio.muted {
+  color: #4a5a64;
+}
+
+#custom-model {
+  color: #00c8b4;
+  font-weight: 600;
+}
+
+#custom-power {
+  color: #7a8a96;
+  padding: 0 14px 0 10px;
+  font-size: 16px;
+}
+
+#custom-power:hover {
+  color: #e05a5a;
+}
+
+tooltip {
+  background: rgba(10, 14, 20, 0.97);
+  border: 1px solid rgba(0, 200, 180, 0.3);
+  border-radius: 4px;
+  color: #c0ccd8;
+}

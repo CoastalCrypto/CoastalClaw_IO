@@ -129,6 +129,10 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
   const [fileNotice, setFileNotice] = useState('')
+  const [voiceMuted, setVoiceMuted] = useState(false)
+  const [architectToast, setArchitectToast] = useState<{
+    proposalId: string; summary: string; vetoDeadline: number
+  } | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef2 = useRef<HTMLInputElement>(null)
 
@@ -159,8 +163,11 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   inputRealtime.current = input
   const sendRef = useRef<() => void>(() => {})
 
+  const voiceMutedRef = useRef(voiceMuted)
+  voiceMutedRef.current = voiceMuted
+
   const speakText = useCallback((text: string) => {
-    if (!('speechSynthesis' in window)) return
+    if (voiceMutedRef.current || !('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(text.replace(/[*#`]/g, ''))
     const voices = window.speechSynthesis.getVoices()
@@ -186,6 +193,13 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
+  // Request browser notification permission once
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {})
+    }
+  }, [])
+
   // WebSocket with auto-reconnect
   const handleWsMessage = useCallback((data: any) => {
     if (data.type === 'proactive_suggestion' && (!data.sessionId || data.sessionId === currentSessionId)) {
@@ -193,14 +207,19 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
     }
     if (data.type === 'approval_request') {
       setMessages(prev => [...prev, {
-        role: 'approval',
-        content: '',
-        approvalId: data.approvalId,
-        agentName: data.agentName,
-        toolName: data.toolName,
-        cmd: data.cmd,
-        resolved: false,
+        role: 'approval', content: '',
+        approvalId: data.approvalId, agentName: data.agentName,
+        toolName: data.toolName, cmd: data.cmd, resolved: false,
       }])
+    }
+    if (data.type === 'architect_proposal') {
+      setArchitectToast({ proposalId: data.proposalId, summary: data.summary, vetoDeadline: data.vetoDeadline })
+    }
+    if (data.type === 'architect_applied') {
+      if (Notification.permission === 'granted') {
+        new Notification('Architect applied a patch', { body: data.summary, icon: '/favicon.ico' })
+      }
+      setArchitectToast(null)
     }
   }, [currentSessionId])
 
@@ -229,22 +248,88 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
     try {
       if (teamMode) {
         const res = await coreClient.runTeam(text, currentSessionId)
-        setMessages(m => [...m, {
-          role: 'team',
-          content: res.reply,
-          subtasks: res.subtasks,
-          subtaskCount: res.subtaskCount,
-        }])
+        setMessages(m => [...m, { role: 'team', content: res.reply, subtasks: res.subtasks, subtaskCount: res.subtaskCount }])
         speakText(res.reply)
-      } else {
-        const res = await coreClient.sendMessage({ message: text, sessionId: currentSessionId })
-        const domain = (res.domain as AgentDomain | undefined) ?? 'general'
-        setActiveDomain(domain)
-        setMessages(m => [...m, { role: 'assistant', content: res.reply, domain }])
-        speakText(res.reply)
+        // Browser notification for completed swarm run
+        if (Notification.permission === 'granted') {
+          new Notification('Team run complete', { body: res.reply.slice(0, 100), icon: '/favicon.ico' })
+        }
+        return
       }
+
+      // Streaming SSE path
+      const res = await fetch('/api/chat/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, sessionId: currentSessionId }),
+      })
+
+      if (!res.ok || !res.body) throw new Error(`Server error ${res.status}`)
+
+      // Add empty assistant bubble that we'll fill token by token
+      setMessages(m => [...m, { role: 'assistant', content: '' }])
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let fullReply = ''
+      let eventType = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+
+        for (const line of lines) {
+          if (line.startsWith('event: ')) { eventType = line.slice(7).trim(); continue }
+          if (!line.startsWith('data: ')) { eventType = ''; continue }
+          try {
+            const data = JSON.parse(line.slice(6))
+            if (eventType === 'token') {
+              fullReply += data.token
+              setMessages(m => {
+                const copy = [...m]
+                copy[copy.length - 1] = { ...copy[copy.length - 1], content: fullReply }
+                return copy
+              })
+            } else if (eventType === 'domain') {
+              setActiveDomain((data.domain as AgentDomain | undefined) ?? 'general')
+              setMessages(m => {
+                const copy = [...m]
+                copy[copy.length - 1] = { ...copy[copy.length - 1], domain: data.domain }
+                return copy
+              })
+            } else if (eventType === 'reply') {
+              // Non-streamed fallback (tool-use path returned full reply)
+              fullReply = data.reply
+              setMessages(m => {
+                const copy = [...m]
+                copy[copy.length - 1] = { ...copy[copy.length - 1], content: fullReply, domain: data.domain }
+                return copy
+              })
+              setActiveDomain((data.domain as AgentDomain | undefined) ?? 'general')
+            } else if (eventType === 'approval') {
+              setMessages(m => [...m, { role: 'approval', content: '', approvalId: data.approvalId, agentName: data.agentName, toolName: data.toolName, cmd: data.cmd, resolved: false }])
+            }
+          } catch { /* skip malformed SSE lines */ }
+          eventType = ''
+        }
+      }
+
+      speakText(fullReply)
     } catch {
-      setMessages(m => [...m, { role: 'assistant', content: 'Connection error. Please try again.' }])
+      setMessages(m => {
+        const copy = [...m]
+        const last = copy[copy.length - 1]
+        if (last?.role === 'assistant' && !last.content) {
+          copy[copy.length - 1] = { role: 'assistant', content: 'Connection error. Please try again.' }
+        } else {
+          copy.push({ role: 'assistant', content: 'Connection error. Please try again.' })
+        }
+        return copy
+      })
     } finally {
       setLoading(false)
     }
@@ -342,7 +427,10 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
           <div className="text-xs text-cyan-800/80 font-mono">SESSION {currentSessionId.slice(-8).toUpperCase()}</div>
         </div>
         <div className="ml-auto flex gap-4 items-center">
-          <button onClick={() => exportMarkdown(messages, currentSessionId)} className="text-gray-500 hover:text-gray-300 text-xs font-mono transition-colors" title="Export">↓ export</button>
+          <button onClick={() => exportMarkdown(messages, currentSessionId)} className="text-gray-500 hover:text-gray-300 text-xs font-mono transition-colors" title="Export conversation">↓ export</button>
+          <button onClick={() => { setVoiceMuted(m => !m); window.speechSynthesis?.cancel() }} className={`text-xs font-mono transition-colors ${voiceMuted ? 'text-red-500 hover:text-red-400' : 'text-gray-500 hover:text-gray-300'}`} title={voiceMuted ? 'Voice muted' : 'Mute voice'}>
+            {voiceMuted ? '🔇' : '🔊'}
+          </button>
           <button onClick={() => setShortcutsOpen(true)} className="text-gray-600 hover:text-gray-400 text-xs font-mono transition-colors" title="Keyboard shortcuts">?</button>
           <button className={activeNav}>/chat</button>
           <button onClick={() => onNav('models')}   className={navBtn}>/models</button>
@@ -376,6 +464,31 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
             </div>
           </div>
           <div className="flex-1" onClick={() => setSidebarOpen(false)} />
+        </div>
+      )}
+
+      {/* Architect proposal toast */}
+      {architectToast && (
+        <div className="fixed bottom-36 left-1/2 -translate-x-1/2 z-30 w-[480px] bg-purple-950/95 border border-purple-700 rounded-xl p-4 shadow-2xl">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-purple-400 font-mono tracking-widest mb-1">⚙ ARCHITECT PROPOSAL</div>
+              <p className="text-sm text-white leading-snug">{architectToast.summary}</p>
+              <p className="text-xs text-purple-600 mt-1 font-mono">
+                veto window: {Math.max(0, Math.round((architectToast.vetoDeadline - Date.now()) / 1000))}s remaining
+              </p>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <button
+                onClick={() => {
+                  fetch('/api/admin/architect/veto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ proposalId: architectToast.proposalId }) })
+                  setArchitectToast(null)
+                }}
+                className="px-3 py-1.5 text-xs font-mono bg-red-900/60 border border-red-700 text-red-300 hover:bg-red-800 rounded transition-colors"
+              >VETO</button>
+              <button onClick={() => setArchitectToast(null)} className="px-3 py-1.5 text-xs font-mono text-gray-500 hover:text-gray-300 transition-colors">dismiss</button>
+            </div>
+          </div>
         </div>
       )}
 

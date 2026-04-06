@@ -41,3 +41,6 @@ brightnessctl
 # Network management (first-boot WiFi/IP config)
 network-manager
 network-manager-gnome
+
+# Status bar
+waybar

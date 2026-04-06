@@ -1,0 +1,74 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 32,
+  "spacing": 6,
+  "modules-left": ["custom/logo", "custom/agent-status"],
+  "modules-center": ["clock"],
+  "modules-right": ["custom/model", "cpu", "memory", "custom/gpu", "network", "pulseaudio", "custom/power"],
+
+  "custom/logo": {
+    "format": " CoastalClaw",
+    "tooltip": false
+  },
+
+  "custom/agent-status": {
+    "exec": "curl -sf http://localhost:4747/health | python3 -c \"import sys,json; d=json.load(sys.stdin); print('⬤ online' if d.get('status')=='ok' else '⬤ offline')\" 2>/dev/null || echo '⬤ offline'",
+    "interval": 10,
+    "format": "{}",
+    "tooltip": false
+  },
+
+  "custom/model": {
+    "exec": "ollama ps 2>/dev/null | awk 'NR==2{print \"⚡ \"$1}' || echo ''",
+    "interval": 15,
+    "format": "{}",
+    "tooltip": false
+  },
+
+  "custom/gpu": {
+    "exec": "nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null | awk -F',' '{printf \"GPU %d%% %dMB/%dMB\", $1, $2, $3}' || echo ''",
+    "interval": 5,
+    "format": "{}",
+    "tooltip": false
+  },
+
+  "custom/power": {
+    "format": "⏻",
+    "on-click": "alacritty -e sh -c 'printf \"1) shutdown\\n2) reboot\\n3) cancel\\n> \"; read n; case $n in 1) systemctl poweroff;; 2) systemctl reboot;; esac'",
+    "tooltip": false
+  },
+
+  "clock": {
+    "format": "{:%a %b %d  %H:%M}",
+    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
+  },
+
+  "cpu": {
+    "format": "CPU {usage}%",
+    "interval": 5,
+    "tooltip": false
+  },
+
+  "memory": {
+    "format": "RAM {percentage}%",
+    "interval": 10,
+    "tooltip": false
+  },
+
+  "network": {
+    "format-wifi": "  {essid} {signalStrength}%",
+    "format-ethernet": "  {ifname}",
+    "format-disconnected": "⚠ No network",
+    "interval": 30,
+    "tooltip": false
+  },
+
+  "pulseaudio": {
+    "format": "{icon} {volume}%",
+    "format-muted": "🔇",
+    "format-icons": { "default": ["🔈", "🔉", "🔊"] },
+    "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "tooltip": false
+  }
+}

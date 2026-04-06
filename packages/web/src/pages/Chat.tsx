@@ -1,19 +1,45 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, type DragEvent } from 'react'
 import { ChatBubble } from '../components/ChatBubble'
+import { ApprovalCard } from '../components/ApprovalCard'
 import { AgentThinkingAnimation, guessDomain, type AgentDomain } from '../components/AgentThinkingAnimation'
 import { RiveAgent } from '../components/animations/RiveAgent'
 import { coreClient, type Session } from '../api/client'
 
+type MessageRole = 'user' | 'assistant' | 'approval' | 'team'
 interface Message {
-  role: 'user' | 'assistant'
+  role: MessageRole
   content: string
   domain?: AgentDomain
+  // approval fields
+  approvalId?: string
+  agentName?: string
+  toolName?: string
+  cmd?: string
+  resolved?: boolean
+  // team fields
+  subtasks?: Array<{ subtaskId: string; reply: string }>
+  subtaskCount?: number
 }
+
+const SHORTCUTS = [
+  { key: 'Enter', desc: 'Send message' },
+  { key: 'Shift+Enter', desc: 'New line' },
+  { key: '/', desc: 'Focus input' },
+  { key: '?', desc: 'Show shortcuts' },
+  { key: 'Esc', desc: 'Close sidebar / overlay' },
+  { key: 'Ctrl+Alt+T', desc: 'Open terminal (OS)' },
+  { key: 'Ctrl+Alt+R', desc: 'Restart server (OS)' },
+  { key: 'Ctrl+Alt+Del', desc: 'Power menu (OS)' },
+  { key: 'Super+L', desc: 'Lock screen (OS)' },
+  { key: 'Print Screen', desc: 'Screenshot (OS)' },
+]
 
 function exportMarkdown(messages: Message[], sessionId: string) {
   const lines = [`# Conversation ${sessionId}`, `_Exported ${new Date().toLocaleString()}_`, '']
   for (const m of messages) {
-    lines.push(`**${m.role === 'user' ? 'You' : 'Agent'}:** ${m.content}`, '')
+    if (m.role === 'user' || m.role === 'assistant') {
+      lines.push(`**${m.role === 'user' ? 'You' : 'Agent'}:** ${m.content}`, '')
+    }
   }
   const blob = new Blob([lines.join('\n')], { type: 'text/markdown' })
   const a = document.createElement('a')
@@ -21,6 +47,68 @@ function exportMarkdown(messages: Message[], sessionId: string) {
   a.download = `conversation-${sessionId.slice(-8)}.md`
   a.click()
   URL.revokeObjectURL(a.href)
+}
+
+function TeamResult({ msg }: { msg: Message }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="flex justify-start mb-3">
+      <div className="max-w-[80%] bg-gray-800 border border-cyan-900/60 rounded-2xl px-4 py-3 text-sm">
+        <div className="flex items-center gap-2 mb-2 text-xs text-cyan-500 font-mono">
+          <span className="animate-none">⚡ TEAM</span>
+          <span className="text-gray-600">·</span>
+          <span>{msg.subtaskCount} subtasks</span>
+          {(msg.subtaskCount ?? 0) > 0 && (
+            <button onClick={() => setOpen(o => !o)} className="ml-auto text-gray-600 hover:text-gray-400">
+              {open ? '▲ hide' : '▼ show subtasks'}
+            </button>
+          )}
+        </div>
+        <ChatBubble role="assistant" content={msg.content} />
+        {open && msg.subtasks && (
+          <div className="mt-3 space-y-2 border-t border-gray-700 pt-3">
+            {msg.subtasks.map((s) => (
+              <div key={s.subtaskId} className="text-xs bg-gray-900 rounded p-2">
+                <div className="text-gray-500 font-mono mb-1">{s.subtaskId}</div>
+                <div className="text-gray-300">{s.reply}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// WebSocket with auto-reconnect
+function useReconnectingWs(url: string, onMessage: (data: any) => void) {
+  const wsRef = useRef<WebSocket | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const delayRef = useRef(1000)
+
+  const connect = useCallback(() => {
+    const ws = new WebSocket(url)
+    wsRef.current = ws
+    ws.onopen = () => { delayRef.current = 1000 }
+    ws.onmessage = (e) => {
+      try { onMessage(JSON.parse(e.data)) } catch {}
+    }
+    ws.onclose = () => {
+      timerRef.current = setTimeout(() => {
+        delayRef.current = Math.min(delayRef.current * 2, 30_000)
+        connect()
+      }, delayRef.current)
+    }
+    ws.onerror = () => ws.close()
+  }, [url, onMessage])
+
+  useEffect(() => {
+    connect()
+    return () => {
+      clearTimeout(timerRef.current)
+      wsRef.current?.close()
+    }
+  }, [connect])
 }
 
 export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string; onNav: (page: string) => void }) {
@@ -34,156 +122,233 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   const [thinkingDomain, setThinkingDomain] = useState<AgentDomain>('general')
   const [activeDomain, setActiveDomain] = useState<AgentDomain>('general')
   const [isListening, setIsListening] = useState(false)
+  const [teamMode, setTeamMode] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [sessions, setSessions] = useState<Session[]>([])
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
+  const [dragging, setDragging] = useState(false)
+  const [fileNotice, setFileNotice] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
+  const inputRef2 = useRef<HTMLInputElement>(null)
 
-  // Load session history for sidebar
+  // Load session history
   const loadSessions = useCallback(() => {
     coreClient.listSessions(30).then(({ sessions: s }) => setSessions(s)).catch(() => {})
   }, [])
-
   useEffect(() => { if (sidebarOpen) loadSessions() }, [sidebarOpen, loadSessions])
 
   // Speech recognition
   const recognitionRef = useRef<any>(null)
   useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition()
-      recognition.continuous = false
-      recognition.interimResults = true
-      recognition.onresult = (e: any) => {
-        const transcript = Array.from(e.results).map((res: any) => res[0].transcript).join('')
-        setInput(transcript)
-      }
-      recognition.onend = () => {
-        setIsListening(false)
-        if (inputRef.current.trim().length > 0) sendRef.current()
-      }
-      recognitionRef.current = recognition
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SR) return
+    const r = new SR()
+    r.continuous = false
+    r.interimResults = true
+    r.onresult = (e: any) =>
+      setInput(Array.from(e.results).map((res: any) => res[0].transcript).join(''))
+    r.onend = () => {
+      setIsListening(false)
+      if (inputRealtime.current.trim()) sendRef.current()
     }
+    recognitionRef.current = r
   }, [])
 
-  const inputRef = useRef(input)
-  inputRef.current = input
+  const inputRealtime = useRef(input)
+  inputRealtime.current = input
   const sendRef = useRef<() => void>(() => {})
 
   const speakText = useCallback((text: string) => {
     if (!('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(text.replace(/[*#]/g, ''))
+    const u = new SpeechSynthesisUtterance(text.replace(/[*#`]/g, ''))
     const voices = window.speechSynthesis.getVoices()
-    utterance.voice = voices.find(v => v.name.includes('Google UK English Male')) || voices.find(v => v.lang.startsWith('en')) || null
-    utterance.rate = 1.05
-    utterance.pitch = 0.9
-    window.speechSynthesis.speak(utterance)
+    u.voice = voices.find(v => v.name.includes('Google UK English Male')) || voices.find(v => v.lang.startsWith('en')) || null
+    u.rate = 1.05; u.pitch = 0.9
+    window.speechSynthesis.speak(u)
   }, [])
 
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+
+  // Global keyboard shortcuts
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === '?' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+        setShortcutsOpen(o => !o)
+      }
+      if (e.key === 'Escape') { setSidebarOpen(false); setShortcutsOpen(false) }
+      if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+        e.preventDefault(); inputRef2.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
+  // WebSocket with auto-reconnect
+  const handleWsMessage = useCallback((data: any) => {
+    if (data.type === 'proactive_suggestion' && (!data.sessionId || data.sessionId === currentSessionId)) {
+      setSuggestions(prev => [...prev.slice(-2), data.suggestion])
+    }
+    if (data.type === 'approval_request') {
+      setMessages(prev => [...prev, {
+        role: 'approval',
+        content: '',
+        approvalId: data.approvalId,
+        agentName: data.agentName,
+        toolName: data.toolName,
+        cmd: data.cmd,
+        resolved: false,
+      }])
+    }
+  }, [currentSessionId])
+
+  const wsUrl = (() => {
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const host = window.location.hostname || 'localhost'
+    const port = window.location.port || '3000'
+    return `${proto}//${host}:${port}/ws/session`
+  })()
+  useReconnectingWs(wsUrl, handleWsMessage)
+
+  const resolveApproval = (approvalId: string) => {
+    setMessages(prev => prev.map(m =>
+      m.approvalId === approvalId ? { ...m, resolved: true } : m
+    ))
+  }
 
   const send = async () => {
     const text = input.trim()
     if (!text || loading) return
     setInput('')
-    setMessages((m) => [...m, { role: 'user', content: text }])
+    setMessages(m => [...m, { role: 'user', content: text }])
     setThinkingDomain(guessDomain(text))
     setLoading(true)
+
     try {
-      const res = await coreClient.sendMessage({ message: text, sessionId: currentSessionId })
-      const domain = (res.domain as AgentDomain | undefined) ?? 'general'
-      setActiveDomain(domain)
-      setMessages((m) => [...m, { role: 'assistant', content: res.reply, domain }])
-      speakText(res.reply)
+      if (teamMode) {
+        const res = await coreClient.runTeam(text, currentSessionId)
+        setMessages(m => [...m, {
+          role: 'team',
+          content: res.reply,
+          subtasks: res.subtasks,
+          subtaskCount: res.subtaskCount,
+        }])
+        speakText(res.reply)
+      } else {
+        const res = await coreClient.sendMessage({ message: text, sessionId: currentSessionId })
+        const domain = (res.domain as AgentDomain | undefined) ?? 'general'
+        setActiveDomain(domain)
+        setMessages(m => [...m, { role: 'assistant', content: res.reply, domain }])
+        speakText(res.reply)
+      }
     } catch {
-      setMessages((m) => [...m, { role: 'assistant', content: 'Connection error. Please try again.' }])
-      speakText('Connection error. I am unable to process that request.')
+      setMessages(m => [...m, { role: 'assistant', content: 'Connection error. Please try again.' }])
     } finally {
       setLoading(false)
     }
   }
   sendRef.current = send
 
-  // WebSocket
-  useEffect(() => {
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsHost = window.location.hostname || 'localhost'
-    const wsPort = window.location.port || '3000'
-    const ws = new WebSocket(`${wsProtocol}//${wsHost}:${wsPort}/ws/session`)
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        if (data.type === 'proactive_suggestion' && (!data.sessionId || data.sessionId === currentSessionId)) {
-          setSuggestions(prev => [...prev.slice(-2), data.suggestion])
-        }
-      } catch {}
-    }
-    return () => ws.close()
-  }, [currentSessionId])
-
   const toggleMic = () => {
     if (!recognitionRef.current) return alert('Speech recognition not supported in this browser.')
-    if (isListening) {
-      recognitionRef.current.stop()
-      setIsListening(false)
-    } else {
-      setInput('')
-      recognitionRef.current.start()
-      setIsListening(true)
-    }
+    if (isListening) { recognitionRef.current.stop(); setIsListening(false) }
+    else { setInput(''); recognitionRef.current.start(); setIsListening(true) }
   }
 
   const copyMessage = (content: string, idx: number) => {
     navigator.clipboard.writeText(content).then(() => {
-      setCopiedIdx(idx)
-      setTimeout(() => setCopiedIdx(null), 1500)
+      setCopiedIdx(idx); setTimeout(() => setCopiedIdx(null), 1500)
     })
   }
 
   const resumeSession = (session: Session) => {
     setCurrentSessionId(session.id)
     setMessages([{ role: 'assistant', content: `Resumed: "${session.title}"` }])
-    setSuggestions([])
-    setSidebarOpen(false)
+    setSuggestions([]); setSidebarOpen(false)
   }
 
   const newSession = () => {
-    const id = `session-${Date.now()}`
-    setCurrentSessionId(id)
+    setCurrentSessionId(`session-${Date.now()}`)
     setMessages([{ role: 'assistant', content: 'Hello. I\'m your AI executive. How can I help you today?' }])
-    setSuggestions([])
-    setSidebarOpen(false)
+    setSuggestions([]); setSidebarOpen(false)
   }
 
+  // File drag & drop
+  const handleDrop = async (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault(); setDragging(false)
+    const file = e.dataTransfer.files[0]
+    if (!file) return
+    setFileNotice(`Reading ${file.name}...`)
+    try {
+      const { text, filename } = await coreClient.uploadFile(file)
+      setInput(prev => `${prev ? prev + '\n\n' : ''}[File: ${filename}]\n${text}`.slice(0, 8000))
+      setFileNotice('')
+      inputRef2.current?.focus()
+    } catch (err: any) {
+      setFileNotice(`Error: ${err.message}`)
+      setTimeout(() => setFileNotice(''), 4000)
+    }
+  }
+
+  const navBtn = 'text-gray-400 hover:text-white transition-all font-mono text-sm'
+  const activeNav = 'text-cyan-400 font-bold tracking-widest bg-cyan-950/30 px-3 py-1 rounded border border-cyan-800/50 font-mono text-sm'
+
   return (
-    <div className="flex flex-col h-screen text-white bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-fixed">
+    <div
+      className="flex flex-col h-screen text-white bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-fixed"
+      onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={handleDrop}
+    >
       <div className="absolute inset-0 bg-[#0d1117]/85 backdrop-blur-md -z-10" />
 
+      {/* Drag overlay */}
+      {dragging && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-cyan-900/30 border-2 border-dashed border-cyan-500 pointer-events-none">
+          <div className="text-cyan-300 text-2xl font-mono">Drop file to attach</div>
+        </div>
+      )}
+
+      {/* Shortcuts overlay */}
+      {shortcutsOpen && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70" onClick={() => setShortcutsOpen(false)}>
+          <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-96 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-mono text-cyan-400 text-sm tracking-widest">KEYBOARD SHORTCUTS</h2>
+              <button onClick={() => setShortcutsOpen(false)} className="text-gray-600 hover:text-gray-400">✕</button>
+            </div>
+            <div className="space-y-2">
+              {SHORTCUTS.map(({ key, desc }) => (
+                <div key={key} className="flex justify-between text-sm">
+                  <kbd className="bg-gray-800 border border-gray-700 rounded px-2 py-0.5 font-mono text-xs text-cyan-300">{key}</kbd>
+                  <span className="text-gray-400">{desc}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-600 mt-4 text-center">Press ? or Esc to close</p>
+          </div>
+        </div>
+      )}
+
       <header className="glass-panel border-b-0 rounded-none px-6 py-3 flex items-center gap-4 z-10 shadow-md">
-        <button
-          onClick={() => setSidebarOpen(o => !o)}
-          className="text-gray-400 hover:text-cyan-400 transition-colors font-mono text-lg leading-none"
-          title="Session history"
-        >☰</button>
+        <button onClick={() => setSidebarOpen(o => !o)} className="text-gray-400 hover:text-cyan-400 transition-colors text-lg" title="Sessions">☰</button>
         <RiveAgent domain={activeDomain} isThinking={loading} size={48} />
         <div>
-          <div className="text-xs text-cyan-400 font-mono tracking-widest">{activeDomain.toUpperCase()}</div>
+          <div className="text-xs text-cyan-400 font-mono tracking-widest">
+            {teamMode ? '⚡ TEAM MODE' : activeDomain.toUpperCase()}
+          </div>
           <div className="text-xs text-cyan-800/80 font-mono">SESSION {currentSessionId.slice(-8).toUpperCase()}</div>
         </div>
-        <div className="ml-auto flex gap-4 font-mono text-sm items-center">
-          <button
-            onClick={() => exportMarkdown(messages, currentSessionId)}
-            className="text-gray-500 hover:text-gray-300 transition-colors text-xs"
-            title="Export conversation"
-          >↓ export</button>
-          <button className="text-cyan-400 font-bold tracking-widest bg-cyan-950/30 px-3 py-1 rounded border border-cyan-800/50">/chat</button>
-          <button onClick={() => onNav('models')} className="text-gray-400 hover:text-white transition-all">/models</button>
-          <button onClick={() => onNav('agents')} className="text-gray-400 hover:text-white transition-all">/agents</button>
-          <button onClick={() => onNav('settings')} className="text-gray-400 hover:text-white transition-all">/settings</button>
-          <button onClick={() => onNav('system')} className="text-gray-400 hover:text-white transition-all">/system</button>
+        <div className="ml-auto flex gap-4 items-center">
+          <button onClick={() => exportMarkdown(messages, currentSessionId)} className="text-gray-500 hover:text-gray-300 text-xs font-mono transition-colors" title="Export">↓ export</button>
+          <button onClick={() => setShortcutsOpen(true)} className="text-gray-600 hover:text-gray-400 text-xs font-mono transition-colors" title="Keyboard shortcuts">?</button>
+          <button className={activeNav}>/chat</button>
+          <button onClick={() => onNav('models')}   className={navBtn}>/models</button>
+          <button onClick={() => onNav('agents')}   className={navBtn}>/agents</button>
+          <button onClick={() => onNav('settings')} className={navBtn}>/settings</button>
+          <button onClick={() => onNav('system')}   className={navBtn}>/system</button>
         </div>
       </header>
 
@@ -197,21 +362,14 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
             </div>
             <div className="flex-1 overflow-y-auto">
               {sessions.length === 0
-                ? <p className="text-gray-600 text-xs p-4">No past conversations yet.</p>
+                ? <p className="text-gray-600 text-xs p-4">No past conversations.</p>
                 : sessions.map((s) => (
-                    <div
-                      key={s.id}
-                      className={`flex items-center justify-between px-4 py-3 border-b border-gray-900 hover:bg-gray-800/50 cursor-pointer group ${s.id === currentSessionId ? 'bg-cyan-900/20' : ''}`}
-                      onClick={() => resumeSession(s)}
-                    >
+                    <div key={s.id} className={`flex items-center justify-between px-4 py-3 border-b border-gray-900 hover:bg-gray-800/50 cursor-pointer group ${s.id === currentSessionId ? 'bg-cyan-900/20' : ''}`} onClick={() => resumeSession(s)}>
                       <div className="min-w-0">
                         <p className="text-sm text-white truncate">{s.title}</p>
                         <p className="text-xs text-gray-600">{new Date(s.updated_at).toLocaleDateString()}</p>
                       </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); coreClient.deleteSession(s.id).then(loadSessions) }}
-                        className="text-gray-700 hover:text-red-400 transition-colors ml-2 opacity-0 group-hover:opacity-100 text-xs"
-                      >✕</button>
+                      <button onClick={(e) => { e.stopPropagation(); coreClient.deleteSession(s.id).then(loadSessions) }} className="text-gray-700 hover:text-red-400 transition-colors ml-2 opacity-0 group-hover:opacity-100 text-xs">✕</button>
                     </div>
                   ))
               }
@@ -222,19 +380,37 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
       )}
 
       <div className="flex-1 overflow-y-auto px-4 py-6">
-        {messages.map((m, i) => (
-          <div key={i} className="relative group">
-            <ChatBubble role={m.role} content={m.content} />
-            {m.role === 'assistant' && (
-              <button
-                onClick={() => copyMessage(m.content, i)}
-                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-600 hover:text-gray-300 px-2 py-0.5 bg-gray-900/80 rounded"
-              >
-                {copiedIdx === i ? 'copied!' : 'copy'}
-              </button>
-            )}
-          </div>
-        ))}
+        {fileNotice && (
+          <div className="mb-3 text-xs text-cyan-400 font-mono px-2 animate-pulse">{fileNotice}</div>
+        )}
+
+        {messages.map((m, i) => {
+          if (m.role === 'approval') {
+            return m.resolved ? null : (
+              <ApprovalCard
+                key={i}
+                approvalId={m.approvalId!}
+                agentName={m.agentName!}
+                toolName={m.toolName!}
+                cmd={m.cmd!}
+                agentId="general"
+                onResolved={() => resolveApproval(m.approvalId!)}
+              />
+            )
+          }
+          if (m.role === 'team') return <TeamResult key={i} msg={m} />
+          return (
+            <div key={i} className="relative group">
+              <ChatBubble role={m.role as 'user' | 'assistant'} content={m.content} />
+              {m.role === 'assistant' && (
+                <button onClick={() => copyMessage(m.content, i)} className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-600 hover:text-gray-300 px-2 py-0.5 bg-gray-900/80 rounded">
+                  {copiedIdx === i ? 'copied!' : 'copy'}
+                </button>
+              )}
+            </div>
+          )
+        })}
+
         {loading && (
           <div className="flex justify-start mb-3">
             <AgentThinkingAnimation domain={thinkingDomain} />
@@ -245,11 +421,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
           <div className="flex justify-start gap-3 mt-4 flex-wrap">
             <span className="text-xs text-amber-500 font-mono self-center tracking-widest animate-pulse">[INSIGHT]</span>
             {suggestions.map((sug, i) => (
-              <button
-                key={i}
-                onClick={() => { setInput(sug); setSuggestions(prev => prev.filter(s => s !== sug)) }}
-                className="text-xs border border-amber-500/30 bg-amber-950/20 text-amber-200/80 px-3 py-1.5 rounded-full hover:bg-amber-500/20 hover:border-amber-500 hover:text-amber-100 transition-all"
-              >
+              <button key={i} onClick={() => { setInput(sug); setSuggestions(prev => prev.filter(s => s !== sug)) }} className="text-xs border border-amber-500/30 bg-amber-950/20 text-amber-200/80 px-3 py-1.5 rounded-full hover:bg-amber-500/20 hover:border-amber-500 hover:text-amber-100 transition-all">
                 {sug}
               </button>
             ))}
@@ -259,41 +431,44 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
         <div ref={bottomRef} />
       </div>
 
-      <div className="glass-panel rounded-none border-x-0 border-b-0 px-4 py-6 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-10">
+      <div className="glass-panel rounded-none border-x-0 border-b-0 px-4 py-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-10">
+        {/* Team mode toggle */}
+        <div className="flex justify-end max-w-4xl mx-auto mb-2">
+          <button
+            onClick={() => setTeamMode(t => !t)}
+            className={`text-xs font-mono px-3 py-1 rounded-full border transition-all ${
+              teamMode
+                ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
+                : 'border-gray-700 text-gray-600 hover:border-gray-500 hover:text-gray-400'
+            }`}
+          >
+            {teamMode ? '⚡ TEAM MODE ON' : '⚡ team mode'}
+          </button>
+        </div>
         <div className="flex gap-4 max-w-4xl mx-auto items-end">
           <div className="flex-1 relative">
             <input
+              ref={inputRef2}
               className="w-full bg-gray-950/80 border border-gray-700 text-cyan-50 font-mono rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-cyan-500 focus:shadow-[0_0_15px_rgba(0,255,255,0.2)] transition-all placeholder:text-gray-600"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && send()}
-              placeholder={isListening ? '> Listening...' : '> Execute command or send message...'}
+              placeholder={isListening ? '> Listening...' : teamMode ? '> Describe a complex task for the swarm...' : '> Execute command or send message...'}
               disabled={loading}
               autoFocus
             />
             {loading && <div className="absolute right-4 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-cyan-400 animate-ping" />}
           </div>
 
-          <button
-            onClick={toggleMic}
-            disabled={loading}
-            className={`w-12 h-12 flex items-center justify-center rounded-xl transition-all ${
-              isListening
-                ? 'bg-red-500/20 text-red-500 border border-red-500 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)]'
-                : 'bg-gray-800 border border-gray-700 text-gray-400 hover:text-cyan-400 hover:border-cyan-500/50'
-            }`}
-          >
+          <button onClick={toggleMic} disabled={loading} className={`w-12 h-12 flex items-center justify-center rounded-xl transition-all ${isListening ? 'bg-red-500/20 text-red-500 border border-red-500 animate-pulse' : 'bg-gray-800 border border-gray-700 text-gray-400 hover:text-cyan-400 hover:border-cyan-500/50'}`}>
             {isListening ? '⏹' : '🎤'}
           </button>
 
-          <button
-            onClick={send}
-            disabled={!input.trim() || loading}
-            className="px-8 py-4 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-30 text-black font-bold font-mono tracking-widest rounded-xl transition-all text-sm hover:scale-105 active:scale-95 hover:shadow-[0_0_20px_rgba(0,255,255,0.4)]"
-          >
-            EXECUTE
+          <button onClick={send} disabled={!input.trim() || loading} className="px-8 py-4 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-30 text-black font-bold font-mono tracking-widest rounded-xl transition-all text-sm hover:scale-105 active:scale-95 hover:shadow-[0_0_20px_rgba(0,255,255,0.4)]">
+            {teamMode ? 'DEPLOY' : 'EXECUTE'}
           </button>
         </div>
+        <p className="text-center text-xs text-gray-700 mt-2 font-mono">drag a file to attach · press ? for shortcuts</p>
       </div>
     </div>
   )

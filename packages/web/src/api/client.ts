@@ -182,6 +182,27 @@ export class CoreClient {
     return res.json()
   }
 
+  async uploadFile(file: File): Promise<{ filename: string; mimeType: string; size: number; text: string }> {
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch(`${this.baseUrl}/api/upload`, { method: 'POST', body: form })
+    if (!res.ok) {
+      const { error } = await res.json() as { error: string }
+      throw new Error(error)
+    }
+    return res.json()
+  }
+
+  async runTeam(task: string, sessionId?: string): Promise<{ reply: string; subtaskCount: number; subtasks: Array<{ subtaskId: string; reply: string }> }> {
+    const res = await fetch(`${this.baseUrl}/api/team/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task, sessionId }),
+    })
+    if (!res.ok) throw new Error(`Team run failed (${res.status})`)
+    return res.json()
+  }
+
   async deleteSession(id: string): Promise<void> {
     await fetch(`${this.baseUrl}/api/sessions/${encodeURIComponent(id)}`, {
       method: 'DELETE',

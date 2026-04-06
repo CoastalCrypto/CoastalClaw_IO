@@ -8,6 +8,8 @@ import { adminRoutes, getOrCreateAdminToken, validateSessionToken } from './api/
 import { agentRoutes } from './api/routes/agents.js'
 import { teamRoutes } from './api/routes/team.js'
 import { personaRoutes } from './api/routes/persona.js'
+import { systemRoutes } from './api/routes/system.js'
+import { sessionRoutes } from './api/routes/sessions.js'
 import { AgentRegistry } from './agents/registry.js'
 import { PermissionGate } from './agents/permission-gate.js'
 import { loadConfig } from './config.js'
@@ -56,6 +58,8 @@ export async function buildServer() {
   await fastify.register(agentRoutes, { registry: agentRegistry, gate })
   await fastify.register(teamRoutes)
   await fastify.register(personaRoutes)
+  await fastify.register(systemRoutes)
+  await fastify.register(sessionRoutes)
 
   fastify.addHook('onClose', async () => {
     agentRegistry.close()

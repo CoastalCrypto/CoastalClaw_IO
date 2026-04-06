@@ -36,6 +36,22 @@ export interface ModelGroup {
 
 export type RegistryUpdate = Partial<Record<'cfo' | 'cto' | 'coo' | 'general', Record<'high' | 'medium' | 'low', string>>>
 
+export interface SystemStats {
+  cpu: { percent: number }
+  mem: { total: number; used: number; free: number; cached: number }
+  disk: Array<{ path: string; total: number; used: number; free: number }>
+  gpu: { name: string; vramUsed: number; vramTotal: number; utilPercent: number } | null
+  models: string[]
+  uptime: number
+}
+
+export interface Session {
+  id: string
+  title: string
+  created_at: number
+  updated_at: number
+}
+
 export class CoreClient {
   private baseUrl: string
   private sessionToken: string | undefined
@@ -131,6 +147,45 @@ export class CoreClient {
     const res = await fetch(`${this.baseUrl}/api/persona`)
     if (!res.ok) throw new Error(`Failed to get persona (${res.status})`)
     return res.json()
+  }
+
+  async getSystemStats(): Promise<SystemStats> {
+    const res = await fetch(`${this.baseUrl}/api/system/stats`)
+    if (!res.ok) throw new Error(`Failed to get system stats (${res.status})`)
+    return res.json()
+  }
+
+  async getLogs(service?: string, lines?: number): Promise<{ service: string; lines: string[] }> {
+    const params = new URLSearchParams()
+    if (service) params.set('service', service)
+    if (lines)   params.set('lines', String(lines))
+    const res = await fetch(`${this.baseUrl}/api/admin/logs?${params}`, {
+      headers: this.adminHeaders(),
+    })
+    if (!res.ok) throw new Error(`Failed to get logs (${res.status})`)
+    return res.json()
+  }
+
+  async triggerUpdate(): Promise<{ ok: boolean; message: string }> {
+    const res = await fetch(`${this.baseUrl}/api/admin/update`, {
+      method: 'POST',
+      headers: this.adminHeaders(),
+    })
+    if (!res.ok) throw new Error(`Failed to trigger update (${res.status})`)
+    return res.json()
+  }
+
+  async listSessions(limit?: number): Promise<{ sessions: Session[] }> {
+    const params = limit ? `?limit=${limit}` : ''
+    const res = await fetch(`${this.baseUrl}/api/sessions${params}`)
+    if (!res.ok) throw new Error(`Failed to list sessions (${res.status})`)
+    return res.json()
+  }
+
+  async deleteSession(id: string): Promise<void> {
+    await fetch(`${this.baseUrl}/api/sessions/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    })
   }
 
   async setPersona(updates: Partial<Persona>): Promise<{ persona: Persona; configured: boolean }> {

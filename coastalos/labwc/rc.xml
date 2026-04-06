@@ -1,10 +1,81 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <labwc_config>
   <keyboard>
-    <!-- Ctrl+Alt+T → open Alacritty terminal -->
+    <!-- Ctrl+Alt+T → terminal -->
     <keybind key="C-A-t">
       <action name="Execute">
         <command>alacritty</command>
+      </action>
+    </keybind>
+
+    <!-- F5 → reload Chromium page -->
+    <keybind key="F5">
+      <action name="Execute">
+        <command>xdotool key --clearmodifiers F5</command>
+      </action>
+    </keybind>
+
+    <!-- Ctrl+F5 → restart Chromium kiosk -->
+    <keybind key="C-F5">
+      <action name="Execute">
+        <command>sh -c 'pkill chromium-browser; sleep 1; chromium-browser --kiosk --no-first-run --disable-translate --app=http://localhost:4747 &amp;'</command>
+      </action>
+    </keybind>
+
+    <!-- Ctrl+Alt+R → restart coastal-server -->
+    <keybind key="C-A-r">
+      <action name="Execute">
+        <command>systemctl restart coastalclaw-server</command>
+      </action>
+    </keybind>
+
+    <!-- Print Screen → screenshot to ~/screenshots/ -->
+    <keybind key="Print">
+      <action name="Execute">
+        <command>sh -c 'mkdir -p ~/screenshots &amp;&amp; grim ~/screenshots/$(date +%Y%m%d_%H%M%S).png'</command>
+      </action>
+    </keybind>
+
+    <!-- Volume controls (pipewire) -->
+    <keybind key="XF86AudioRaiseVolume">
+      <action name="Execute">
+        <command>wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+</command>
+      </action>
+    </keybind>
+    <keybind key="XF86AudioLowerVolume">
+      <action name="Execute">
+        <command>wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-</command>
+      </action>
+    </keybind>
+    <keybind key="XF86AudioMute">
+      <action name="Execute">
+        <command>wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle</command>
+      </action>
+    </keybind>
+
+    <!-- Brightness controls (brightnessctl) -->
+    <keybind key="XF86MonBrightnessUp">
+      <action name="Execute">
+        <command>brightnessctl set +10%</command>
+      </action>
+    </keybind>
+    <keybind key="XF86MonBrightnessDown">
+      <action name="Execute">
+        <command>brightnessctl set 10%-</command>
+      </action>
+    </keybind>
+
+    <!-- Ctrl+Alt+Delete → power menu in terminal -->
+    <keybind key="C-A-Delete">
+      <action name="Execute">
+        <command>alacritty -e sh -c 'printf "1) shutdown\n2) reboot\n3) cancel\n> "; read n; case $n in 1) systemctl poweroff;; 2) systemctl reboot;; esac'</command>
+      </action>
+    </keybind>
+
+    <!-- Super+L → lock screen (requires swaylock) -->
+    <keybind key="W-l">
+      <action name="Execute">
+        <command>swaylock -f -c 000000</command>
       </action>
     </keybind>
   </keyboard>

@@ -113,6 +113,14 @@ export async function chatRoutes(fastify: FastifyInstance) {
     await memory.write({ id: randomUUID(), sessionId, role: 'user', content: message, timestamp: Date.now() }, decision.signals.retention)
     await memory.write({ id: randomUUID(), sessionId, role: 'assistant', content: result.reply, timestamp: Date.now() }, 'useful')
 
+    // Upsert session record with auto-generated title from first user message
+    const title = message.slice(0, 80).replace(/\s+/g, ' ').trim()
+    fetch(`http://127.0.0.1:${config.port}/api/sessions/${sessionId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title }),
+    }).catch(() => {})
+
     // START PREDICTIVE THREAD
     setTimeout(async () => {
       try {

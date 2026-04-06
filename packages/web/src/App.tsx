@@ -4,6 +4,7 @@ import { Chat } from './pages/Chat'
 import { Models } from './pages/Models'
 import { Agents } from './pages/Agents'
 import { Settings } from './pages/Settings'
+import { System } from './pages/System'
 import { coreClient } from './api/client'
 import './index.css'
 
@@ -14,7 +15,7 @@ const OceanScene = lazy(() =>
 
 export default function App() {
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const [page, setPage] = useState<'chat' | 'models' | 'agents' | 'settings'>('chat')
+  const [page, setPage] = useState<'chat' | 'models' | 'agents' | 'settings' | 'system'>('chat')
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
@@ -46,6 +47,7 @@ export default function App() {
   if (page === 'agents') return <Agents onNav={(p) => setPage(p as any)} />
 
   if (page === 'settings') return <Settings onNav={(p) => setPage(p as any)} />
+  if (page === 'system')   return <System onNav={(p) => setPage(p as any)} />
 
   if (page === 'models') return (
     <div className="min-h-screen text-white bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-fixed">
@@ -57,6 +59,7 @@ export default function App() {
           <button className="text-cyan-400 font-bold tracking-widest bg-cyan-950/30 px-3 py-1 rounded border border-cyan-800/50">/models</button>
           <button onClick={() => setPage('agents')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/agents</button>
           <button onClick={() => setPage('settings')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/settings</button>
+          <button onClick={() => setPage('system')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/system</button>
         </div>
       </nav>
       <div className="pt-20 px-6 max-w-4xl mx-auto">

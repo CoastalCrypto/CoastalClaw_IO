@@ -31,3 +31,9 @@ ffmpeg
 # Development / build tools (for pnpm install on first boot)
 git
 build-essential
+
+# Keyboard shortcut tools
+grim
+xdotool
+swaylock
+brightnessctl

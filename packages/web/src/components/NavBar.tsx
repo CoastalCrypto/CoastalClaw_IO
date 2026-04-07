@@ -42,11 +42,30 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
         {/* Brand */}
         <div className="flex items-center gap-2.5 min-w-0">
           {/* Wave logo */}
-          <svg width="32" height="22" viewBox="0 0 32 22" fill="none" className="shrink-0 text-cyan-400" aria-hidden="true">
-            <path d="M1 8 C4.5 2, 9 2, 12 8 C15 14, 19.5 14, 23 8 C26.5 2, 31 2, 34 8"
-              stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" fill="none"/>
-            <path d="M1 14 C4.5 8, 9 8, 12 14 C15 20, 19.5 20, 23 14 C26.5 8, 31 8, 34 14"
-              stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" fill="none" opacity="0.45"/>
+          <svg viewBox="0 0 100 100" width="34" height="34" className="shrink-0 text-cyan-400" fill="none" aria-hidden="true">
+            <defs>
+              <clipPath id="wave-logo-clip">
+                <circle cx="50" cy="50" r="46"/>
+              </clipPath>
+            </defs>
+            {/* Circle border */}
+            <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="3"/>
+            <g clipPath="url(#wave-logo-clip)">
+              {/* Main wave body */}
+              <path fill="currentColor" d="M6 84 C8 68 18 52 32 40 C42 32 50 24 56 16 C60 10 68 6 76 8 C84 10 88 20 84 30 C80 40 68 44 62 36 C56 28 54 36 54 46 C54 56 64 60 78 60 C88 60 96 58 96 68 L96 96 L4 96 Z"/>
+              {/* Wave curl highlight */}
+              <path fill="currentColor" opacity="0.4" d="M56 16 C62 6 82 4 84 30 C80 18 68 12 56 16Z"/>
+              {/* Foam spray dots */}
+              <circle cx="80" cy="4"  r="4"   fill="currentColor" opacity="0.7"/>
+              <circle cx="88" cy="8"  r="3"   fill="currentColor" opacity="0.55"/>
+              <circle cx="74" cy="2"  r="2.5" fill="currentColor" opacity="0.5"/>
+              {/* Birds */}
+              <path d="M80 44 Q83 40 86 44" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+              <path d="M87 36 Q90 32 93 36" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+              {/* Water ripple lines */}
+              <path d="M4 74 C22 70 44 73 64 71 C78 69 90 72 96 69"  stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.5"/>
+              <path d="M4 84 C28 80 56 83 78 81 C86 80 94 82 96 80"  stroke="currentColor" strokeWidth="2"   strokeLinecap="round" fill="none" opacity="0.35"/>
+            </g>
           </svg>
           <span className="font-mono text-xs tracking-widest text-cyan-500 shrink-0 hidden sm:block">
             COASTAL_OS

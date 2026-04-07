@@ -231,6 +231,55 @@ export class CoreClient {
       body: JSON.stringify({ decision, agentId, toolName }),
     })
   }
+
+  async getAnalytics(): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/api/analytics`)
+    if (!res.ok) throw new Error(`Analytics failed (${res.status})`)
+    return res.json()
+  }
+
+  async listTools(): Promise<any[]> {
+    const res = await fetch(`${this.baseUrl}/api/admin/tools`, { headers: this.adminHeaders() })
+    if (!res.ok) throw new Error(`List tools failed (${res.status})`)
+    return res.json()
+  }
+
+  async createTool(data: { name: string; description: string; parameters: string; implBody: string }): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/api/admin/tools`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) throw new Error(`Create tool failed (${res.status}): ${await res.text()}`)
+    return res.json()
+  }
+
+  async updateTool(id: string, data: Partial<{ name: string; description: string; parameters: string; implBody: string; enabled: boolean }>): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/api/admin/tools/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) throw new Error(`Update tool failed (${res.status})`)
+    return res.json()
+  }
+
+  async deleteTool(id: string): Promise<void> {
+    await fetch(`${this.baseUrl}/api/admin/tools/${id}`, {
+      method: 'DELETE',
+      headers: this.adminHeaders(),
+    })
+  }
+
+  async testTool(data: { implBody: string; parameters?: string; args?: Record<string, unknown> }): Promise<{ output: string; success: boolean }> {
+    const res = await fetch(`${this.baseUrl}/api/admin/tools/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) throw new Error(`Test failed (${res.status})`)
+    return res.json()
+  }
 }
 
 export const coreClient = new CoreClient('/api')

@@ -13,8 +13,11 @@ import { sessionRoutes } from './api/routes/sessions.js'
 import { uploadRoutes } from './api/routes/upload.js'
 import { streamRoutes } from './api/routes/stream.js'
 import { eventRoutes } from './api/routes/events.js'
+import { analyticsRoutes } from './api/routes/analytics.js'
+import { toolRoutes } from './api/routes/tools.js'
 import { AgentRegistry } from './agents/registry.js'
 import { PermissionGate } from './agents/permission-gate.js'
+import { CustomToolLoader } from './tools/custom/loader.js'
 import { loadConfig } from './config.js'
 import Database from 'better-sqlite3'
 import { join } from 'node:path'
@@ -51,12 +54,12 @@ export async function buildServer() {
   await fastify.register(websocket)
   await fastify.register(healthRoutes)
   await fastify.register(wsRoutes)
-  await fastify.register(chatRoutes)
   await fastify.register(adminRoutes)
 
   const db = new Database(join(config.dataDir, 'coastal-claw.db'))
   const agentRegistry = new AgentRegistry(join(config.dataDir, 'agents.db'))
   const gate = new PermissionGate(db)
+  const customToolLoader = new CustomToolLoader(db)
 
   await fastify.register(agentRoutes, { registry: agentRegistry, gate })
   await fastify.register(teamRoutes)
@@ -64,8 +67,11 @@ export async function buildServer() {
   await fastify.register(systemRoutes)
   await fastify.register(sessionRoutes)
   await fastify.register(uploadRoutes)
+  await fastify.register(chatRoutes)
   await fastify.register(streamRoutes)
   await fastify.register(eventRoutes)
+  await fastify.register(analyticsRoutes, { db })
+  await fastify.register(toolRoutes, { loader: customToolLoader })
 
   fastify.addHook('onClose', async () => {
     agentRegistry.close()

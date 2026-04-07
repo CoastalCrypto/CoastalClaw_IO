@@ -6,6 +6,8 @@ import { Agents } from './pages/Agents'
 import { Settings } from './pages/Settings'
 import { System } from './pages/System'
 import { Dashboard } from './pages/Dashboard'
+import { Analytics } from './pages/Analytics'
+import { Tools } from './pages/Tools'
 import { NavBar, type NavPage } from './components/NavBar'
 import { coreClient } from './api/client'
 import './index.css'
@@ -49,6 +51,8 @@ export default function App() {
   const nav = (p: string) => setPage(p as NavPage)
 
   if (page === 'dashboard') return <Dashboard onNav={nav} />
+  if (page === 'analytics') return <Analytics onNav={nav} />
+  if (page === 'tools')     return <Tools onNav={nav} />
   if (page === 'agents')    return <Agents onNav={nav} />
   if (page === 'settings')  return <Settings onNav={nav} />
   if (page === 'system')    return <System onNav={nav} />

@@ -48,23 +48,36 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
                 <circle cx="50" cy="50" r="46"/>
               </clipPath>
             </defs>
-            {/* Circle border */}
             <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="3"/>
             <g clipPath="url(#wave-logo-clip)">
-              {/* Main wave body */}
-              <path fill="currentColor" d="M6 84 C8 68 18 52 32 40 C42 32 50 24 56 16 C60 10 68 6 76 8 C84 10 88 20 84 30 C80 40 68 44 62 36 C56 28 54 36 54 46 C54 56 64 60 78 60 C88 60 96 58 96 68 L96 96 L4 96 Z"/>
-              {/* Wave curl highlight */}
-              <path fill="currentColor" opacity="0.4" d="M56 16 C62 6 82 4 84 30 C80 18 68 12 56 16Z"/>
-              {/* Foam spray dots */}
-              <circle cx="80" cy="4"  r="4"   fill="currentColor" opacity="0.7"/>
-              <circle cx="88" cy="8"  r="3"   fill="currentColor" opacity="0.55"/>
-              <circle cx="74" cy="2"  r="2.5" fill="currentColor" opacity="0.5"/>
-              {/* Birds */}
-              <path d="M80 44 Q83 40 86 44" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
-              <path d="M87 36 Q90 32 93 36" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
-              {/* Water ripple lines */}
-              <path d="M4 74 C22 70 44 73 64 71 C78 69 90 72 96 69"  stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.5"/>
-              <path d="M4 84 C28 80 56 83 78 81 C86 80 94 82 96 80"  stroke="currentColor" strokeWidth="2"   strokeLinecap="round" fill="none" opacity="0.35"/>
+              {/* Wave body with hollow barrel (evenodd) */}
+              <path fillRule="evenodd" fill="currentColor" d="
+                M 4 92 L 96 92 L 96 68
+                C 88 76 78 78 72 72
+                C 64 64 68 52 72 54
+                C 80 58 90 52 93 40
+                C 97 25 92 10 82 7
+                C 72 4 62 10 56 20
+                C 48 32 38 44 26 56
+                C 14 68 5 80 4 84 Z
+                M 54 26
+                C 62 14 84 14 90 34
+                C 96 54 82 70 64 70
+                C 46 70 34 58 34 46
+                C 34 30 46 24 54 26 Z
+              "/>
+              {/* Foam spray at crest */}
+              <circle cx="86" cy="6"  r="5.5" fill="currentColor" opacity="0.9"/>
+              <circle cx="93" cy="14" r="3.5" fill="currentColor" opacity="0.7"/>
+              <circle cx="80" cy="3"  r="3"   fill="currentColor" opacity="0.65"/>
+              <circle cx="96" cy="8"  r="2.2" fill="currentColor" opacity="0.5"/>
+              <circle cx="95" cy="19" r="1.8" fill="currentColor" opacity="0.35"/>
+              {/* Seagulls inside barrel */}
+              <path d="M56 44 C58 40 60 40 62 44 C64 40 66 40 68 44" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <path d="M64 35 C66 31 68 31 70 35 C72 31 74 31 76 35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              {/* Water ripples */}
+              <path d="M4 80 C18 76 38 78 56 77 C70 76 84 78 96 76" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.5"/>
+              <path d="M4 87 C24 84 50 86 72 85 C82 84 92 86 96 84" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.35"/>
             </g>
           </svg>
           <span className="font-mono text-xs tracking-widest text-cyan-500 shrink-0 hidden sm:block">

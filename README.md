@@ -300,7 +300,7 @@ Complete the setup wizard (same as the standard install — name your agent, des
 - **Your data is stored on the USB drive** — plug it in to any compatible machine and your agent memory and settings come with you
 - **Ollama and the AI model** are downloaded on first boot (~2 GB) — you need internet for this initial setup
 - **The OS runs entirely from the USB drive** — nothing is written to the host machine's disk unless you choose to install
-- CoastalOS is built on Ubuntu 24.04 (Noble) and supports most modern x86-64 hardware
+- CoastalOS is built on Ubuntu 24.04 (Noble) and supports modern x86-64 hardware with UEFI firmware (most machines from 2012 onwards). Very old hardware with legacy BIOS only is not supported.
 
 ---
 

@@ -22,7 +22,7 @@ cd "$WORKDIR"
 lb config \
   --distribution noble \
   --archive-areas "main restricted universe multiverse" \
-  --bootloader grub \
+  --bootloader grub-efi \
   --binary-images iso-hybrid \
   --iso-application "CoastalOS" \
   --iso-volume "CoastalOS-${VERSION}"

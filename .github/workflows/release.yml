@@ -89,6 +89,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Resolve tag
+        id: tag
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "ref=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Download .deb
         uses: actions/download-artifact@v4
         with:
@@ -111,8 +120,8 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: "CoastalClaw ${{ github.ref_name }}"
+          tag_name: ${{ steps.tag.outputs.ref }}
+          name: "CoastalClaw ${{ steps.tag.outputs.ref }}"
           body: |
             ## What's changed
             ${{ steps.changelog.outputs.log }}
@@ -121,7 +130,7 @@ jobs:
 
             **One-line installer:**
             ```
-            curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/${{ github.ref_name }}/install.sh | bash
+            curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/${{ steps.tag.outputs.ref }}/install.sh | bash
             ```
 
             **APT (Ubuntu/Debian):**
@@ -132,7 +141,7 @@ jobs:
             ```
           files: dist-deb/*.deb
           draft: false
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          prerelease: ${{ contains(steps.tag.outputs.ref, '-') }}
 
   # ── Publish APT repo ─────────────────────────────────────────
   apt:

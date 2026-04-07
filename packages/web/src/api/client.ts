@@ -413,5 +413,5 @@ export class CoreClient {
   }
 }
 
-export const coreClient = new CoreClient('/api')
-export const adminClient = new CoreClient('/api')
+export const coreClient = new CoreClient('')
+export const adminClient = new CoreClient('')

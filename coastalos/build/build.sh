@@ -53,6 +53,13 @@ cp "${COASTALOS_DIR}/systemd/"*.timer   config/includes.chroot/etc/systemd/syste
 # Build
 lb build
 
-# Move ISO to repo root
-mv live-image-amd64.iso "${REPO_ROOT}/coastalos-${VERSION}.iso"
-echo "[build] ISO ready: ${REPO_ROOT}/coastalos-${VERSION}.iso"
+# Find the ISO — live-build may name it binary.iso or live-image-amd64.iso
+ISO_SRC="$(ls -1 *.iso 2>/dev/null | head -1)"
+if [[ -z "$ISO_SRC" ]]; then
+  echo "[build] ERROR: no ISO found in ${WORKDIR} after lb build"
+  ls -la
+  exit 1
+fi
+
+mv "$ISO_SRC" "${REPO_ROOT}/coastalos-${VERSION}.iso"
+echo "[build] ISO ready: ${REPO_ROOT}/coastalos-${VERSION}.iso ($(du -h "${REPO_ROOT}/coastalos-${VERSION}.iso" | cut -f1))"

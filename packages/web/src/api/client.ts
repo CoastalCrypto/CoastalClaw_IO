@@ -280,6 +280,59 @@ export class CoreClient {
     if (!res.ok) throw new Error(`Test failed (${res.status})`)
     return res.json()
   }
+
+  async listChannels(): Promise<any[]> {
+    const res = await fetch(`${this.baseUrl}/api/admin/channels`, { headers: this.adminHeaders() })
+    if (!res.ok) throw new Error(`List channels failed (${res.status})`)
+    return res.json()
+  }
+
+  async createChannel(data: { type: string; name: string; config: Record<string, string> }): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/api/admin/channels`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) throw new Error(`Create channel failed (${res.status}): ${await res.text()}`)
+    return res.json()
+  }
+
+  async updateChannel(id: string, data: Partial<{ name: string; config: Record<string, string>; enabled: boolean }>): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/api/admin/channels/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) throw new Error(`Update channel failed (${res.status})`)
+    return res.json()
+  }
+
+  async deleteChannel(id: string): Promise<void> {
+    await fetch(`${this.baseUrl}/api/admin/channels/${id}`, {
+      method: 'DELETE',
+      headers: this.adminHeaders(),
+    })
+  }
+
+  async testChannel(id: string, message?: string): Promise<{ success: boolean; error?: string }> {
+    const res = await fetch(`${this.baseUrl}/api/admin/channels/${id}/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify({ message }),
+    })
+    if (!res.ok) throw new Error(`Test channel failed (${res.status})`)
+    return res.json()
+  }
+
+  async broadcastChannels(message: string): Promise<any[]> {
+    const res = await fetch(`${this.baseUrl}/api/admin/channels/broadcast`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify({ message }),
+    })
+    if (!res.ok) throw new Error(`Broadcast failed (${res.status})`)
+    return res.json()
+  }
 }
 
 export const coreClient = new CoreClient('/api')

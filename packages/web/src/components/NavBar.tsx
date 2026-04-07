@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export type NavPage = 'chat' | 'dashboard' | 'analytics' | 'tools' | 'models' | 'agents' | 'settings' | 'system'
+export type NavPage = 'chat' | 'dashboard' | 'analytics' | 'tools' | 'channels' | 'models' | 'agents' | 'settings' | 'system'
 
 interface NavItem { id: NavPage; label: string; icon: string }
 
@@ -9,6 +9,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: '⚡' },
   { id: 'analytics', label: 'Analytics', icon: '📊' },
   { id: 'tools',     label: 'Tools',     icon: '🔧' },
+  { id: 'channels',  label: 'Channels',  icon: '📣' },
   { id: 'models',    label: 'Models',    icon: '🧠' },
   { id: 'agents',    label: 'Agents',    icon: '🤖' },
   { id: 'settings',  label: 'Settings',  icon: '⚙️' },

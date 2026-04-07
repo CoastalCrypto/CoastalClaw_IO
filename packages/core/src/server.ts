@@ -15,9 +15,11 @@ import { streamRoutes } from './api/routes/stream.js'
 import { eventRoutes } from './api/routes/events.js'
 import { analyticsRoutes } from './api/routes/analytics.js'
 import { toolRoutes } from './api/routes/tools.js'
+import { channelRoutes } from './api/routes/channels.js'
 import { AgentRegistry } from './agents/registry.js'
 import { PermissionGate } from './agents/permission-gate.js'
 import { CustomToolLoader } from './tools/custom/loader.js'
+import { ChannelManager } from './channels/manager.js'
 import { loadConfig } from './config.js'
 import Database from 'better-sqlite3'
 import { join } from 'node:path'
@@ -60,6 +62,7 @@ export async function buildServer() {
   const agentRegistry = new AgentRegistry(join(config.dataDir, 'agents.db'))
   const gate = new PermissionGate(db)
   const customToolLoader = new CustomToolLoader(db)
+  const channelManager = new ChannelManager(db)
 
   await fastify.register(agentRoutes, { registry: agentRegistry, gate })
   await fastify.register(teamRoutes)
@@ -72,6 +75,7 @@ export async function buildServer() {
   await fastify.register(eventRoutes)
   await fastify.register(analyticsRoutes, { db })
   await fastify.register(toolRoutes, { loader: customToolLoader })
+  await fastify.register(channelRoutes, { manager: channelManager })
 
   fastify.addHook('onClose', async () => {
     agentRegistry.close()

@@ -65,14 +65,22 @@ export default function App() {
     init()
   }, [])
 
-  const handleLogin = (sessionToken: string, user: AuthUser) => {
+  const handleLogin = async (sessionToken: string, user: AuthUser) => {
     coreClient.setSession(sessionToken)
     sessionStorage.setItem('cc_user', JSON.stringify(user))
-    setCurrentUser(user)
-    setNeedsSetup(false)
-    coreClient.getPersona()
-      .then(({ configured }) => { if (configured) setSessionId(`session-${Date.now()}`) })
-      .catch(() => {})
+    // Show spinner while checking persona — avoids Onboarding flash for returning users
+    setChecking(true)
+    try {
+      const { configured } = await coreClient.getPersona()
+      setCurrentUser(user)
+      setNeedsSetup(false)
+      if (configured) setSessionId(`session-${Date.now()}`)
+    } catch {
+      setCurrentUser(user)
+      setNeedsSetup(false)
+    } finally {
+      setChecking(false)
+    }
   }
 
   const handleLogout = () => {

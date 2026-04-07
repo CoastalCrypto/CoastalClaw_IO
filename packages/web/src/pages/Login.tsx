@@ -3,7 +3,7 @@ import { coreClient } from '../api/client'
 
 interface Props {
   setupMode: boolean
-  onLogin: (sessionToken: string, user: { id: string; username: string; role: string }) => void
+  onLogin: (sessionToken: string, user: { id: string; username: string; role: string }) => void | Promise<void>
 }
 
 export function Login({ setupMode, onLogin }: Props) {

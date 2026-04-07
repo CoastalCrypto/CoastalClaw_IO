@@ -1,8 +1,10 @@
 // packages/shell/src/main.ts
-import { app, BrowserWindow, Tray, Menu, nativeImage } from 'electron'
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } from 'electron'
 import { join } from 'path'
 
-const SERVER_URL = process.env.CC_SERVER_URL ?? 'http://localhost:4747'
+const isDev = process.env.CC_DEV === '1'
+const UI_URL = isDev ? 'http://localhost:5173' : (process.env.CC_SERVER_URL ?? 'http://localhost:4747')
+
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 
@@ -10,17 +12,31 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
+    minWidth: 800,
+    minHeight: 600,
     frame: false,
+    titleBarStyle: 'hidden',
     webPreferences: {
       preload: join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#050d1a',
     show: false,
   })
 
-  mainWindow.loadURL(SERVER_URL)
+  // In dev, open DevTools
+  if (isDev) {
+    mainWindow.webContents.openDevTools({ mode: 'detach' })
+  }
+
+  // Retry loading until Vite dev server is ready
+  const load = () => {
+    mainWindow?.loadURL(UI_URL).catch(() => {
+      setTimeout(load, 500)
+    })
+  }
+  load()
 
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show()
@@ -32,12 +48,23 @@ function createWindow(): void {
 function createTray(): void {
   const icon = nativeImage.createEmpty()
   tray = new Tray(icon)
-  tray.setToolTip('CoastalClaw')
+  tray.setToolTip('CoastalClaw OS')
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: 'Show', click: () => mainWindow?.show() },
-    { label: 'Quit', click: () => app.quit() },
+    { label: 'Show',   click: () => mainWindow?.show() },
+    { label: 'Reload', click: () => mainWindow?.webContents.reload() },
+    { type: 'separator' },
+    { label: 'Quit',   click: () => app.quit() },
   ]))
+  tray.on('double-click', () => mainWindow?.show())
 }
+
+// Window controls via IPC (since frame: false)
+ipcMain.on('window:minimize', () => mainWindow?.minimize())
+ipcMain.on('window:maximize', () => {
+  if (mainWindow?.isMaximized()) mainWindow.unmaximize()
+  else mainWindow?.maximize()
+})
+ipcMain.on('window:close', () => mainWindow?.close())
 
 app.whenReady().then(() => {
   createWindow()

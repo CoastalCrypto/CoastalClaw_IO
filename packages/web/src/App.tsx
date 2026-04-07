@@ -13,6 +13,7 @@ import { Tools } from './pages/Tools'
 import { Channels } from './pages/Channels'
 import { Users } from './pages/Users'
 import { NavBar, type NavPage } from './components/NavBar'
+import { TitleBar } from './components/TitleBar'
 import { coreClient } from './api/client'
 import './index.css'
 
@@ -115,6 +116,7 @@ export default function App() {
 
   return (
     <AuthContext.Provider value={{ currentUser, onLogout: handleLogout }}>
+      <TitleBar />
       {page === 'dashboard' && <Dashboard onNav={nav} />}
       {page === 'analytics' && <Analytics onNav={nav} />}
       {page === 'tools'     && <Tools onNav={nav} />}

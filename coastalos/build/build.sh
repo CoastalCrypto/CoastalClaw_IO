@@ -23,7 +23,7 @@ lb config \
   --distribution noble \
   --archive-areas "main restricted universe multiverse" \
   --bootloader grub-efi \
-  --binary-images iso-hybrid \
+  --binary-images iso \
   --iso-application "CoastalOS" \
   --iso-volume "CoastalOS-${VERSION}"
 
@@ -54,5 +54,5 @@ cp "${COASTALOS_DIR}/systemd/"*.timer   config/includes.chroot/etc/systemd/syste
 lb build
 
 # Move ISO to repo root
-mv live-image-amd64.hybrid.iso "${REPO_ROOT}/coastalos-${VERSION}.iso"
+mv live-image-amd64.iso "${REPO_ROOT}/coastalos-${VERSION}.iso"
 echo "[build] ISO ready: ${REPO_ROOT}/coastalos-${VERSION}.iso"

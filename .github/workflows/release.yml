@@ -58,7 +58,11 @@ jobs:
       - name: Extract version from tag
         id: version
         run: |
-          REF="${{ github.ref_name }}"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            REF="${{ github.event.inputs.tag }}"
+          else
+            REF="${{ github.ref_name }}"
+          fi
           echo "version=${REF#v}" >> "$GITHUB_OUTPUT"
 
       - name: Build .deb

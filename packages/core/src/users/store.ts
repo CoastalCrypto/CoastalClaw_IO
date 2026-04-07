@@ -114,23 +114,17 @@ export class UserStore {
       if (lastColon === -1) return null
       const payload = rest.slice(0, lastColon)
       const sig = rest.slice(lastColon + 1)
+      // payload = userId:role:expiry:nonce
+      // UUID contains no colons, so parts[0] is the full UUID
       const parts = payload.split(':')
-      // payload = userId:role:expiry:nonce  (userId is a UUID with dashes — 5 parts when split)
       if (parts.length < 4) return null
-      const userId = parts.slice(0, 5).join('-').replace(/-/g, (_, i, s) => {
-        // UUID has dashes at positions 8, 13, 18, 23 in standard form
-        // parts[0..4] from split on ':' gives us userId without issues
-        // actually UUID doesn't contain ':' so parts[0] = full UUID
-        return '-'
-      })
-      // parts[0] = UUID (no colons), parts[1] = role, parts[2] = expiry, parts[3] = nonce
-      const [rawId, role, expiry] = parts
+      const [userId, role, expiry] = parts
       if (Date.now() > Number(expiry)) return null
       const expected = createHmac('sha256', this.secret).update(payload).digest('hex')
       const a = Buffer.from(sig, 'hex')
       const b = Buffer.from(expected, 'hex')
       if (a.length !== b.length || !timingSafeEqual(a, b)) return null
-      return { userId: rawId, role: role as UserRole }
+      return { userId, role: role as UserRole }
     } catch {
       return null
     }

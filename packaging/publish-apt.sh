@@ -53,8 +53,9 @@ EOF
 
 # Optional: sign with GPG if key is available
 if [[ -n "${GPG_KEY_ID:-}" ]]; then
-  gpg --default-key "$GPG_KEY_ID" -abs -o Release.gpg Release
-  gpg --default-key "$GPG_KEY_ID" --clearsign -o InRelease Release
+  GPG_OPTS="--batch --no-tty --pinentry-mode loopback --default-key $GPG_KEY_ID"
+  gpg $GPG_OPTS -abs -o Release.gpg Release
+  gpg $GPG_OPTS --clearsign -o InRelease Release
   echo "[apt] Release signed with $GPG_KEY_ID"
 fi
 

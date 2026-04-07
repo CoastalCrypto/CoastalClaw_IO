@@ -577,6 +577,18 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
 
       <header className="glass-panel border-b-0 rounded-none px-6 py-3 flex items-center gap-4 z-10 shadow-md">
         <button onClick={() => setSidebarOpen(o => !o)} className="text-gray-400 hover:text-cyan-400 transition-colors text-lg" title="Sessions">☰</button>
+        {/* Wave logo */}
+        <svg viewBox="0 0 100 100" width="32" height="32" className="shrink-0 text-cyan-400" fill="none" aria-hidden="true">
+          <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="3.5"/>
+          <path stroke="currentColor" strokeWidth="9" strokeLinecap="round" fill="none"
+            d="M8 48 C18 34 30 34 38 44 C46 54 58 54 66 44 C74 34 86 34 94 44"/>
+          <circle cx="24" cy="36" r="3.5" fill="currentColor" opacity="0.8"/>
+          <circle cx="80" cy="36" r="3.5" fill="currentColor" opacity="0.8"/>
+          <path stroke="currentColor" strokeWidth="7" strokeLinecap="round" fill="none" opacity="0.65"
+            d="M8 62 C18 50 32 50 42 60 C52 70 66 68 76 58 C84 50 92 50 96 56"/>
+          <path stroke="currentColor" strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.35"
+            d="M8 76 C22 68 38 70 50 78 C62 86 78 84 90 76"/>
+        </svg>
         <RiveAgent domain={activeDomain} isThinking={loading} size={48} />
         <div>
           <div className="text-xs text-cyan-400 font-mono tracking-widest">

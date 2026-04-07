@@ -43,42 +43,19 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
         <div className="flex items-center gap-2.5 min-w-0">
           {/* Wave logo */}
           <svg viewBox="0 0 100 100" width="34" height="34" className="shrink-0 text-cyan-400" fill="none" aria-hidden="true">
-            <defs>
-              <clipPath id="wave-logo-clip">
-                <circle cx="50" cy="50" r="46"/>
-              </clipPath>
-            </defs>
-            <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="3"/>
-            <g clipPath="url(#wave-logo-clip)">
-              {/* Wave body with hollow barrel (evenodd) */}
-              <path fillRule="evenodd" fill="currentColor" d="
-                M 4 92 L 96 92 L 96 68
-                C 88 76 78 78 72 72
-                C 64 64 68 52 72 54
-                C 80 58 90 52 93 40
-                C 97 25 92 10 82 7
-                C 72 4 62 10 56 20
-                C 48 32 38 44 26 56
-                C 14 68 5 80 4 84 Z
-                M 54 26
-                C 62 14 84 14 90 34
-                C 96 54 82 70 64 70
-                C 46 70 34 58 34 46
-                C 34 30 46 24 54 26 Z
-              "/>
-              {/* Foam spray at crest */}
-              <circle cx="86" cy="6"  r="5.5" fill="currentColor" opacity="0.9"/>
-              <circle cx="93" cy="14" r="3.5" fill="currentColor" opacity="0.7"/>
-              <circle cx="80" cy="3"  r="3"   fill="currentColor" opacity="0.65"/>
-              <circle cx="96" cy="8"  r="2.2" fill="currentColor" opacity="0.5"/>
-              <circle cx="95" cy="19" r="1.8" fill="currentColor" opacity="0.35"/>
-              {/* Seagulls inside barrel */}
-              <path d="M56 44 C58 40 60 40 62 44 C64 40 66 40 68 44" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              <path d="M64 35 C66 31 68 31 70 35 C72 31 74 31 76 35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              {/* Water ripples */}
-              <path d="M4 80 C18 76 38 78 56 77 C70 76 84 78 96 76" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.5"/>
-              <path d="M4 87 C24 84 50 86 72 85 C82 84 92 86 96 84" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.35"/>
-            </g>
+            <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="3.5"/>
+            {/* Top wave — breaking crest */}
+            <path stroke="currentColor" strokeWidth="9" strokeLinecap="round" fill="none"
+              d="M8 48 C18 34 30 34 38 44 C46 54 58 54 66 44 C74 34 86 34 94 44"/>
+            {/* Foam dots at wave peaks */}
+            <circle cx="24" cy="36" r="3.5" fill="currentColor" opacity="0.8"/>
+            <circle cx="80" cy="36" r="3.5" fill="currentColor" opacity="0.8"/>
+            {/* Middle wave */}
+            <path stroke="currentColor" strokeWidth="7" strokeLinecap="round" fill="none" opacity="0.65"
+              d="M8 62 C18 50 32 50 42 60 C52 70 66 68 76 58 C84 50 92 50 96 56"/>
+            {/* Lower ripple */}
+            <path stroke="currentColor" strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.35"
+              d="M8 76 C22 68 38 70 50 78 C62 86 78 84 90 76"/>
           </svg>
           <span className="font-mono text-xs tracking-widest text-cyan-500 shrink-0 hidden sm:block">
             COASTAL_OS

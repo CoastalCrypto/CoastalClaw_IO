@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react'
 import { AgentCard } from '../components/AgentCard'
 import { AgentEditor } from '../components/AgentEditor'
+import { NavBar, type NavPage } from '../components/NavBar'
 
 interface Agent {
   id: string; name: string; role: string; tools: string[]; builtIn: boolean; active: boolean
 }
 
-const BASE = `http://localhost:${import.meta.env.VITE_CORE_PORT ?? 4747}`
+const BASE = `http://localhost:${(import.meta as any).env?.VITE_CORE_PORT ?? 4747}`
 
-export function Agents({ onNav }: { onNav: (page: string) => void }) {
+export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
   const [agents, setAgents] = useState<Agent[]>([])
   const [editing, setEditing] = useState<Agent | null>(null)
   const [adding, setAdding] = useState(false)
@@ -50,21 +51,10 @@ export function Agents({ onNav }: { onNav: (page: string) => void }) {
   }
 
   return (
-    <div className="min-h-screen text-white bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-fixed">
-      {/* Dark overlay for readability */}
-      <div className="absolute inset-0 bg-[#0d1117]/80 backdrop-blur-sm -z-10" />
+    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)' }}>
+      <NavBar page="agents" onNav={onNav} />
 
-      <nav className="fixed top-0 left-0 right-0 z-10 glass-panel border-b-0 rounded-none px-6 py-3 flex justify-between items-center shadow-md">
-        <span className="text-sm font-mono tracking-wider" style={{ color: 'var(--color-console-cyan)' }}>{'>'} EXECUTIVE_OS [AGENTS]</span>
-        <div className="flex gap-6 font-mono text-sm">
-          <button onClick={() => onNav('chat')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/chat</button>
-          <button onClick={() => onNav('models')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/models</button>
-          <button className="text-cyan-400 font-bold tracking-widest bg-cyan-950/30 px-3 py-1 rounded border border-cyan-800/50">/agents</button>
-          <button onClick={() => onNav('settings')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/settings</button>
-        </div>
-      </nav>
-
-      <div className="pt-20 px-6 max-w-4xl mx-auto">
+      <div className="pt-20 pb-12 px-4 sm:px-6 max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8 animate-slide-up">
           <h1 className="text-2xl font-mono tracking-wide flex items-center gap-3">
             <span className="w-2 h-6 bg-cyan-500 inline-block"></span> Workforce Matrix

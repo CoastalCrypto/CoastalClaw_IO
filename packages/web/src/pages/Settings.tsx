@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { coreClient, type Persona } from '../api/client'
+import { NavBar, type NavPage } from '../components/NavBar'
 
 const PERSONALITY_PRESETS = [
   { id: 'direct', label: 'Direct', desc: 'Concise, data-first, no filler.' },
@@ -21,7 +22,7 @@ function detectPreset(personality: string): string {
   return personality ? 'custom' : ''
 }
 
-export function Settings({ onNav }: { onNav: (page: string) => void }) {
+export function Settings({ onNav }: { onNav: (page: NavPage) => void }) {
   const [persona, setPersona] = useState<Partial<Persona>>({})
   const [personalityPreset, setPersonalityPreset] = useState('')
   const [loading, setLoading] = useState(true)
@@ -63,18 +64,10 @@ export function Settings({ onNav }: { onNav: (page: string) => void }) {
   }
 
   return (
-    <div className="min-h-screen text-white" style={{ background: '#050d1a' }}>
-      <nav className="fixed top-0 left-0 right-0 z-10 bg-[#050d1a]/90 border-b border-gray-800 px-6 py-3 flex justify-between items-center">
-        <span className="text-sm font-mono tracking-wider text-cyan-400">{'>'} SETTINGS</span>
-        <div className="flex gap-6 font-mono text-sm">
-          <button onClick={() => onNav('chat')} className="text-gray-400 hover:text-white transition-colors">/chat</button>
-          <button onClick={() => onNav('models')} className="text-gray-400 hover:text-white transition-colors">/models</button>
-          <button onClick={() => onNav('agents')} className="text-gray-400 hover:text-white transition-colors">/agents</button>
-          <button className="text-cyan-400 font-bold">/settings</button>
-        </div>
-      </nav>
+    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)' }}>
+      <NavBar page="settings" onNav={onNav} />
 
-      <div className="pt-20 px-6 max-w-xl mx-auto py-12">
+      <div className="pt-20 px-4 sm:px-6 max-w-xl mx-auto py-12">
         <h1 className="text-2xl font-bold mb-1">Agent Persona</h1>
         <p className="text-gray-500 text-sm mb-8">Changes take effect on the next conversation.</p>
 

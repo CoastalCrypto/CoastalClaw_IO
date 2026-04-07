@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { coreClient, type SystemStats } from '../api/client'
+import { NavBar, type NavPage } from '../components/NavBar'
 
 function fmtBytes(b: number): string {
   if (b === 0) return '0 B'
@@ -36,7 +37,7 @@ function fmtUptime(s: number): string {
 
 const LOG_SERVICES = ['coastalclaw-server', 'coastalclaw-daemon', 'coastalclaw-architect', 'ollama']
 
-export function System({ onNav }: { onNav: (page: string) => void }) {
+export function System({ onNav }: { onNav: (page: NavPage) => void }) {
   const [stats, setStats]       = useState<SystemStats | null>(null)
   const [logs, setLogs]         = useState<string[]>([])
   const [logService, setLogService] = useState(LOG_SERVICES[0])
@@ -81,23 +82,11 @@ export function System({ onNav }: { onNav: (page: string) => void }) {
     }
   }
 
-  const navBtn = 'text-gray-400 hover:text-white transition-colors font-mono text-sm'
-  const activeBtn = 'text-cyan-400 font-bold font-mono text-sm'
-
   return (
-    <div className="min-h-screen text-white" style={{ background: '#050d1a' }}>
-      <nav className="fixed top-0 left-0 right-0 z-10 bg-[#050d1a]/90 border-b border-gray-800 px-6 py-3 flex justify-between items-center">
-        <span className="text-sm font-mono tracking-wider text-cyan-400">{'>'} SYSTEM</span>
-        <div className="flex gap-6">
-          <button onClick={() => onNav('chat')}     className={navBtn}>/chat</button>
-          <button onClick={() => onNav('models')}   className={navBtn}>/models</button>
-          <button onClick={() => onNav('agents')}   className={navBtn}>/agents</button>
-          <button onClick={() => onNav('settings')} className={navBtn}>/settings</button>
-          <button className={activeBtn}>/system</button>
-        </div>
-      </nav>
+    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)' }}>
+      <NavBar page="system" onNav={onNav} />
 
-      <div className="pt-20 px-6 max-w-4xl mx-auto pb-12">
+      <div className="pt-20 px-4 sm:px-6 max-w-4xl mx-auto pb-12">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">System</h1>
           <div className="flex items-center gap-3">

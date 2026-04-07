@@ -433,10 +433,11 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
           </button>
           <button onClick={() => setShortcutsOpen(true)} className="text-gray-600 hover:text-gray-400 text-xs font-mono transition-colors" title="Keyboard shortcuts">?</button>
           <button className={activeNav}>/chat</button>
-          <button onClick={() => onNav('models')}   className={navBtn}>/models</button>
-          <button onClick={() => onNav('agents')}   className={navBtn}>/agents</button>
-          <button onClick={() => onNav('settings')} className={navBtn}>/settings</button>
-          <button onClick={() => onNav('system')}   className={navBtn}>/system</button>
+          <button onClick={() => onNav('dashboard')} className={navBtn}>/dashboard</button>
+          <button onClick={() => onNav('models')}    className={navBtn}>/models</button>
+          <button onClick={() => onNav('agents')}    className={navBtn}>/agents</button>
+          <button onClick={() => onNav('settings')}  className={navBtn}>/settings</button>
+          <button onClick={() => onNav('system')}    className={navBtn}>/system</button>
         </div>
       </header>
 

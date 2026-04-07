@@ -5,6 +5,8 @@ import { Models } from './pages/Models'
 import { Agents } from './pages/Agents'
 import { Settings } from './pages/Settings'
 import { System } from './pages/System'
+import { Dashboard } from './pages/Dashboard'
+import { NavBar, type NavPage } from './components/NavBar'
 import { coreClient } from './api/client'
 import './index.css'
 
@@ -15,7 +17,7 @@ const OceanScene = lazy(() =>
 
 export default function App() {
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const [page, setPage] = useState<'chat' | 'models' | 'agents' | 'settings' | 'system'>('chat')
+  const [page, setPage] = useState<NavPage>('chat')
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
@@ -44,29 +46,21 @@ export default function App() {
     </div>
   )
 
-  if (page === 'agents') return <Agents onNav={(p) => setPage(p as any)} />
+  const nav = (p: string) => setPage(p as NavPage)
 
-  if (page === 'settings') return <Settings onNav={(p) => setPage(p as any)} />
-  if (page === 'system')   return <System onNav={(p) => setPage(p as any)} />
+  if (page === 'dashboard') return <Dashboard onNav={nav} />
+  if (page === 'agents')    return <Agents onNav={nav} />
+  if (page === 'settings')  return <Settings onNav={nav} />
+  if (page === 'system')    return <System onNav={nav} />
 
   if (page === 'models') return (
-    <div className="min-h-screen text-white bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-fixed">
-      <div className="absolute inset-0 bg-[#0d1117]/80 backdrop-blur-sm -z-10" />
-      <nav className="fixed top-0 left-0 right-0 z-10 glass-panel border-b-0 rounded-none px-6 py-3 flex justify-between items-center shadow-md">
-        <span className="text-sm font-mono tracking-wider" style={{ color: 'var(--color-console-cyan)' }}>{'>'} EXECUTIVE_OS [MODELS]</span>
-        <div className="flex gap-6 font-mono text-sm">
-          <button onClick={() => setPage('chat')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/chat</button>
-          <button className="text-cyan-400 font-bold tracking-widest bg-cyan-950/30 px-3 py-1 rounded border border-cyan-800/50">/models</button>
-          <button onClick={() => setPage('agents')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/agents</button>
-          <button onClick={() => setPage('settings')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/settings</button>
-          <button onClick={() => setPage('system')} className="text-gray-400 hover:text-white hover:animate-glow-pulse transition-all">/system</button>
-        </div>
-      </nav>
-      <div className="pt-20 px-6 max-w-4xl mx-auto">
+    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)' }}>
+      <NavBar page="models" onNav={nav} />
+      <div className="pt-20 px-4 sm:px-6 max-w-4xl mx-auto pb-12">
         <Models />
       </div>
     </div>
   )
 
-  return <Chat sessionId={sessionId} onNav={(p) => setPage(p as any)} />
+  return <Chat sessionId={sessionId} onNav={nav} />
 }

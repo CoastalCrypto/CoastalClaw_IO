@@ -5,6 +5,7 @@ export interface OnboardingData {
   orgContext: string
   ownerName: string
   agentName: string
+  agentRole: string
   personality: string
 }
 
@@ -15,6 +16,7 @@ export function useOnboarding() {
     orgContext: '',
     ownerName: '',
     agentName: '',
+    agentRole: '',
     personality: '',
   })
 

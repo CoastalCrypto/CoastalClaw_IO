@@ -7,6 +7,7 @@ import type { LoopResult, GateDecision } from './types.js'
 import type { SkillGapsLog } from './skill-gaps.js'
 import { runBackgroundReview } from './learning-thread.js'
 import { IterationBudget } from './iteration-budget.js'
+import { eventBus } from '../events/bus.js'
 
 const MAX_TURNS = () => Number(process.env.CC_AGENT_MAX_TURNS ?? 10)
 const MAX_RESULT_CHARS = () => Number(process.env.CC_TOOL_RESULT_MAX_CHARS ?? 4000)
@@ -215,17 +216,25 @@ export class AgenticLoop {
       }
     }
 
+    // Emit tool_call_start
+    eventBus.publish({ type: 'tool_call_start', ts: start, sessionId, agentId: session.agent.id, toolName: tc.name, args: tc.args })
+
     // Execute the tool
     let raw = ''
+    let success = true
     try {
       raw = await this.registry.execute(tc.name, tc.args)
     } catch (e: unknown) {
       raw = `Execution error: ${(e as Error).message}`
+      success = false
     }
 
     const truncated = raw.slice(0, MAX_RESULT_CHARS())
     const duration = Date.now() - start
     const finalDecision: GateDecision = decision === 'queued' ? 'approved' : decision
+
+    // Emit tool_call_end
+    eventBus.publish({ type: 'tool_call_end', ts: Date.now(), sessionId, agentId: session.agent.id, toolName: tc.name, durationMs: duration, decision: finalDecision, success })
 
     this.log.record({
       sessionId,

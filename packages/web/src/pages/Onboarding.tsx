@@ -39,7 +39,7 @@ export function Onboarding({ onComplete }: { onComplete: (sessionId: string) => 
     try {
       await coreClient.setPersona({
         agentName: data.agentName || 'Assistant',
-        agentRole: 'AI Assistant',
+        agentRole: data.agentRole || 'AI Assistant',
         personality: data.personality || 'Helpful, concise, and honest.',
         orgName: data.orgName || 'Your Organization',
         orgContext: data.orgContext,
@@ -110,6 +110,14 @@ export function Onboarding({ onComplete }: { onComplete: (sessionId: string) => 
           autoFocus
         />
         <p className="text-xs text-gray-600 mt-2">This is what your primary assistant calls itself.</p>
+
+        <label className="block text-sm text-gray-400 mb-2 mt-4">Role <span className="text-gray-600">(optional)</span></label>
+        <input
+          className={input}
+          value={data.agentRole ?? ''}
+          onChange={(e) => update({ agentRole: e.target.value })}
+          placeholder="Chief of Staff, Research Assistant, Operations Lead..."
+        />
 
         <div className="mt-6">
           <label className="block text-sm text-gray-400 mb-3">Personality</label>

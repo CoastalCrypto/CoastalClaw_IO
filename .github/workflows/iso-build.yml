@@ -33,7 +33,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends \
-            live-build qemu-system-x86 ovmf curl
+            live-build qemu-system-x86 ovmf curl syslinux-utils
 
       - name: Build ISO
         env:

@@ -22,7 +22,6 @@ cd "$WORKDIR"
 lb config \
   --distribution noble \
   --archive-areas "main restricted universe multiverse" \
-  --debian-installer live \
   --bootloader grub \
   --binary-images iso-hybrid \
   --iso-application "CoastalOS" \

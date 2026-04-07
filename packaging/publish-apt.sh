@@ -38,7 +38,7 @@ cp "$DEB_PATH" "$WORK_DIR/apt/pool/main/"
 # Generate Packages index
 cd "$WORK_DIR/apt"
 dpkg-scanpackages --arch amd64 pool/ > Packages
-gzip -k Packages
+gzip -kf Packages
 
 # Write Release file
 cat > Release <<EOF

@@ -21,6 +21,88 @@ interface Message {
   subtaskCount?: number
 }
 
+interface BgPreset {
+  id: string
+  label: string
+  css: string        // full CSS background value
+  overlay: string    // rgba overlay on top
+  thumb: string      // inline style for the swatch preview
+  isImage?: boolean
+}
+
+const BG_PRESETS: BgPreset[] = [
+  {
+    id: 'coastal',
+    label: 'Coastal',
+    css: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)',
+    overlay: 'rgba(0,0,0,0)',
+    thumb: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)',
+  },
+  {
+    id: 'void',
+    label: 'Void',
+    css: '#000000',
+    overlay: 'rgba(0,0,0,0)',
+    thumb: '#000000',
+  },
+  {
+    id: 'midnight',
+    label: 'Midnight',
+    css: 'linear-gradient(135deg, #0a0015 0%, #120030 50%, #0a0015 100%)',
+    overlay: 'rgba(0,0,0,0)',
+    thumb: 'linear-gradient(135deg, #0a0015, #120030)',
+  },
+  {
+    id: 'aurora',
+    label: 'Aurora',
+    css: 'linear-gradient(135deg, #001a1a 0%, #001828 40%, #0d0020 100%)',
+    overlay: 'rgba(0,0,0,0)',
+    thumb: 'linear-gradient(135deg, #001a1a, #0d0020)',
+  },
+  {
+    id: 'ember',
+    label: 'Ember',
+    css: 'linear-gradient(135deg, #1a0600 0%, #200010 50%, #050d1a 100%)',
+    overlay: 'rgba(0,0,0,0)',
+    thumb: 'linear-gradient(135deg, #1a0600, #200010)',
+  },
+  {
+    id: 'ocean-photo',
+    label: 'Ocean',
+    css: "url('https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=1920&q=80') center/cover fixed",
+    overlay: 'rgba(5,13,26,0.82)',
+    thumb: "url('https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=400&q=60') center/cover",
+    isImage: true,
+  },
+  {
+    id: 'cyber-photo',
+    label: 'Cyber',
+    css: "url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1920&q=80') center/cover fixed",
+    overlay: 'rgba(13,17,23,0.85)',
+    thumb: "url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=400&q=60') center/cover",
+    isImage: true,
+  },
+  {
+    id: 'space-photo',
+    label: 'Space',
+    css: "url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1920&q=80') center/cover fixed",
+    overlay: 'rgba(0,0,0,0.7)',
+    thumb: "url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=400&q=60') center/cover",
+    isImage: true,
+  },
+]
+
+const LS_BG_KEY = 'cc_chat_bg'
+
+function loadSavedBg(): { presetId: string; customUrl: string } {
+  try {
+    const raw = localStorage.getItem(LS_BG_KEY)
+    return raw ? JSON.parse(raw) : { presetId: 'coastal', customUrl: '' }
+  } catch {
+    return { presetId: 'coastal', customUrl: '' }
+  }
+}
+
 const SHORTCUTS = [
   { key: 'Enter', desc: 'Send message' },
   { key: 'Shift+Enter', desc: 'New line' },
@@ -135,6 +217,23 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   } | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef2 = useRef<HTMLInputElement>(null)
+
+  // Background picker
+  const savedBg = loadSavedBg()
+  const [bgPresetId, setBgPresetId]   = useState(savedBg.presetId)
+  const [bgCustomUrl, setBgCustomUrl] = useState(savedBg.customUrl)
+  const [bgPickerOpen, setBgPickerOpen] = useState(false)
+  const [bgCustomDraft, setBgCustomDraft] = useState(savedBg.customUrl)
+
+  const activeBg = bgCustomUrl
+    ? { css: `url('${bgCustomUrl}') center/cover fixed`, overlay: 'rgba(5,13,26,0.80)' }
+    : (BG_PRESETS.find(p => p.id === bgPresetId) ?? BG_PRESETS[0])
+
+  const applyBg = (presetId: string, customUrl = '') => {
+    setBgPresetId(presetId)
+    setBgCustomUrl(customUrl)
+    localStorage.setItem(LS_BG_KEY, JSON.stringify({ presetId, customUrl }))
+  }
 
   // Load session history
   const loadSessions = useCallback(() => {
@@ -382,12 +481,71 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
 
   return (
     <div
-      className="flex flex-col h-screen text-white bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-fixed"
+      className="flex flex-col h-screen text-white relative"
+      style={{ background: activeBg.css }}
       onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
     >
-      <div className="absolute inset-0 bg-[#0d1117]/85 backdrop-blur-md -z-10" />
+      {/* Background overlay */}
+      <div className="absolute inset-0 -z-10 backdrop-blur-sm" style={{ background: activeBg.overlay }} />
+
+      {/* Background picker panel */}
+      {bgPickerOpen && (
+        <div className="fixed inset-0 z-30" onClick={() => setBgPickerOpen(false)}>
+          <div
+            className="absolute top-16 right-4 w-72 rounded-xl border border-white/10 shadow-2xl p-4"
+            style={{ background: 'rgba(5,13,26,0.97)', backdropFilter: 'blur(20px)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <p className="text-xs font-mono text-gray-500 tracking-widest mb-3">CHAT BACKGROUND</p>
+
+            {/* Preset grid */}
+            <div className="grid grid-cols-4 gap-2 mb-4">
+              {BG_PRESETS.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => applyBg(p.id, '')}
+                  title={p.label}
+                  className={`relative h-12 rounded-lg overflow-hidden border-2 transition-all ${
+                    bgPresetId === p.id && !bgCustomUrl
+                      ? 'border-cyan-400 scale-105'
+                      : 'border-white/10 hover:border-white/30'
+                  }`}
+                  style={{ background: p.thumb }}
+                >
+                  <span className="absolute bottom-0 inset-x-0 text-[9px] font-mono text-center pb-0.5"
+                    style={{ textShadow: '0 1px 3px #000', color: '#fff' }}>
+                    {p.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Custom URL */}
+            <p className="text-xs font-mono text-gray-600 mb-1.5">Custom image URL</p>
+            <div className="flex gap-2">
+              <input
+                className="flex-1 bg-black/40 border border-white/10 text-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-cyan-500/60 placeholder-gray-700"
+                placeholder="https://..."
+                value={bgCustomDraft}
+                onChange={e => setBgCustomDraft(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { applyBg('custom', bgCustomDraft); setBgPickerOpen(false) }}}
+              />
+              <button
+                onClick={() => { applyBg('custom', bgCustomDraft); setBgPickerOpen(false) }}
+                className="px-3 py-2 bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-xs font-mono rounded-lg hover:bg-cyan-500/30 transition-colors"
+              >set</button>
+            </div>
+            {bgCustomUrl && (
+              <button
+                onClick={() => { applyBg('coastal', ''); setBgCustomDraft('') }}
+                className="mt-2 text-xs text-gray-600 hover:text-red-400 font-mono transition-colors"
+              >✕ clear custom</button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Drag overlay */}
       {dragging && (
@@ -432,6 +590,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
             {voiceMuted ? '🔇' : '🔊'}
           </button>
           <button onClick={() => setShortcutsOpen(true)} className="text-gray-600 hover:text-gray-400 text-xs font-mono transition-colors" title="Keyboard shortcuts">?</button>
+          <button onClick={() => setBgPickerOpen(o => !o)} className={`text-xs font-mono transition-colors ${bgPickerOpen ? 'text-cyan-400' : 'text-gray-600 hover:text-gray-400'}`} title="Change background">🎨</button>
           <button className={activeNav}>/chat</button>
           <button onClick={() => onNav('dashboard')} className={navBtn}>/dashboard</button>
           <button onClick={() => onNav('models')}    className={navBtn}>/models</button>

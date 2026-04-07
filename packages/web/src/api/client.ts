@@ -333,6 +333,84 @@ export class CoreClient {
     if (!res.ok) throw new Error(`Broadcast failed (${res.status})`)
     return res.json()
   }
+
+  // ── Auth / Users ────────────────────────────────────────────────────────────
+
+  async checkSetup(): Promise<{ needsSetup: boolean }> {
+    const res = await fetch(`${this.baseUrl}/api/auth/setup`)
+    if (!res.ok) throw new Error(`Setup check failed (${res.status})`)
+    return res.json()
+  }
+
+  async setupFirstUser(username: string, password: string): Promise<{ sessionToken: string; user: any }> {
+    const res = await fetch(`${this.baseUrl}/api/auth/setup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+    if (!res.ok) throw new Error((await res.json() as any).error ?? `Setup failed (${res.status})`)
+    return res.json()
+  }
+
+  async loginUser(username: string, password: string): Promise<{ sessionToken: string; user: any }> {
+    const res = await fetch(`${this.baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+    if (!res.ok) throw new Error((await res.json() as any).error ?? `Login failed (${res.status})`)
+    return res.json()
+  }
+
+  async getMe(): Promise<{ user: any }> {
+    const res = await fetch(`${this.baseUrl}/api/auth/me`, { headers: this.adminHeaders() })
+    if (!res.ok) throw new Error('Not authenticated')
+    return res.json()
+  }
+
+  setSession(token: string): void {
+    this.sessionToken = token
+    sessionStorage.setItem('cc_admin_session', token)
+  }
+
+  clearSession(): void {
+    this.sessionToken = undefined
+    sessionStorage.removeItem('cc_admin_session')
+    sessionStorage.removeItem('cc_user')
+  }
+
+  async listUsers(): Promise<any[]> {
+    const res = await fetch(`${this.baseUrl}/api/admin/users`, { headers: this.adminHeaders() })
+    if (!res.ok) throw new Error(`List users failed (${res.status})`)
+    return res.json()
+  }
+
+  async createUser(username: string, password: string, role: string): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/api/admin/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify({ username, password, role }),
+    })
+    if (!res.ok) throw new Error((await res.json() as any).error ?? `Create user failed (${res.status})`)
+    return res.json()
+  }
+
+  async updateUser(id: string, data: { role?: string; password?: string; username?: string }): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/api/admin/users/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) throw new Error(`Update user failed (${res.status})`)
+    return res.json()
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await fetch(`${this.baseUrl}/api/admin/users/${id}`, {
+      method: 'DELETE',
+      headers: this.adminHeaders(),
+    })
+  }
 }
 
 export const coreClient = new CoreClient('/api')

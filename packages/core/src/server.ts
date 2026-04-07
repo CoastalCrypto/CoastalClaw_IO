@@ -16,6 +16,8 @@ import { eventRoutes } from './api/routes/events.js'
 import { analyticsRoutes } from './api/routes/analytics.js'
 import { toolRoutes } from './api/routes/tools.js'
 import { channelRoutes } from './api/routes/channels.js'
+import { userRoutes } from './api/routes/users.js'
+import { UserStore } from './users/store.js'
 import { AgentRegistry } from './agents/registry.js'
 import { PermissionGate } from './agents/permission-gate.js'
 import { CustomToolLoader } from './tools/custom/loader.js'
@@ -31,10 +33,16 @@ export async function buildServer() {
 
   // Root-level admin auth — applies to ALL /api/admin/* routes across all plugins
   const adminToken = getOrCreateAdminToken(config.dataDir)
+  // UserStore is created here so the auth hook can reference it for user session tokens.
+  // It is also passed to userRoutes below.
+  const db = new Database(join(config.dataDir, 'coastal-claw.db'))
+  const userStore = new UserStore(db, adminToken)
+
   fastify.addHook('onRequest', async (req, reply) => {
     if (!req.url.startsWith('/api/admin')) return
     if (req.url === '/api/admin/login') return
 
+    // 1. Raw admin token (legacy / CLI usage)
     const rawHeader = req.headers['x-admin-token'] ?? ''
     const raw = typeof rawHeader === 'string' ? rawHeader : rawHeader[0] ?? ''
     if (raw) {
@@ -45,7 +53,13 @@ export async function buildServer() {
 
     const sessionHeader = req.headers['x-admin-session'] ?? ''
     const session = typeof sessionHeader === 'string' ? sessionHeader : sessionHeader[0] ?? ''
-    if (session && validateSessionToken(adminToken, session)) return
+    if (session) {
+      // 2. Legacy admin session token (issued by /api/admin/login)
+      if (validateSessionToken(adminToken, session)) return
+      // 3. User session token (issued by /api/auth/login) — admin role required
+      const claims = userStore.verifySessionToken(session)
+      if (claims?.role === 'admin') return
+    }
 
     return reply.status(401).send({ error: 'Unauthorized' })
   })
@@ -58,7 +72,6 @@ export async function buildServer() {
   await fastify.register(wsRoutes)
   await fastify.register(adminRoutes)
 
-  const db = new Database(join(config.dataDir, 'coastal-claw.db'))
   const agentRegistry = new AgentRegistry(join(config.dataDir, 'agents.db'))
   const gate = new PermissionGate(db)
   const customToolLoader = new CustomToolLoader(db)
@@ -76,6 +89,7 @@ export async function buildServer() {
   await fastify.register(analyticsRoutes, { db })
   await fastify.register(toolRoutes, { loader: customToolLoader })
   await fastify.register(channelRoutes, { manager: channelManager })
+  await fastify.register(userRoutes, { store: userStore })
 
   fastify.addHook('onClose', async () => {
     agentRegistry.close()

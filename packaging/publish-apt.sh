@@ -9,6 +9,11 @@ DEB_FILE="$(basename "$DEB_PATH")"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APT_BRANCH="apt"
 WORK_DIR="$(mktemp -d)"
+# Inject GITHUB_TOKEN for authenticated pushes on CI
+REMOTE_URL="$(git -C "$REPO_ROOT" remote get-url origin)"
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+  REMOTE_URL="${REMOTE_URL/https:\/\//https:\/\/x-access-token:${GITHUB_TOKEN}@}"
+fi
 
 cleanup() { rm -rf "$WORK_DIR"; }
 trap cleanup EXIT
@@ -17,14 +22,12 @@ echo "[apt] Publishing ${DEB_FILE}..."
 
 # Clone the apt branch (or create it)
 if git -C "$REPO_ROOT" ls-remote --exit-code --heads origin "$APT_BRANCH" &>/dev/null; then
-  git clone --depth=1 --branch "$APT_BRANCH" \
-    "$(git -C "$REPO_ROOT" remote get-url origin)" "$WORK_DIR/apt"
+  git clone --depth=1 --branch "$APT_BRANCH" "$REMOTE_URL" "$WORK_DIR/apt"
 else
   mkdir -p "$WORK_DIR/apt"
   git -C "$WORK_DIR/apt" init
   git -C "$WORK_DIR/apt" checkout -b "$APT_BRANCH"
-  git -C "$WORK_DIR/apt" remote add origin \
-    "$(git -C "$REPO_ROOT" remote get-url origin)"
+  git -C "$WORK_DIR/apt" remote add origin "$REMOTE_URL"
 fi
 
 mkdir -p "$WORK_DIR/apt/pool/main"
@@ -59,9 +62,9 @@ fi
 cat > setup.sh <<'SETUP'
 #!/bin/bash
 set -e
-curl -fsSL https://CoastalCrypto.github.io/CoastalClaw_IO/coastalclaw.gpg | \
-  sudo gpg --dearmor -o /etc/apt/keyrings/coastalclaw.gpg
-echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/coastalclaw.gpg] \
+curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/coastalclaw-release.asc | \
+  sudo gpg --dearmor -o /usr/share/keyrings/coastalclaw.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/coastalclaw.gpg] \
   https://CoastalCrypto.github.io/CoastalClaw_IO stable main" | \
   sudo tee /etc/apt/sources.list.d/coastalclaw.list
 sudo apt-get update

@@ -110,83 +110,98 @@ Ollama (always available, CPU fallback)
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Installation
 
-### Prerequisites
+Everything installs with a single command. It handles Node.js, Ollama, the AI model, dependencies, and launches the app automatically.
 
-- Node.js 22+, pnpm 9+
-- [Ollama](https://ollama.com) running locally — `ollama pull llama3.2`
-- Docker (optional — required for `sandboxed` tier on non-Linux)
+### What you need before you start
 
-### 1. Install
+- A Mac or Linux machine (Windows: use WSL2)
+- A terminal (Terminal.app on Mac, any terminal on Linux)
+- An internet connection for the initial download (~2 GB for the AI model)
+- That's it — everything else is installed for you
 
-**One-line installer:**
-```bash
-curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/main/install.sh | bash
-```
+---
 
-**APT (Ubuntu 22.04 / 24.04):**
-```bash
-curl -fsSL https://CoastalCrypto.github.io/CoastalClaw_IO/coastalclaw-release.asc \
-  | sudo gpg --dearmor -o /usr/share/keyrings/coastalclaw.gpg
-echo "deb [signed-by=/usr/share/keyrings/coastalclaw.gpg] \
-  https://CoastalCrypto.github.io/CoastalClaw_IO stable main" \
-  | sudo tee /etc/apt/sources.list.d/coastalclaw.list
-sudo apt update && sudo apt install coastalclaw
-```
+### Step 1 — Run the installer
 
-**From source:**
-```bash
-git clone https://github.com/CoastalCrypto/CoastalClaw_IO.git
-cd CoastalClaw_IO
-pnpm install
-```
-
-### 2. Configure
+Open your terminal and paste this command:
 
 ```bash
-cp packages/core/.env.example packages/core/.env.local
+curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/install.sh | bash
 ```
 
-Minimal config:
-```env
-CC_OLLAMA_URL=http://127.0.0.1:11434
-CC_DEFAULT_MODEL=llama3.2
-CC_TRUST_LEVEL=sandboxed
+The installer will:
+1. Check for Git, Node.js, and Ollama — install anything missing automatically
+2. Download CoastalClaw
+3. Install all dependencies and build the app
+4. Pull the `llama3.2` AI model (~2 GB — this takes a few minutes)
+5. Start the server and open your browser
+
+When it finishes you'll see something like:
+
+```
+  ✔  Coastal Claw is running!
+
+  Web portal:   http://127.0.0.1:5173
+  Core API:     http://127.0.0.1:4747
+  Admin token:  abc123...
 ```
 
-### 3. Run
+---
+
+### Step 2 — Complete the setup wizard
+
+Your browser will open automatically to `http://127.0.0.1:5173`.
+
+Follow the on-screen wizard:
+1. **Name your agent** — give it a name and role (e.g. "Aria", "Executive Assistant")
+2. **Describe your organization** — a sentence or two about what your company does
+3. **Set a personality** — choose a style or write your own
+4. **Start chatting** — your AI executive team is ready
+
+That's it. You're running a fully private AI system on your own hardware.
+
+---
+
+### Ubuntu / Debian — APT install
+
+If you prefer to install as a system package:
 
 ```bash
-# Terminal 1 — core API server
-node packages/core/dist/main.js
-# → http://127.0.0.1:4747
-
-# Terminal 2 — web UI
-cd packages/web && pnpm dev
-# → http://localhost:5173
-
-# Terminal 3 — autonomous daemon (optional)
-node packages/daemon/dist/index.js
+curl -fsSL https://CoastalCrypto.github.io/CoastalClaw_IO/setup.sh | sudo bash
 ```
 
-### 4. Set up your agent
+This adds the signed APT repo and installs `coastalclaw` as a system service that starts automatically on boot.
 
-Open `http://localhost:5173` and complete the setup wizard — name your agent, describe your org, set a personality. This hits `PUT /api/persona` and configures every agent in the system.
+---
 
-Or set directly via API:
+### Stopping and starting
+
 ```bash
-curl -X PUT http://localhost:4747/api/persona \
-  -H "Content-Type: application/json" \
-  -d '{
-    "agentName": "JARVIS",
-    "agentRole": "Executive Assistant",
-    "personality": "Direct and concise. Lead with data. No filler.",
-    "orgName": "Stark Industries",
-    "orgContext": "Engineering and defense contractor. 12,000 employees.",
-    "ownerName": "Tony"
-  }'
+# Stop
+kill $(cat /tmp/coastal-claw-core.pid /tmp/coastal-claw-web.pid)
+
+# Start again (from your install directory)
+node ~/coastal-claw/packages/core/dist/main.js &
 ```
+
+Or if installed via APT:
+```bash
+sudo systemctl stop coastalclaw
+sudo systemctl start coastalclaw
+```
+
+---
+
+### Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| Browser doesn't open | Go to `http://127.0.0.1:5173` manually |
+| "Port already in use" | Run `kill $(cat /tmp/coastal-claw-core.pid)` then start again |
+| Slow first response | The AI model is loading into memory — normal on first run |
+| Logs | `tail -f /tmp/coastal-claw-core.log` |
 
 ---
 

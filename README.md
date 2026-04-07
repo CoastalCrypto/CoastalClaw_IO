@@ -205,6 +205,105 @@ sudo systemctl start coastalclaw
 
 ---
 
+## 💿 CoastalOS — Bootable USB
+
+CoastalOS is a dedicated Linux image that runs CoastalClaw as a full operating system. Boot it from a thumb drive and your machine becomes a dedicated, private AI appliance — no installation required.
+
+### What you need
+
+- A USB drive **8 GB or larger** (everything on it will be erased)
+- The CoastalOS ISO file — download the latest from the [Releases page](https://github.com/CoastalCrypto/CoastalClaw_IO/releases)
+- A second computer to write the USB (Mac, Linux, or Windows)
+
+---
+
+### Step 1 — Download the ISO
+
+Go to [github.com/CoastalCrypto/CoastalClaw_IO/releases](https://github.com/CoastalCrypto/CoastalClaw_IO/releases) and download the file named `coastalos-X.X.X.iso`.
+
+---
+
+### Step 2 — Write the ISO to your USB drive
+
+**On Mac:**
+
+1. Plug in your USB drive
+2. Open Terminal and find your USB drive's disk identifier:
+   ```bash
+   diskutil list
+   ```
+   Look for your drive — it will appear as `/dev/disk2` or similar. **Double-check the size matches your USB drive.**
+3. Unmount it:
+   ```bash
+   diskutil unmountDisk /dev/disk2
+   ```
+4. Write the ISO (replace `/dev/disk2` with your disk and update the path to the ISO):
+   ```bash
+   sudo dd if=~/Downloads/coastalos-1.0.0.iso of=/dev/rdisk2 bs=4m status=progress
+   ```
+5. When it finishes, eject:
+   ```bash
+   diskutil eject /dev/disk2
+   ```
+
+**On Linux:**
+
+1. Plug in your USB drive
+2. Find the drive:
+   ```bash
+   lsblk
+   ```
+   Look for your USB drive — it will appear as `/dev/sdb` or `/dev/sdc`. **Make sure you have the right one.**
+3. Write the ISO (replace `/dev/sdb` with your drive):
+   ```bash
+   sudo dd if=~/Downloads/coastalos-1.0.0.iso of=/dev/sdb bs=4M status=progress oflag=sync
+   ```
+
+**On Windows:**
+
+1. Download and install [Balena Etcher](https://etcher.balena.io) — it's free
+2. Open Etcher, click **Flash from file**, and select the ISO
+3. Select your USB drive
+4. Click **Flash** and wait for it to finish
+
+---
+
+### Step 3 — Boot from the USB drive
+
+1. Plug the USB drive into the computer you want to run CoastalOS on
+2. Restart the computer
+3. As it boots, press the key to open the **boot menu** — this is usually one of:
+   - `F12` (most PCs — Dell, Lenovo, HP)
+   - `F11` (MSI, ASRock)
+   - `F9` (HP)
+   - `Option ⌥` (Mac)
+   - If none of those work, try `Esc` or `F2` to enter BIOS and change the boot order
+4. Select your USB drive from the list
+5. CoastalOS will boot — this takes about 30–60 seconds
+
+---
+
+### Step 4 — First boot
+
+On first boot, CoastalOS will:
+
+1. **Check your network** — if you're not connected to WiFi or ethernet, a network setup window opens automatically. Connect before continuing.
+2. **Start the CoastalClaw server** — the status bar at the top shows a green dot when it's ready
+3. **Open the browser** — the CoastalClaw interface loads fullscreen automatically
+
+Complete the setup wizard (same as the standard install — name your agent, describe your org) and you're running.
+
+---
+
+### Notes
+
+- **Your data is stored on the USB drive** — plug it in to any compatible machine and your agent memory and settings come with you
+- **Ollama and the AI model** are downloaded on first boot (~2 GB) — you need internet for this initial setup
+- **The OS runs entirely from the USB drive** — nothing is written to the host machine's disk unless you choose to install
+- CoastalOS is built on Ubuntu 24.04 (Noble) and supports most modern x86-64 hardware
+
+---
+
 ## 🎭 Agent Persona
 
 Every agent soul is a template. Configure once, applied everywhere.

@@ -40,12 +40,19 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
       <div className="px-4 sm:px-6 h-14 flex items-center justify-between max-w-7xl mx-auto">
 
         {/* Brand */}
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0">
+          {/* Wave logo */}
+          <svg width="32" height="22" viewBox="0 0 32 22" fill="none" className="shrink-0 text-cyan-400" aria-hidden="true">
+            <path d="M1 8 C4.5 2, 9 2, 12 8 C15 14, 19.5 14, 23 8 C26.5 2, 31 2, 34 8"
+              stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" fill="none"/>
+            <path d="M1 14 C4.5 8, 9 8, 12 14 C15 20, 19.5 20, 23 14 C26.5 8, 31 8, 34 14"
+              stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" fill="none" opacity="0.45"/>
+          </svg>
           <span className="font-mono text-xs tracking-widest text-cyan-500 shrink-0 hidden sm:block">
-            {'>'} COASTAL_OS
+            COASTAL_OS
           </span>
           <span className="font-mono text-xs tracking-widest text-cyan-500 shrink-0 sm:hidden">
-            {'>'} CC
+            CC
           </span>
           {title && (
             <span className="text-xs font-mono text-gray-500 truncate hidden md:block">

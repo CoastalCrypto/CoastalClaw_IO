@@ -18,7 +18,7 @@ lb config \
   --distribution noble \
   --archive-areas "main restricted universe multiverse" \
   --debian-installer live \
-  --bootloaders grub-efi,grub-pc \
+  --bootloader grub \
   --binary-images iso-hybrid \
   --iso-application "CoastalOS" \
   --iso-volume "CoastalOS-${VERSION}"

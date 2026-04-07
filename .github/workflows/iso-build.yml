@@ -9,9 +9,16 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'ISO version tag (e.g. 0.3.1)'
+        description: "ISO version (e.g. 1.0.0)"
         required: false
-        default: 'ci'
+        default: "ci"
+      attach_release:
+        description: "Attach to GitHub Release with this tag (e.g. v1.0.0) — leave blank to skip"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
 
 jobs:
   build-iso:
@@ -25,7 +32,8 @@ jobs:
       - name: Install live-build and QEMU
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y live-build qemu-system-x86 ovmf curl
+          sudo apt-get install -y --no-install-recommends \
+            live-build qemu-system-x86 ovmf curl
 
       - name: Build ISO
         env:
@@ -44,5 +52,16 @@ jobs:
         with:
           name: coastalos-${{ github.event.inputs.version || 'ci' }}-${{ github.run_number }}.iso
           path: coastalos-*.iso
-          retention-days: 7
+          retention-days: 30
           if-no-files-found: error
+
+      - name: Attach ISO to GitHub Release
+        if: ${{ github.event.inputs.attach_release != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISO=$(ls coastalos-*.iso | head -1)
+          gh release upload "${{ github.event.inputs.attach_release }}" "$ISO" \
+            --repo "${{ github.repository }}" \
+            --clobber
+          echo "Attached $ISO to release ${{ github.event.inputs.attach_release }}"

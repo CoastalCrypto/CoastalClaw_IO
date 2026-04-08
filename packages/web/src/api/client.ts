@@ -368,6 +368,16 @@ export class CoreClient {
     return res.json()
   }
 
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ user: any }> {
+    const res = await fetch(`${this.baseUrl}/api/auth/password`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    })
+    if (!res.ok) throw new Error((await res.json() as any).error ?? `Failed (${res.status})`)
+    return res.json()
+  }
+
   setSession(token: string): void {
     this.sessionToken = token
     sessionStorage.setItem('cc_admin_session', token)

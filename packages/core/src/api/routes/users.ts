@@ -32,6 +32,30 @@ export async function userRoutes(fastify: FastifyInstance, opts: { store: UserSt
     return reply.send({ sessionToken, user })
   })
 
+  /** Self-service password change — requires current session, no admin role needed */
+  fastify.patch<{ Body: { currentPassword: string; newPassword: string } }>(
+    '/api/auth/password',
+    async (req, reply) => {
+      const header = req.headers['x-admin-session'] ?? ''
+      const token = typeof header === 'string' ? header : (header[0] ?? '')
+      const claims = store.verifySessionToken(token)
+      if (!claims) return reply.status(401).send({ error: 'Unauthorized' })
+
+      const { currentPassword, newPassword } = req.body ?? {}
+      if (!currentPassword || !newPassword) return reply.status(400).send({ error: 'currentPassword and newPassword required' })
+      if (newPassword.length < 8) return reply.status(400).send({ error: 'Password must be at least 8 characters' })
+
+      const user = store.get(claims.userId)
+      if (!user) return reply.status(401).send({ error: 'User not found' })
+
+      const verified = await store.verifyPassword(user.username, currentPassword)
+      if (!verified) return reply.status(401).send({ error: 'Current password is incorrect' })
+
+      const updated = await store.update(claims.userId, { password: newPassword })
+      return reply.send({ user: updated })
+    }
+  )
+
   /** Verify current session and return user info */
   fastify.get('/api/auth/me', async (req, reply) => {
     const header = req.headers['x-admin-session'] ?? ''

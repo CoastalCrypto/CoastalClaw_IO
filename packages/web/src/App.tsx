@@ -2,6 +2,7 @@ import { useState, lazy, Suspense, useEffect } from 'react'
 import { AuthContext, type AuthUser } from './context/AuthContext'
 import { Onboarding } from './pages/Onboarding'
 import { Login } from './pages/Login'
+import { ChangePassword } from './pages/ChangePassword'
 import { Chat } from './pages/Chat'
 import { Models } from './pages/Models'
 import { Agents } from './pages/Agents'
@@ -40,9 +41,6 @@ export default function App() {
   useEffect(() => {
     async function init() {
       try {
-        const { needsSetup: ns } = await coreClient.checkSetup()
-        if (ns) { setNeedsSetup(true); setChecking(false); return }
-
         const storedUser = loadStoredUser()
         if (!storedUser || !sessionStorage.getItem('cc_admin_session')) {
           setChecking(false); return
@@ -100,8 +98,19 @@ export default function App() {
     </div>
   )
 
-  if (needsSetup || !currentUser) {
-    return <Login setupMode={needsSetup} onLogin={handleLogin} />
+  if (!currentUser) {
+    return <Login onLogin={handleLogin} />
+  }
+
+  // Force password change for default admin account before entering the app
+  if ((currentUser as any).mustChangePassword) {
+    return (
+      <ChangePassword onDone={(updatedUser) => {
+        const merged = { ...currentUser, ...updatedUser, mustChangePassword: false }
+        setCurrentUser(merged)
+        sessionStorage.setItem('cc_user', JSON.stringify(merged))
+      }} />
+    )
   }
 
   if (!sessionId) return (

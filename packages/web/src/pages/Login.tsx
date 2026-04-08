@@ -2,14 +2,12 @@ import { useState } from 'react'
 import { coreClient } from '../api/client'
 
 interface Props {
-  setupMode: boolean
   onLogin: (sessionToken: string, user: { id: string; username: string; role: string }) => void | Promise<void>
 }
 
-export function Login({ setupMode, onLogin }: Props) {
+export function Login({ onLogin }: Props) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [confirm,  setConfirm]  = useState('')
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
 
@@ -18,13 +16,9 @@ export function Login({ setupMode, onLogin }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    if (setupMode && password !== confirm) { setError('Passwords do not match'); return }
-    if (setupMode && password.length < 8)  { setError('Password must be at least 8 characters'); return }
     setLoading(true)
     try {
-      const { sessionToken, user } = setupMode
-        ? await coreClient.setupFirstUser(username, password)
-        : await coreClient.loginUser(username, password)
+      const { sessionToken, user } = await coreClient.loginUser(username, password)
       onLogin(sessionToken, user)
     } catch (e: any) {
       setError(e.message ?? 'Login failed')
@@ -41,9 +35,7 @@ export function Login({ setupMode, onLogin }: Props) {
         {/* Logo */}
         <div className="text-center mb-10">
           <div className="font-mono text-2xl text-cyan-400 tracking-widest mb-2">{'>'} COASTAL_OS</div>
-          <div className="text-xs font-mono text-gray-500 tracking-wider">
-            {setupMode ? 'CREATE YOUR ADMIN ACCOUNT' : 'SIGN IN TO CONTINUE'}
-          </div>
+          <div className="text-xs font-mono text-gray-500 tracking-wider">SIGN IN TO CONTINUE</div>
         </div>
 
         <form onSubmit={handleSubmit}
@@ -60,16 +52,8 @@ export function Login({ setupMode, onLogin }: Props) {
             <div>
               <label className="block text-xs text-gray-500 mb-1.5 font-mono tracking-wider">PASSWORD</label>
               <input className={inp} type="password" value={password} onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••" autoComplete={setupMode ? 'new-password' : 'current-password'} required />
+                placeholder="••••••••" autoComplete="current-password" required />
             </div>
-
-            {setupMode && (
-              <div>
-                <label className="block text-xs text-gray-500 mb-1.5 font-mono tracking-wider">CONFIRM PASSWORD</label>
-                <input className={inp} type="password" value={confirm} onChange={e => setConfirm(e.target.value)}
-                  placeholder="••••••••" autoComplete="new-password" required />
-              </div>
-            )}
           </div>
 
           {error && (
@@ -80,15 +64,13 @@ export function Login({ setupMode, onLogin }: Props) {
 
           <button type="submit" disabled={loading || !username || !password}
             className="mt-6 w-full btn-primary py-3 text-sm disabled:opacity-40">
-            {loading ? 'Please wait...' : setupMode ? 'Create account' : 'Sign in'}
+            {loading ? 'Please wait...' : 'Sign in'}
           </button>
         </form>
 
-        {setupMode && (
-          <p className="text-center text-xs text-gray-600 mt-6 font-mono">
-            This is your first login — you're creating the root admin account.
-          </p>
-        )}
+        <p className="text-center text-xs text-gray-600 mt-6 font-mono">
+          Default credentials: <span className="text-gray-400">admin / admin</span>
+        </p>
       </div>
     </div>
   )

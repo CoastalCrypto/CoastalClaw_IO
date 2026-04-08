@@ -11,6 +11,7 @@ export interface UserRecord {
   id: string
   username: string
   role: UserRole
+  mustChangePassword: boolean
   createdAt: number
   updatedAt: number
 }
@@ -21,14 +22,22 @@ export class UserStore {
   constructor(private db: Database.Database, private secret: string) {
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS users (
-        id            TEXT PRIMARY KEY,
-        username      TEXT UNIQUE NOT NULL,
-        role          TEXT NOT NULL DEFAULT 'operator',
-        password_hash TEXT NOT NULL,
-        created_at    INTEGER NOT NULL,
-        updated_at    INTEGER NOT NULL
+        id                   TEXT PRIMARY KEY,
+        username             TEXT UNIQUE NOT NULL,
+        role                 TEXT NOT NULL DEFAULT 'operator',
+        password_hash        TEXT NOT NULL,
+        must_change_password INTEGER NOT NULL DEFAULT 0,
+        created_at           INTEGER NOT NULL,
+        updated_at           INTEGER NOT NULL
       )
     `)
+    // Migration: add must_change_password to existing installs
+    try { this.db.exec('ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0') } catch {}
+
+    // First-run: seed default admin account if no users exist
+    if (!this.hasUsers) {
+      this.create('admin', 'admin', 'admin', true).catch(() => {})
+    }
   }
 
   get hasUsers(): boolean {
@@ -48,14 +57,14 @@ export class UserStore {
     return this.db.prepare('SELECT * FROM users WHERE username = ?').get(username) as any
   }
 
-  async create(username: string, password: string, role: UserRole = 'operator'): Promise<UserRecord> {
+  async create(username: string, password: string, role: UserRole = 'operator', mustChangePassword = false): Promise<UserRecord> {
     const now = Date.now()
     const id = randomUUID()
     const hash = await this.hashPassword(password)
     this.db.prepare(`
-      INSERT INTO users (id, username, role, password_hash, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(id, username, role, hash, now, now)
+      INSERT INTO users (id, username, role, password_hash, must_change_password, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(id, username, role, hash, mustChangePassword ? 1 : 0, now, now)
     return this.get(id)!
   }
 
@@ -70,6 +79,9 @@ export class UserStore {
     if (data.password !== undefined) {
       fields.push('password_hash = ?')
       values.push(await this.hashPassword(data.password))
+      // Changing password clears the must-change flag
+      fields.push('must_change_password = ?')
+      values.push(0)
     }
     if (!fields.length) return this.get(id)
     fields.push('updated_at = ?')
@@ -141,6 +153,7 @@ export class UserStore {
       id: r.id,
       username: r.username,
       role: r.role as UserRole,
+      mustChangePassword: Boolean(r.must_change_password),
       createdAt: r.created_at,
       updatedAt: r.updated_at,
     }

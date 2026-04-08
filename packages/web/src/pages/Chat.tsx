@@ -295,7 +295,9 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
 
   const speakText = useCallback((text: string) => {
     if (voiceMutedRef.current) return
-    const clean = text.replace(/[*#`]/g, '')
+    // Strip markdown formatting and trim whitespace
+    const clean = text.replace(/[*#`_~>]/g, '').replace(/\s+/g, ' ').trim()
+    if (!clean) return
     const agentVoiceName = agentVoicesRef.current.get(activeDomainRef.current)
 
     // VibeVoice (AI on-device TTS)
@@ -313,17 +315,46 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
     }
 
     // Browser Web Speech API
+    // Chrome has a known bug where speechSynthesis pauses/garbles after ~15s on long texts.
+    // Fix: split into sentence-sized chunks and chain them via onend.
     if (!('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(clean)
+
     const voices = window.speechSynthesis.getVoices()
-    if (agentVoiceName) {
-      u.voice = voices.find(v => v.name === agentVoiceName) ?? null
-    } else {
-      u.voice = voices.find(v => v.name.includes('Google UK English Male')) || voices.find(v => v.lang.startsWith('en')) || null
+    const preferredVoice = agentVoiceName
+      ? (voices.find(v => v.name === agentVoiceName) ?? null)
+      : (voices.find(v => v.name.includes('Google UK English Male')) || voices.find(v => v.lang.startsWith('en')) || null)
+
+    // Split on sentence boundaries, keeping the delimiter attached
+    const sentences = clean.match(/[^.!?]+[.!?]*/g) ?? [clean]
+    // Merge very short fragments to reduce utterance overhead
+    const chunks: string[] = []
+    let current = ''
+    for (const s of sentences) {
+      current += s
+      if (current.length >= 80) { chunks.push(current.trim()); current = '' }
     }
-    u.rate = 1.05; u.pitch = 0.9
-    window.speechSynthesis.speak(u)
+    if (current.trim()) chunks.push(current.trim())
+
+    let idx = 0
+    // Keep-alive interval: Chrome pauses synthesis without this on long queues
+    const keepAlive = setInterval(() => {
+      if (!window.speechSynthesis.speaking) { clearInterval(keepAlive); return }
+      window.speechSynthesis.pause()
+      window.speechSynthesis.resume()
+    }, 10000)
+
+    const speakNext = () => {
+      if (voiceMutedRef.current || idx >= chunks.length) { clearInterval(keepAlive); return }
+      const u = new SpeechSynthesisUtterance(chunks[idx++])
+      u.voice = preferredVoice
+      u.rate = 1.0
+      u.pitch = 1.0
+      u.onend = speakNext
+      u.onerror = () => { clearInterval(keepAlive) }
+      window.speechSynthesis.speak(u)
+    }
+    speakNext()
   }, [])
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])

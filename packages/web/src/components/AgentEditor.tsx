@@ -76,7 +76,9 @@ export function AgentEditor({ initial, onSave, onCancel }: Props) {
     if (!('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(previewText)
-    const match = availableVoices.find(v => v.name === voice)
+    // Re-query voices at call time — browser may not have them loaded at component mount
+    const voices = window.speechSynthesis.getVoices()
+    const match = voices.find(v => v.name === voice)
     if (match) u.voice = match
     u.rate = 1.0; u.pitch = 1.0
     window.speechSynthesis.speak(u)

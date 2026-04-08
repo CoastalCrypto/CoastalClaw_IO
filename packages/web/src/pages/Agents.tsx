@@ -52,6 +52,20 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
     load()
   }
 
+  const handleToggle = async (id: string, active: boolean) => {
+    // Optimistic update
+    setAgents(prev => prev.map(a => a.id === id ? { ...a, active } : a))
+    const res = await fetch(`/api/admin/agents/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+      body: JSON.stringify({ active }),
+    })
+    if (!res.ok) {
+      // Revert on failure
+      setAgents(prev => prev.map(a => a.id === id ? { ...a, active: !active } : a))
+    }
+  }
+
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)' }}>
       <NavBar page="agents" onNav={onNav} />
@@ -92,6 +106,7 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
               agent={agent}
               onEdit={a => { setEditing(a); setAdding(false) }}
               onDelete={handleDelete}
+              onToggle={handleToggle}
             />
           ))}
         </div>

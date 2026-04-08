@@ -11,9 +11,10 @@ interface Props {
   agent: Agent
   onEdit: (agent: Agent) => void
   onDelete: (id: string) => void
+  onToggle: (id: string, active: boolean) => void
 }
 
-export function AgentCard({ agent, onEdit, onDelete }: Props) {
+export function AgentCard({ agent, onEdit, onDelete, onToggle }: Props) {
   return (
     <div className="glass-panel p-5 hover:border-cyan-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_4px_20px_rgba(0,255,255,0.15)] group relative overflow-hidden">
       <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500/0 group-hover:bg-cyan-500/80 transition-colors"></div>
@@ -33,19 +34,21 @@ export function AgentCard({ agent, onEdit, onDelete }: Props) {
           <div className="text-xs text-gray-400 mb-3 font-mono leading-relaxed line-clamp-2">
             {'>'} {agent.role}
           </div>
-          <div className="flex gap-2 text-[10px] font-mono tracking-widest text-cyan-500/60">
+          <div className="flex gap-2 text-[10px] font-mono tracking-widest text-cyan-500/60 flex-wrap">
             <span className="border border-gray-800 px-2 py-0.5 rounded bg-black/20">
               {agent.tools.length} TOOLS
             </span>
-            {agent.active ? (
-              <span className="border border-green-900/50 text-green-400 px-2 py-0.5 rounded bg-green-950/20">
-                ONLINE
-              </span>
-            ) : (
-              <span className="border border-red-900/50 text-red-400 px-2 py-0.5 rounded bg-red-950/20">
-                OFFLINE
-              </span>
-            )}
+            <button
+              onClick={() => onToggle(agent.id, !agent.active)}
+              title={agent.active ? 'Click to take offline' : 'Click to bring online'}
+              className={`border px-2 py-0.5 rounded transition-colors cursor-pointer ${
+                agent.active
+                  ? 'border-green-900/50 text-green-400 bg-green-950/20 hover:bg-red-950/20 hover:text-red-400 hover:border-red-900/50'
+                  : 'border-red-900/50 text-red-400 bg-red-950/20 hover:bg-green-950/20 hover:text-green-400 hover:border-green-900/50'
+              }`}
+            >
+              {agent.active ? 'ONLINE' : 'OFFLINE'}
+            </button>
           </div>
         </div>
         <div className="flex flex-col gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">

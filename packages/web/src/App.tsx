@@ -33,7 +33,7 @@ function loadStoredUser(): AuthUser | null {
 
 export default function App() {
   const [checking,    setChecking]    = useState(true)
-  const [needsSetup,  setNeedsSetup]  = useState(false)
+  const [,            setNeedsSetup]  = useState(false)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const [sessionId,   setSessionId]   = useState<string | null>(null)
   const [page,        setPage]        = useState<NavPage>('chat')

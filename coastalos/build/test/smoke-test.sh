@@ -12,16 +12,17 @@ LOG=$(mktemp)
 echo "[smoke-test] Booting $ISO in QEMU (${TIMEOUT}s timeout)..."
 
 # Start QEMU — serial output goes to log file
+# -drive with format=raw avoids "Could not read from CDROM (code 0004)" in CI
+# -append passes console=ttyS0 so GRUB/kernel output reaches the serial log
 qemu-system-x86_64 \
-  -cdrom "$ISO" \
+  -drive "file=${ISO},format=raw,media=cdrom,readonly=on" \
   -m 2048 \
   -smp 2 \
-  -nographic \
+  -display none \
   -serial file:"$LOG" \
-  -net nic \
-  -net user \
+  -netdev user,id=net0 -device virtio-net-pci,netdev=net0 \
   -no-reboot \
-  -boot d \
+  -boot order=d,menu=off \
   &
 
 QEMU_PID=$!

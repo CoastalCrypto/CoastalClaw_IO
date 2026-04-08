@@ -54,8 +54,10 @@ EOF
 # Optional: sign with GPG if key is available
 if [[ -n "${GPG_KEY_ID:-}" ]]; then
   rm -f Release.gpg InRelease
-  GPG_OPTS="--batch --yes --no-tty --pinentry-mode loopback --default-key $GPG_KEY_ID"
-  gpg $GPG_OPTS -abs -o Release.gpg Release
+  # Kill any stale gpg-agent (causes "File exists" EEXIST on socket files in CI)
+  gpgconf --kill gpg-agent 2>/dev/null || true
+  GPG_OPTS="--batch --yes --no-tty --pinentry-mode loopback --no-autostart --default-key $GPG_KEY_ID"
+  gpg $GPG_OPTS --armor --detach-sign -o Release.gpg Release
   gpg $GPG_OPTS --clearsign -o InRelease Release
   echo "[apt] Release signed with $GPG_KEY_ID"
 fi

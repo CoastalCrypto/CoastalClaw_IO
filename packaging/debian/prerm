@@ -3,7 +3,7 @@ set -e
 
 case "$1" in
   remove|purge)
-    systemctl stop coastalclaw-server.service coastalclaw-daemon.service 2>/dev/null || true
-    systemctl disable coastalclaw-server.service coastalclaw-daemon.service 2>/dev/null || true
+    systemctl stop coastalclaw-server.service coastalclaw-daemon.service coastalclaw-web.service 2>/dev/null || true
+    systemctl disable coastalclaw-server.service coastalclaw-daemon.service coastalclaw-web.service 2>/dev/null || true
     ;;
 esac

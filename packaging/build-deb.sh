@@ -14,13 +14,28 @@ echo "[deb] Building ${PKG}.deb..."
 rm -rf "${REPO_ROOT}/dist-deb"
 mkdir -p "${STAGING}"
 
+# ── Build application ─────────────────────────────────────────
+echo "[deb] Building application (pnpm install + build)..."
+cd "${REPO_ROOT}"
+pnpm install --frozen-lockfile
+pnpm build
+cd - >/dev/null
+
 # ── Application files ─────────────────────────────────────────
 INSTALL_DIR="${STAGING}/opt/coastalclaw"
 mkdir -p "${INSTALL_DIR}"
 
-# Copy source (no node_modules or dist — postinst builds on target)
-rsync -a --exclude='node_modules' --exclude='dist' --exclude='dist-electron' \
-  --exclude='.git' --exclude='dist-deb' --exclude='*.iso' \
+# Copy everything including node_modules and built dist directories.
+# The .deb is self-contained — no build step needed at install time.
+rsync -a \
+  --exclude='.git' \
+  --exclude='dist-deb' \
+  --exclude='*.iso' \
+  --exclude='dist-electron' \
+  --exclude='packages/shell' \
+  --exclude='coastalos' \
+  --exclude='docs' \
+  --exclude='assets' \
   "${REPO_ROOT}/" "${INSTALL_DIR}/"
 
 # ── Systemd units ─────────────────────────────────────────────
@@ -28,12 +43,15 @@ SYSTEMD_DIR="${STAGING}/lib/systemd/system"
 mkdir -p "${SYSTEMD_DIR}"
 cp "${REPO_ROOT}/coastalos/systemd/coastal-server.service"    "${SYSTEMD_DIR}/coastalclaw-server.service"
 cp "${REPO_ROOT}/coastalos/systemd/coastal-daemon.service"    "${SYSTEMD_DIR}/coastalclaw-daemon.service"
+cp "${REPO_ROOT}/coastalos/systemd/coastal-web.service"       "${SYSTEMD_DIR}/coastalclaw-web.service"
 cp "${REPO_ROOT}/coastalos/systemd/coastal-architect.service" "${SYSTEMD_DIR}/coastalclaw-architect.service"
 cp "${REPO_ROOT}/coastalos/systemd/coastal-architect.timer"   "${SYSTEMD_DIR}/coastalclaw-architect.timer"
 
 # Fix ExecStart paths in the copied units
 sed -i 's|/usr/bin/node packages/core/dist/main.js|/usr/bin/node /opt/coastalclaw/packages/core/dist/main.js|g' \
   "${SYSTEMD_DIR}/coastalclaw-server.service"
+sed -i 's|/usr/bin/node packages/daemon/dist/index.js|/usr/bin/node /opt/coastalclaw/packages/daemon/dist/index.js|g' \
+  "${SYSTEMD_DIR}/coastalclaw-daemon.service"
 
 # ── CLI wrapper ───────────────────────────────────────────────
 BIN_DIR="${STAGING}/usr/bin"

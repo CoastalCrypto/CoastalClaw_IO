@@ -48,22 +48,22 @@ export function AgentCard({ agent, onEdit, onDelete }: Props) {
             )}
           </div>
         </div>
-        {!agent.builtIn && (
-          <div className="flex flex-col gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={() => onEdit(agent)}
-              className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors font-mono hover:underline"
-            >
-              [EDIT]
-            </button>
+        <div className="flex flex-col gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => onEdit(agent)}
+            className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors font-mono hover:underline"
+          >
+            [EDIT]
+          </button>
+          {!agent.builtIn && (
             <button
               onClick={() => onDelete(agent.id)}
               className="text-xs text-red-500 hover:text-red-400 transition-colors font-mono hover:underline"
             >
               [KILL]
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )

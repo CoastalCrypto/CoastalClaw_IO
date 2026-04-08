@@ -34,6 +34,13 @@ export interface ModelGroup {
   variants: ModelVariant[]
 }
 
+export interface OllamaModel {
+  name: string
+  sizeGb: number
+  modifiedAt: string
+  imported: boolean
+}
+
 export type RegistryUpdate = Partial<Record<'cfo' | 'cto' | 'coo' | 'general', Record<'high' | 'medium' | 'low', string>>>
 
 export interface SystemStats {
@@ -120,6 +127,41 @@ export class CoreClient {
       body: JSON.stringify({ hfModelId, quants, sessionId }),
     })
     if (!res.ok) throw new Error(`Failed to start install (${res.status})`)
+  }
+
+  async listOllamaModels(): Promise<OllamaModel[]> {
+    const res = await fetch(`${this.baseUrl}/api/admin/ollama/models`, {
+      headers: this.adminHeaders(),
+    })
+    if (!res.ok) throw new Error(`Failed to list Ollama models (${res.status})`)
+    return res.json()
+  }
+
+  async importOllamaModel(name: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/admin/ollama/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify({ name }),
+    })
+    if (!res.ok) throw new Error(`Failed to import model (${res.status})`)
+  }
+
+  async syncOllamaModels(): Promise<{ synced: number }> {
+    const res = await fetch(`${this.baseUrl}/api/admin/ollama/sync`, {
+      method: 'POST',
+      headers: this.adminHeaders(),
+    })
+    if (!res.ok) throw new Error(`Failed to sync Ollama models (${res.status})`)
+    return res.json()
+  }
+
+  async pullOllamaModel(name: string, sessionId: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/admin/ollama/pull`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify({ name, sessionId }),
+    })
+    if (!res.ok) throw new Error(`Failed to start pull (${res.status}): ${await res.text()}`)
   }
 
   async getRegistry(): Promise<RegistryUpdate> {

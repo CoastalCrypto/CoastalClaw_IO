@@ -3,6 +3,7 @@ import { adminClient, type ModelGroup, type RegistryUpdate } from '../api/client
 import { ModelCard } from '../components/ModelCard'
 import { ModelInstaller } from '../components/ModelInstaller'
 import { DomainAssigner } from '../components/DomainAssigner'
+import { OllamaSection } from '../components/OllamaSection'
 
 interface QuantProgress {
   type: 'quant_progress'
@@ -156,6 +157,10 @@ export function Models() {
         {models.map(g => (
           <ModelCard key={g.baseName} group={g} onRemove={handleRemove} removingId={removingId ?? undefined} />
         ))}
+      </div>
+
+      <div className="mb-8">
+        <OllamaSection onModelsChanged={refresh} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

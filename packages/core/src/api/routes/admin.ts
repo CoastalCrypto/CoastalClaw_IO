@@ -98,6 +98,157 @@ export async function adminRoutes(fastify: FastifyInstance) {
     return modelRegistry.listGrouped()
   })
 
+  // ── Ollama helpers ──────────────────────────────────────────────────────
+
+  async function fetchOllamaModels(): Promise<Array<{ name: string; sizeGb: number; modifiedAt: string }>> {
+    try {
+      const res = await fetch(`${config.ollamaUrl}/api/tags`)
+      if (!res.ok) return []
+      const data = await res.json() as { models?: Array<{ name: string; size?: number; modified_at?: string }> }
+      return (data.models ?? []).map((m) => ({
+        name: m.name,
+        sizeGb: m.size ? Math.round((m.size / 1e9) * 10) / 10 : 0,
+        modifiedAt: m.modified_at ?? '',
+      }))
+    } catch {
+      return []
+    }
+  }
+
+  function syncOllamaToRegistry(ollamaModels: Array<{ name: string; sizeGb: number }>) {
+    for (const m of ollamaModels) {
+      const baseName = m.name.split(':')[0]
+      const tag = m.name.includes(':') ? m.name.split(':')[1] : 'latest'
+      if (!modelRegistry.isActive(m.name)) {
+        modelRegistry.register({
+          id: m.name,
+          hfSource: `ollama://${m.name}`,
+          baseName,
+          quantLevel: tag,
+          sizeGb: m.sizeGb,
+        })
+      }
+    }
+  }
+
+  // Auto-sync Ollama models into registry on startup (best-effort)
+  fetchOllamaModels().then(syncOllamaToRegistry).catch(() => {})
+
+  // GET /api/admin/ollama/models — list models currently pulled in Ollama
+  fastify.get('/api/admin/ollama/models', async () => {
+    const ollamaModels = await fetchOllamaModels()
+    const registered = new Set(modelRegistry.listGrouped().flatMap(g => g.variants.map(v => v.id)))
+    return ollamaModels.map(m => ({ ...m, imported: registered.has(m.name) }))
+  })
+
+  // POST /api/admin/ollama/import — import a locally-pulled Ollama model into the registry
+  fastify.post<{ Body: { name: string } }>('/api/admin/ollama/import', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['name'],
+        properties: { name: { type: 'string' } },
+      },
+    },
+  }, async (req, reply) => {
+    const { name } = req.body
+    const ollamaModels = await fetchOllamaModels()
+    const found = ollamaModels.find(m => m.name === name)
+    if (!found) return reply.status(404).send({ error: `Model "${name}" not found in Ollama` })
+    syncOllamaToRegistry([found])
+    return reply.send({ ok: true })
+  })
+
+  // POST /api/admin/ollama/sync — import ALL locally-pulled Ollama models into registry
+  fastify.post('/api/admin/ollama/sync', async () => {
+    const ollamaModels = await fetchOllamaModels()
+    syncOllamaToRegistry(ollamaModels)
+    return { synced: ollamaModels.length }
+  })
+
+  // POST /api/admin/ollama/pull — pull a model from Ollama hub with streaming progress
+  fastify.post<{ Body: { name: string; sessionId: string } }>('/api/admin/ollama/pull', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['name', 'sessionId'],
+        properties: {
+          name: { type: 'string' },
+          sessionId: { type: 'string' },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { name, sessionId } = req.body
+
+    if (!/^[a-zA-Z0-9_.:/-]+$/.test(name)) {
+      return reply.status(400).send({ error: 'Invalid model name' })
+    }
+
+    // Stream pull progress in background, broadcast via WebSocket
+    ;(async () => {
+      try {
+        const res = await fetch(`${config.ollamaUrl}/api/pull`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, stream: true }),
+        })
+        if (!res.ok) {
+          fastify.websocketServer?.clients.forEach((c: any) => {
+            if (c._sessionId === sessionId) {
+              c.send(JSON.stringify({ type: 'ollama_pull_error', name, error: `Ollama returned ${res.status}` }))
+            }
+          })
+          return
+        }
+        const reader = res.body!.getReader()
+        const decoder = new TextDecoder()
+        let buf = ''
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buf += decoder.decode(value, { stream: true })
+          const lines = buf.split('\n')
+          buf = lines.pop() ?? ''
+          for (const line of lines) {
+            if (!line.trim()) continue
+            try {
+              const chunk = JSON.parse(line) as {
+                status?: string
+                completed?: number
+                total?: number
+                digest?: string
+              }
+              fastify.websocketServer?.clients.forEach((c: any) => {
+                if (c._sessionId === sessionId) {
+                  c.send(JSON.stringify({ type: 'ollama_pull_progress', name, ...chunk }))
+                }
+              })
+            } catch { /* skip */ }
+          }
+        }
+        // Auto-import into registry after successful pull
+        const ollamaModels = await fetchOllamaModels()
+        const pulled = ollamaModels.find(m => m.name === name || m.name.startsWith(`${name}:`))
+        if (pulled) syncOllamaToRegistry([pulled])
+
+        fastify.websocketServer?.clients.forEach((c: any) => {
+          if (c._sessionId === sessionId) {
+            c.send(JSON.stringify({ type: 'ollama_pull_done', name }))
+          }
+        })
+      } catch (err: any) {
+        fastify.websocketServer?.clients.forEach((c: any) => {
+          if (c._sessionId === sessionId) {
+            c.send(JSON.stringify({ type: 'ollama_pull_error', name, error: err.message }))
+          }
+        })
+      }
+    })()
+
+    return reply.status(202).send({ message: 'Pull started', name })
+  })
+
   // DELETE /api/admin/models/:quantId
   fastify.delete<{ Params: { quantId: string } }>('/api/admin/models/:quantId', async (req, reply) => {
     const { quantId } = req.params

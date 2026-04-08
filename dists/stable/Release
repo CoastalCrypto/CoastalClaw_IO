@@ -1,0 +1,23 @@
+Architectures: amd64
+Codename: stable
+Components: main
+Date: Wed, 08 Apr 2026 17:36:05 +0000
+Label: CoastalClaw
+Origin: CoastalClaw
+Suite: stable
+MD5Sum:
+ 612d743eb0dc29397fbde388f96edc9a              146 Release
+ e970441b0e3480a58df6b1991a73e876              787 main/binary-amd64/Packages
+ 5458280ae0bc1738081fa4df53e74610              562 main/binary-amd64/Packages.gz
+SHA1:
+ 287d2a0377873d9ac4adb4fbfee42ca0c6b11534              146 Release
+ 093a83e392840d53bc5e5e6d9e179ded175a3f8f              787 main/binary-amd64/Packages
+ be626cb51a913f7c4a5d6834d271845696efd13e              562 main/binary-amd64/Packages.gz
+SHA256:
+ 48baf13a35bb678ccd9c376ab2951f5335285c94e160b74ff078225660cfe958              146 Release
+ 9cf7b903583530c68966113c77bfe70b74bd4441708706c0c135063844973b0e              787 main/binary-amd64/Packages
+ 8822119dcfaa0c5801516fb404faff8ae9e36e37da9d3ec36ccb66a78f0209d7              562 main/binary-amd64/Packages.gz
+SHA512:
+ 8392b7580fe497c83bd00ba0410c732f269f2ea08025de1f0166478343dc70a474afa37a3e7518f61f26e04dd051f31d91b90269fd3af60884ca6a1db6bb1859              146 Release
+ 172481b4f2eaefe669596e2b6f30820507a0bdac6a49c7afb9ecff4c06ffe3d554de6535da57d0f79f013ed2c3086e37fd896343630cf8456e8e9f3d9e603415              787 main/binary-amd64/Packages
+ 757b9b29df21e60e7fa17c6d7f6227c26c3c0880ca4806a9dedf80128a69d2134f1a0348da7954d04927d5d971598aee20aa6488670b25010347afaf0a167471              562 main/binary-amd64/Packages.gz

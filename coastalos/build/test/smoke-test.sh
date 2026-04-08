@@ -10,7 +10,7 @@ ISO="$1"
 
 # How long to wait for a stable running state.
 # A broken ISO exits QEMU in <5s. A booting ISO stays alive past this point.
-LIVENESS_SECONDS=60
+LIVENESS_SECONDS=120
 CRASH_WINDOW=10   # if QEMU dies within this many seconds it's a crash
 
 echo "[smoke-test] Booting $ISO in QEMU..."
@@ -27,7 +27,6 @@ qemu-system-x86_64 \
   -display none \
   -serial stdio \
   -netdev user,id=net0 -device virtio-net-pci,netdev=net0 \
-  -enable-kvm \
   -no-reboot \
   -boot order=d,menu=off \
   > "$QEMU_LOG" 2>&1 &

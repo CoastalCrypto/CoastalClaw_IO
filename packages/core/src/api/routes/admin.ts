@@ -101,18 +101,14 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // ── Ollama helpers ──────────────────────────────────────────────────────
 
   async function fetchOllamaModels(): Promise<Array<{ name: string; sizeGb: number; modifiedAt: string }>> {
-    try {
-      const res = await fetch(`${config.ollamaUrl}/api/tags`)
-      if (!res.ok) return []
-      const data = await res.json() as { models?: Array<{ name: string; size?: number; modified_at?: string }> }
-      return (data.models ?? []).map((m) => ({
-        name: m.name,
-        sizeGb: m.size ? Math.round((m.size / 1e9) * 10) / 10 : 0,
-        modifiedAt: m.modified_at ?? '',
-      }))
-    } catch {
-      return []
-    }
+    const res = await fetch(`${config.ollamaUrl}/api/tags`)
+    if (!res.ok) throw new Error(`Ollama returned HTTP ${res.status} from ${config.ollamaUrl}`)
+    const data = await res.json() as { models?: Array<{ name: string; size?: number; modified_at?: string }> }
+    return (data.models ?? []).map((m) => ({
+      name: m.name,
+      sizeGb: m.size ? Math.round((m.size / 1e9) * 10) / 10 : 0,
+      modifiedAt: m.modified_at ?? '',
+    }))
   }
 
   function syncOllamaToRegistry(ollamaModels: Array<{ name: string; sizeGb: number }>) {
@@ -132,13 +128,28 @@ export async function adminRoutes(fastify: FastifyInstance) {
   }
 
   // Auto-sync Ollama models into registry on startup (best-effort)
-  fetchOllamaModels().then(syncOllamaToRegistry).catch(() => {})
+  fetchOllamaModels()
+    .then(syncOllamaToRegistry)
+    .catch((err: Error) => console.warn(`[coastal-claw] Ollama auto-sync skipped: ${err.message}`))
 
   // GET /api/admin/ollama/models — list models currently pulled in Ollama
-  fastify.get('/api/admin/ollama/models', async () => {
-    const ollamaModels = await fetchOllamaModels()
-    const registered = new Set(modelRegistry.listGrouped().flatMap(g => g.variants.map(v => v.id)))
-    return ollamaModels.map(m => ({ ...m, imported: registered.has(m.name) }))
+  fastify.get('/api/admin/ollama/models', async (_req, reply) => {
+    try {
+      const ollamaModels = await fetchOllamaModels()
+      // Auto-sync any newly-found models into registry
+      syncOllamaToRegistry(ollamaModels)
+      const registered = new Set(modelRegistry.listGrouped().flatMap(g => g.variants.map(v => v.id)))
+      return reply.send({
+        ollamaUrl: config.ollamaUrl,
+        models: ollamaModels.map(m => ({ ...m, imported: registered.has(m.name) })),
+      })
+    } catch (err: any) {
+      return reply.status(503).send({
+        ollamaUrl: config.ollamaUrl,
+        error: err.message ?? 'Could not reach Ollama',
+        models: [],
+      })
+    }
   })
 
   // POST /api/admin/ollama/import — import a locally-pulled Ollama model into the registry

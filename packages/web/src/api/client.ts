@@ -137,12 +137,13 @@ export class CoreClient {
     if (!res.ok) throw new Error(`Failed to start install (${res.status})`)
   }
 
-  async listOllamaModels(): Promise<OllamaModel[]> {
+  async listOllamaModels(): Promise<{ ollamaUrl: string; models: OllamaModel[]; error?: string }> {
     const res = await fetch(`${this.baseUrl}/api/admin/ollama/models`, {
       headers: this.adminHeaders(),
     })
-    if (!res.ok) throw new Error(`Failed to list Ollama models (${res.status})`)
-    return res.json()
+    if (res.status === 401) throw new Error('Not authenticated — enter your admin token on the Models page')
+    const data = await res.json() as { ollamaUrl: string; models: OllamaModel[]; error?: string }
+    return data
   }
 
   async importOllamaModel(name: string): Promise<void> {

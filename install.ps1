@@ -155,12 +155,13 @@ Write-Step "⑧ Launching Coastal Claw"
 Set-Location $InstallDir
 
 Write-Info "Starting core service on :4747..."
+# Use minimized windows (not hidden) so AV can see the processes
 $coreJob = Start-Process -FilePath "node" `
     -ArgumentList "packages\core\dist\main.js" `
     -WorkingDirectory $InstallDir `
     -RedirectStandardOutput "$env:TEMP\coastal-claw-core.log" `
     -RedirectStandardError  "$env:TEMP\coastal-claw-core-err.log" `
-    -PassThru -WindowStyle Hidden
+    -PassThru -WindowStyle Minimized
 $coreJob.Id | Set-Content "$env:TEMP\coastal-claw-core.pid"
 Write-Ok "Core service started (PID $($coreJob.Id))"
 
@@ -182,7 +183,7 @@ $webJob = Start-Process -FilePath "pnpm" `
     -WorkingDirectory "$InstallDir\packages\web" `
     -RedirectStandardOutput "$env:TEMP\coastal-claw-web.log" `
     -RedirectStandardError  "$env:TEMP\coastal-claw-web-err.log" `
-    -PassThru -WindowStyle Hidden
+    -PassThru -WindowStyle Minimized
 $webJob.Id | Set-Content "$env:TEMP\coastal-claw-web.pid"
 Write-Ok "Web portal started (PID $($webJob.Id))"
 Start-Sleep 2

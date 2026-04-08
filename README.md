@@ -74,13 +74,20 @@ Think of it as a private AI command center: chat with intelligent agents, set th
 curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/install.sh | bash
 ```
 
-**Windows** — open **PowerShell as Administrator** (`Right-click Start → Windows PowerShell (Admin)`) and paste:
+**Windows** — open **PowerShell as Administrator** (`Right-click Start → Windows PowerShell (Admin)`) and run these three commands one at a time:
 
 ```powershell
-irm https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/install.ps1 | iex
+# 1. Download the installer
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/install.ps1" -OutFile "$env:USERPROFILE\Downloads\coastalclaw-install.ps1"
+
+# 2. Unblock it (Windows flags downloaded scripts by default)
+Unblock-File "$env:USERPROFILE\Downloads\coastalclaw-install.ps1"
+
+# 3. Run it
+& "$env:USERPROFILE\Downloads\coastalclaw-install.ps1"
 ```
 
-> **Windows tip:** Don't use the regular `curl` command in PowerShell — it's a different tool that doesn't work with this installer. Use the `irm ... | iex` command above instead.
+> **Why not `curl` or `irm | iex`?** PowerShell's `curl` is a different tool that doesn't understand Unix flags. The `irm | iex` one-liner gets blocked by antivirus. Downloading first and running separately lets your AV scan the file before it runs.
 
 The installer will automatically:
 - Install Git (if needed)
@@ -325,8 +332,8 @@ bash install.sh
 Stop-Process -Id (Get-Content $env:TEMP\coastal-claw-core.pid) -ErrorAction SilentlyContinue
 Stop-Process -Id (Get-Content $env:TEMP\coastal-claw-web.pid)  -ErrorAction SilentlyContinue
 
-# Start again
-irm https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/install.ps1 | iex
+# Start again (re-run the installer you downloaded)
+& "$env:USERPROFILE\Downloads\coastalclaw-install.ps1"
 ```
 
 ### If you installed via APT (Ubuntu/Debian)

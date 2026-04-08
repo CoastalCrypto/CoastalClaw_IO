@@ -127,9 +127,32 @@ export async function adminRoutes(fastify: FastifyInstance) {
     }
   }
 
+  // ── Domain registry auto-bootstrap ──────────────────────────────────────────
+  // If model-registry.json doesn't exist yet, auto-assign available Ollama models
+  // to all four routing domains so local models work out of the box.
+  function bootstrapDomainRegistry(ollamaModels: Array<{ name: string; sizeGb: number }>) {
+    if (existsSync(registryPath)) return // user already configured
+    if (ollamaModels.length === 0) return
+
+    // Sort largest→smallest (bigger = more capable = higher priority)
+    const sorted = [...ollamaModels].sort((a, b) => b.sizeGb - a.sizeGb)
+    const high   = sorted[0].name
+    const medium = (sorted[1] ?? sorted[0]).name
+    const low    = (sorted[sorted.length - 1]).name
+
+    const domains = ['coo', 'cfo', 'cto', 'general'] as const
+    const reg: Record<string, Record<string, string>> = {}
+    for (const d of domains) {
+      reg[d] = { high, medium, low }
+    }
+    mkdirSync(config.dataDir, { recursive: true })
+    writeFileSync(registryPath, JSON.stringify(reg, null, 2))
+    console.log(`[coastal-claw] Auto-bootstrapped domain registry with ${ollamaModels.length} Ollama model(s). High-priority: ${high}`)
+  }
+
   // Auto-sync Ollama models into registry on startup (best-effort)
   fetchOllamaModels()
-    .then(syncOllamaToRegistry)
+    .then(models => { syncOllamaToRegistry(models); bootstrapDomainRegistry(models) })
     .catch((err: Error) => console.warn(`[coastal-claw] Ollama auto-sync skipped: ${err.message}`))
 
   // GET /api/admin/ollama/models — list models currently pulled in Ollama

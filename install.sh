@@ -141,7 +141,7 @@ if [[ -d "${INSTALL_DIR}/.git" ]]; then
   info "Updating existing installation..."
   git -C "$INSTALL_DIR" fetch origin "$REPO_BRANCH"
   git -C "$INSTALL_DIR" checkout "$REPO_BRANCH"
-  git -C "$INSTALL_DIR" pull --ff-only origin "$REPO_BRANCH"
+  git -C "$INSTALL_DIR" reset --hard "origin/$REPO_BRANCH"
 elif [[ -d "$INSTALL_DIR" ]]; then
   # Directory exists but is not a git repo — stale or partial previous install
   warn "Found ${INSTALL_DIR} but it is not a git repository."

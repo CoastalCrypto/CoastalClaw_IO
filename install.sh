@@ -135,18 +135,21 @@ success "Ollama $(ollama --version 2>/dev/null | head -1 || echo 'installed')"
 step "③ Fetching Coastal Claw"
 
 REPO_URL="https://github.com/CoastalCrypto/CoastalClaw_IO.git"
+REPO_BRANCH="master"
 
 if [[ -d "${INSTALL_DIR}/.git" ]]; then
   info "Updating existing installation..."
-  git -C "$INSTALL_DIR" pull --ff-only
+  git -C "$INSTALL_DIR" fetch origin "$REPO_BRANCH"
+  git -C "$INSTALL_DIR" checkout "$REPO_BRANCH"
+  git -C "$INSTALL_DIR" pull --ff-only origin "$REPO_BRANCH"
 elif [[ -d "$INSTALL_DIR" ]]; then
   # Directory exists but is not a git repo — stale or partial previous install
   warn "Found ${INSTALL_DIR} but it is not a git repository."
   info "Removing stale directory and re-cloning..."
   rm -rf "$INSTALL_DIR"
-  git clone --depth=1 "$REPO_URL" "$INSTALL_DIR"
+  git clone --depth=1 --branch "$REPO_BRANCH" "$REPO_URL" "$INSTALL_DIR"
 else
-  git clone --depth=1 "$REPO_URL" "$INSTALL_DIR"
+  git clone --depth=1 --branch "$REPO_BRANCH" "$REPO_URL" "$INSTALL_DIR"
 fi
 success "Repository at ${INSTALL_DIR}"
 

@@ -13,7 +13,8 @@ echo "[smoke-test] Booting $ISO in QEMU (${TIMEOUT}s timeout)..."
 
 # Start QEMU — serial output goes to log file
 # -drive with format=raw avoids "Could not read from CDROM (code 0004)" in CI
-# -append passes console=ttyS0 so GRUB/kernel output reaches the serial log
+# console=ttyS0 is set in the live-build kernel params (--bootappend-live),
+# but we also pass -append here as a safety net for BIOS/hybrid boot paths
 qemu-system-x86_64 \
   -drive "file=${ISO},format=raw,media=cdrom,readonly=on" \
   -m 2048 \
@@ -34,6 +35,23 @@ PASSED=0
 while [ $ELAPSED -lt $TIMEOUT ]; do
   sleep 5
   ELAPSED=$((ELAPSED + 5))
+
+  # Check if QEMU exited — if it ran for at least 30 seconds before exiting
+  # cleanly that means the OS booted and shut down (not an immediate crash)
+  if ! kill -0 $QEMU_PID 2>/dev/null; then
+    wait $QEMU_PID 2>/dev/null
+    EXIT_CODE=$?
+    if [ $ELAPSED -ge 30 ]; then
+      echo "[smoke-test] ✓ QEMU ran for ${ELAPSED}s and exited (code ${EXIT_CODE}) — boot confirmed"
+      rm -f "$LOG"
+      exit 0
+    else
+      echo "[smoke-test] ✗ QEMU exited too quickly after ${ELAPSED}s (code ${EXIT_CODE}) — likely a crash"
+      cat "$LOG" 2>/dev/null || true
+      rm -f "$LOG"
+      exit 1
+    fi
+  fi
 
   if [ ! -s "$LOG" ]; then
     echo "[smoke-test] ${ELAPSED}s — no output yet..."

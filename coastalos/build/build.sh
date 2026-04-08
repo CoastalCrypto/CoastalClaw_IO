@@ -25,7 +25,8 @@ lb config \
   --bootloader grub-efi \
   --binary-images iso \
   --iso-application "CoastalOS" \
-  --iso-volume "CoastalOS-${VERSION}"
+  --iso-volume "CoastalOS-${VERSION}" \
+  --bootappend-live "boot=live console=ttyS0,115200n8 console=tty0"
 
 # Add package list
 cp "${SCRIPT_DIR}/packages.list" config/package-lists/coastalos.list.chroot

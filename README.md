@@ -68,11 +68,19 @@ Think of it as a private AI command center: chat with intelligent agents, set th
 
 ### Step 1 — Run the installer
 
-Open your terminal and paste this command, then press Enter:
+**Mac / Linux** — open Terminal and paste:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/install.sh | bash
 ```
+
+**Windows** — open **PowerShell as Administrator** (`Right-click Start → Windows PowerShell (Admin)`) and paste:
+
+```powershell
+irm https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/install.ps1 | iex
+```
+
+> **Windows tip:** Don't use the regular `curl` command in PowerShell — it's a different tool that doesn't work with this installer. Use the `irm ... | iex` command above instead.
 
 The installer will automatically:
 - Install Git (if needed)
@@ -302,12 +310,23 @@ sudo dd if=~/Downloads/coastalos-1.0.0.iso of=/dev/sdb bs=4M status=progress ofl
 
 ### If you installed with the install script
 
+**Mac / Linux:**
 ```bash
-# Stop everything
+# Stop
 kill $(cat /tmp/coastal-claw-core.pid /tmp/coastal-claw-web.pid) 2>/dev/null
 
-# Start again (from the CoastalClaw_IO folder)
+# Start again
 bash install.sh
+```
+
+**Windows (PowerShell):**
+```powershell
+# Stop
+Stop-Process -Id (Get-Content $env:TEMP\coastal-claw-core.pid) -ErrorAction SilentlyContinue
+Stop-Process -Id (Get-Content $env:TEMP\coastal-claw-web.pid)  -ErrorAction SilentlyContinue
+
+# Start again
+irm https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/install.ps1 | iex
 ```
 
 ### If you installed via APT (Ubuntu/Debian)

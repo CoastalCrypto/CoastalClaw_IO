@@ -1,8 +1,55 @@
 import type { FastifyInstance } from 'fastify'
 import { readFileSync, existsSync } from 'node:fs'
 import { execSync } from 'node:child_process'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { loadConfig } from '../../config.js'
+import { VibeVoiceClient } from '../../voice/vibevoice.js'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+// Voices available in the VibeVoice TTS service
+const VIBE_VOICES = [
+  { id: 'en_us_female_1', label: 'US English — Female 1' },
+  { id: 'en_us_female_2', label: 'US English — Female 2' },
+  { id: 'en_us_male_1',   label: 'US English — Male 1' },
+  { id: 'en_us_male_2',   label: 'US English — Male 2' },
+  { id: 'en_gb_female_1', label: 'British English — Female' },
+  { id: 'en_gb_male_1',   label: 'British English — Male' },
+  { id: 'en_au_female_1', label: 'Australian English — Female' },
+  { id: 'en_au_male_1',   label: 'Australian English — Male' },
+]
+
+function pcmToWav(pcm: Buffer, sampleRate = 24_000, channels = 1, bitDepth = 16): Buffer {
+  const byteRate = (sampleRate * channels * bitDepth) / 8
+  const blockAlign = (channels * bitDepth) / 8
+  const h = Buffer.alloc(44)
+  h.write('RIFF', 0)
+  h.writeUInt32LE(36 + pcm.length, 4)
+  h.write('WAVE', 8)
+  h.write('fmt ', 12)
+  h.writeUInt32LE(16, 16)
+  h.writeUInt16LE(1, 20)
+  h.writeUInt16LE(channels, 22)
+  h.writeUInt32LE(sampleRate, 24)
+  h.writeUInt32LE(byteRate, 28)
+  h.writeUInt16LE(blockAlign, 32)
+  h.writeUInt16LE(bitDepth, 34)
+  h.write('data', 36)
+  h.writeUInt32LE(pcm.length, 40)
+  return Buffer.concat([h, pcm])
+}
+
+function appVersion(): string {
+  try {
+    const pkg = JSON.parse(readFileSync(join(__dirname, '..', '..', '..', '..', 'package.json'), 'utf8'))
+    return pkg.version ?? '0.0.0'
+  } catch { return '0.0.0' }
+}
+
+function gitCommit(): string {
+  try { return execSync('git rev-parse --short HEAD', { timeout: 2000 }).toString().trim() } catch { return 'unknown' }
+}
 
 interface DiskStat { path: string; total: number; used: number; free: number }
 
@@ -111,6 +158,32 @@ export async function systemRoutes(fastify: FastifyInstance) {
       }
     }
   )
+
+  // GET /api/version — current app version (public, used by frontend update poller)
+  fastify.get('/api/version', async (_req, reply) => {
+    return reply.send({ version: appVersion(), commit: gitCommit() })
+  })
+
+  // GET /api/voices — list VibeVoice voices (public, used by AgentEditor)
+  fastify.get('/api/voices', async (_req, reply) => {
+    const vibe = new VibeVoiceClient()
+    const available = await vibe.isAvailable()
+    return reply.send({ vibeAvailable: available, voices: available ? VIBE_VOICES : [] })
+  })
+
+  // POST /api/admin/tts — synthesise speech via VibeVoice, return WAV
+  fastify.post<{ Body: { text: string; voice: string } }>('/api/admin/tts', async (req, reply) => {
+    const { text, voice } = req.body ?? {}
+    if (!text || !voice) return reply.status(400).send({ error: 'text and voice required' })
+    const vibe = new VibeVoiceClient()
+    const chunks: Buffer[] = []
+    for await (const chunk of vibe.speak(text, voice)) {
+      chunks.push(chunk)
+    }
+    const wav = pcmToWav(Buffer.concat(chunks))
+    reply.header('Content-Type', 'audio/wav')
+    return reply.send(wav)
+  })
 
   // POST /api/admin/update — pull latest + rebuild + restart
   fastify.post('/api/admin/update', async (_req, reply) => {

@@ -1,6 +1,7 @@
 // packages/shell/src/main.ts
 import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } from 'electron'
 import { join } from 'path'
+import { autoUpdater } from 'electron-updater'
 
 const isDev = process.env.CC_DEV === '1'
 const UI_URL = isDev ? 'http://localhost:5173' : (process.env.CC_SERVER_URL ?? 'http://localhost:4747')
@@ -70,6 +71,23 @@ app.whenReady().then(() => {
   createWindow()
   createTray()
   app.on('activate', () => { if (!mainWindow) createWindow() })
+
+  if (!isDev) {
+    autoUpdater.checkForUpdates().catch(() => {})
+
+    autoUpdater.on('update-available', (info) => {
+      mainWindow?.webContents.send('update:available', { version: info.version })
+    })
+
+    autoUpdater.on('update-downloaded', () => {
+      ipcMain.once('update:install', () => {
+        autoUpdater.quitAndInstall()
+      })
+    })
+
+    // Recheck every 4 hours
+    setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 4 * 60 * 60 * 1_000)
+  }
 })
 
 app.on('window-all-closed', () => {

@@ -10,6 +10,7 @@ import { System } from './pages/System'
 import { Dashboard } from './pages/Dashboard'
 import { Analytics } from './pages/Analytics'
 import { Tools } from './pages/Tools'
+import { Skills } from './pages/Skills'
 import { Channels } from './pages/Channels'
 import { Users } from './pages/Users'
 import { NavBar, type NavPage } from './components/NavBar'
@@ -120,6 +121,7 @@ export default function App() {
       {page === 'dashboard' && <Dashboard onNav={nav} />}
       {page === 'analytics' && <Analytics onNav={nav} />}
       {page === 'tools'     && <Tools onNav={nav} />}
+      {page === 'skills'    && <Skills onNav={nav} />}
       {page === 'channels'  && <Channels onNav={nav} />}
       {page === 'agents'    && <Agents onNav={nav} />}
       {page === 'settings'  && <Settings onNav={nav} />}

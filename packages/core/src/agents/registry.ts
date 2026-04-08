@@ -97,6 +97,7 @@ export type CreateAgentInput = {
   soulPath: string
   tools: string[]
   modelPref?: string
+  voice?: string
 }
 
 export class AgentRegistry {
@@ -118,11 +119,14 @@ export class AgentRegistry {
         soul_path  TEXT NOT NULL,
         tools      TEXT NOT NULL,
         model_pref TEXT,
+        voice      TEXT,
         built_in   INTEGER DEFAULT 0,
         active     INTEGER DEFAULT 1,
         created_at INTEGER NOT NULL
       )
     `)
+    // Migration: add voice column if it doesn't exist yet
+    try { this.db.exec('ALTER TABLE agents ADD COLUMN voice TEXT') } catch {}
 
     const insert = this.db.prepare(`
       INSERT OR IGNORE INTO agents (id, name, role, soul_path, tools, built_in, active, created_at)
@@ -152,13 +156,13 @@ export class AgentRegistry {
   create(input: CreateAgentInput): string {
     const id = randomUUID()
     this.db.prepare(`
-      INSERT INTO agents (id, name, role, soul_path, tools, model_pref, built_in, active, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, 0, 1, ?)
-    `).run(id, input.name, input.role, input.soulPath, JSON.stringify(input.tools), input.modelPref ?? null, Date.now())
+      INSERT INTO agents (id, name, role, soul_path, tools, model_pref, voice, built_in, active, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1, ?)
+    `).run(id, input.name, input.role, input.soulPath, JSON.stringify(input.tools), input.modelPref ?? null, input.voice ?? null, Date.now())
     return id
   }
 
-  update(id: string, fields: Partial<Pick<AgentConfig, 'name' | 'role' | 'soulPath' | 'tools' | 'modelPref' | 'active'>>): void {
+  update(id: string, fields: Partial<Pick<AgentConfig, 'name' | 'role' | 'soulPath' | 'tools' | 'modelPref' | 'voice' | 'active'>>): void {
     const sets: string[] = []
     const values: unknown[] = []
     if (fields.name !== undefined) { sets.push('name = ?'); values.push(fields.name) }
@@ -166,6 +170,7 @@ export class AgentRegistry {
     if (fields.soulPath !== undefined) { sets.push('soul_path = ?'); values.push(fields.soulPath) }
     if (fields.tools !== undefined) { sets.push('tools = ?'); values.push(JSON.stringify(fields.tools)) }
     if (fields.modelPref !== undefined) { sets.push('model_pref = ?'); values.push(fields.modelPref) }
+    if (fields.voice !== undefined) { sets.push('voice = ?'); values.push(fields.voice || null) }
     if (fields.active !== undefined) { sets.push('active = ?'); values.push(fields.active ? 1 : 0) }
     if (sets.length === 0) return
     values.push(id)
@@ -215,6 +220,7 @@ export class AgentRegistry {
       soulPath: this.resolvedSoulPath(row.id, row.soul_path),
       tools: fileConfig?.tools ?? this.parseTools(row.id, row.tools),
       modelPref: fileConfig?.modelPref ?? row.model_pref ?? undefined,
+      voice: row.voice ?? undefined,
       builtIn: Boolean(row.built_in),
       active: Boolean(row.active),
       createdAt: row.created_at,

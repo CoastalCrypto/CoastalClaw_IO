@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, type DragEvent } from 'react'
 import { ChatBubble } from '../components/ChatBubble'
 import { ApprovalCard } from '../components/ApprovalCard'
-import { AgentThinkingAnimation, guessDomain, type AgentDomain } from '../components/AgentThinkingAnimation'
+import { guessDomain, type AgentDomain } from '../components/AgentThinkingAnimation'
 import { coreClient, type Session } from '../api/client'
 
 type MessageRole = 'user' | 'assistant' | 'approval' | 'team'
@@ -200,7 +200,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [thinkingDomain, setThinkingDomain] = useState<AgentDomain>('general')
+  const [, setThinkingDomain] = useState<AgentDomain>('general')
   const [activeDomain, setActiveDomain] = useState<AgentDomain>('general')
   const [isListening, setIsListening] = useState(false)
   const [teamMode, setTeamMode] = useState(false)
@@ -216,6 +216,11 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   } | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef2 = useRef<HTMLInputElement>(null)
+  const agentVoicesRef = useRef<Map<string, string>>(new Map()) // agentId → voice name
+  const [skills, setSkills] = useState<{ name: string; description: string; prompt: string }[]>([])
+  const [skillSuggestions, setSkillSuggestions] = useState<typeof skills>([])
+  const [skillVars, setSkillVars] = useState<Record<string, string> | null>(null)
+  const [pendingSkill, setPendingSkill] = useState<{ prompt: string } | null>(null)
 
   // Background picker
   const savedBg = loadSavedBg()
@@ -233,6 +238,28 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
     setBgCustomUrl(customUrl)
     localStorage.setItem(LS_BG_KEY, JSON.stringify({ presetId, customUrl }))
   }
+
+  // Load skills for /command autocomplete
+  useEffect(() => {
+    fetch('/api/skills')
+      .then(r => r.ok ? r.json() : [])
+      .then(setSkills)
+      .catch(() => {})
+  }, [])
+
+  // Load agent voices once on mount
+  useEffect(() => {
+    const session = sessionStorage.getItem('cc_admin_session') ?? ''
+    const headers: Record<string, string> = session ? { 'x-admin-session': session } : {}
+    fetch('/api/admin/agents', { headers })
+      .then(r => r.ok ? r.json() : [])
+      .then((agents: { id: string; voice?: string }[]) => {
+        const map = new Map<string, string>()
+        for (const a of agents) if (a.voice) map.set(a.id, a.voice)
+        agentVoicesRef.current = map
+      })
+      .catch(() => {})
+  }, [])
 
   // Load session history
   const loadSessions = useCallback(() => {
@@ -263,13 +290,38 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
 
   const voiceMutedRef = useRef(voiceMuted)
   voiceMutedRef.current = voiceMuted
+  const activeDomainRef = useRef(activeDomain)
+  activeDomainRef.current = activeDomain
 
   const speakText = useCallback((text: string) => {
-    if (voiceMutedRef.current || !('speechSynthesis' in window)) return
+    if (voiceMutedRef.current) return
+    const clean = text.replace(/[*#`]/g, '')
+    const agentVoiceName = agentVoicesRef.current.get(activeDomainRef.current)
+
+    // VibeVoice (AI on-device TTS)
+    if (agentVoiceName?.startsWith('vv:')) {
+      const vibeId = agentVoiceName.slice(3)
+      const session = sessionStorage.getItem('cc_admin_session') ?? ''
+      fetch('/api/admin/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(session ? { 'x-admin-session': session } : {}) },
+        body: JSON.stringify({ text: clean, voice: vibeId }),
+      }).then(r => r.ok ? r.blob() : null).then(blob => {
+        if (blob) new Audio(URL.createObjectURL(blob)).play()
+      }).catch(() => {})
+      return
+    }
+
+    // Browser Web Speech API
+    if (!('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(text.replace(/[*#`]/g, ''))
+    const u = new SpeechSynthesisUtterance(clean)
     const voices = window.speechSynthesis.getVoices()
-    u.voice = voices.find(v => v.name.includes('Google UK English Male')) || voices.find(v => v.lang.startsWith('en')) || null
+    if (agentVoiceName) {
+      u.voice = voices.find(v => v.name === agentVoiceName) ?? null
+    } else {
+      u.voice = voices.find(v => v.name.includes('Google UK English Male')) || voices.find(v => v.lang.startsWith('en')) || null
+    }
     u.rate = 1.05; u.pitch = 0.9
     window.speechSynthesis.speak(u)
   }, [])
@@ -342,6 +394,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
     setMessages(m => [...m, { role: 'user', content: text }])
     setThinkingDomain(guessDomain(text))
     setLoading(true)
+    inputRef2.current?.focus()
 
     try {
       if (teamMode) {
@@ -430,6 +483,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
       })
     } finally {
       setLoading(false)
+      inputRef2.current?.focus()
     }
   }
   sendRef.current = send
@@ -695,8 +749,8 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
         })}
 
         {loading && (
-          <div className="flex justify-start mb-3">
-            <AgentThinkingAnimation domain={thinkingDomain} />
+          <div className="flex justify-start mb-3 px-3">
+            <span className="text-xs font-mono text-cyan-500/60 animate-pulse tracking-widest">thinking...</span>
           </div>
         )}
 
@@ -730,14 +784,96 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
         </div>
         <div className="flex gap-4 max-w-4xl mx-auto items-end">
           <div className="flex-1 relative">
+            {/* Skill autocomplete dropdown */}
+            {skillSuggestions.length > 0 && (
+              <div className="absolute bottom-full mb-1 left-0 right-0 bg-gray-950 border border-cyan-800/50 rounded-xl overflow-hidden shadow-xl z-20">
+                {skillSuggestions.map(s => (
+                  <button
+                    key={s.name}
+                    onMouseDown={e => {
+                      e.preventDefault()
+                      // Check if skill has variables
+                      const vars = [...s.prompt.matchAll(/\{\{(\w+)\}\}/g)].map(m => m[1])
+                      if (vars.length > 0) {
+                        setPendingSkill({ prompt: s.prompt })
+                        setSkillVars(Object.fromEntries(vars.map(v => [v, ''])))
+                        setInput('')
+                      } else {
+                        setInput(s.prompt)
+                      }
+                      setSkillSuggestions([])
+                    }}
+                    className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-cyan-500/10 transition-colors"
+                  >
+                    <span className="font-mono text-xs text-cyan-400">/{s.name}</span>
+                    <span className="text-xs text-gray-500 truncate">{s.description}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Skill variable fill-in */}
+            {pendingSkill && skillVars && (
+              <div className="absolute bottom-full mb-1 left-0 right-0 bg-gray-950 border border-cyan-800/50 rounded-xl p-4 shadow-xl z-20">
+                <p className="text-xs font-mono text-cyan-400 mb-3">Fill in skill variables:</p>
+                <div className="space-y-2 mb-3">
+                  {Object.keys(skillVars).map(v => (
+                    <div key={v} className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-cyan-600/80 w-20 shrink-0">{`{{${v}}}`}</span>
+                      <input
+                        autoFocus
+                        className="flex-1 bg-black/40 border border-white/10 text-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-cyan-500/50"
+                        value={skillVars[v]}
+                        onChange={e => setSkillVars(sv => ({ ...sv!, [v]: e.target.value }))}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            const resolved = pendingSkill.prompt.replace(/\{\{(\w+)\}\}/g, (_, k) => skillVars[k] ?? '')
+                            setInput(resolved)
+                            setPendingSkill(null)
+                            setSkillVars(null)
+                            inputRef2.current?.focus()
+                          } else if (e.key === 'Escape') {
+                            setPendingSkill(null); setSkillVars(null)
+                          }
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onMouseDown={e => { e.preventDefault()
+                      const resolved = pendingSkill.prompt.replace(/\{\{(\w+)\}\}/g, (_, k) => skillVars[k] ?? '')
+                      setInput(resolved); setPendingSkill(null); setSkillVars(null); inputRef2.current?.focus()
+                    }}
+                    className="text-xs font-mono px-3 py-1 bg-cyan-500/10 border border-cyan-500/40 text-cyan-400 rounded hover:bg-cyan-500/20 transition-colors"
+                  >
+                    Apply ↵
+                  </button>
+                  <button onMouseDown={() => { setPendingSkill(null); setSkillVars(null) }} className="text-xs text-gray-600 hover:text-gray-400 transition-colors">cancel</button>
+                </div>
+              </div>
+            )}
+
             <input
               ref={inputRef2}
               className="w-full bg-gray-950/80 border border-gray-700 text-cyan-50 font-mono rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-cyan-500 focus:shadow-[0_0_15px_rgba(0,255,255,0.2)] transition-all placeholder:text-gray-600"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && send()}
-              placeholder={isListening ? '> Listening...' : teamMode ? '> Describe a complex task for the swarm...' : '> Execute command or send message...'}
-              disabled={loading}
+              onChange={(e) => {
+                const val = e.target.value
+                setInput(val)
+                if (val.startsWith('/') && val.length > 1 && !val.includes(' ')) {
+                  const query = val.slice(1).toLowerCase()
+                  setSkillSuggestions(skills.filter(s => s.name.startsWith(query)).slice(0, 6))
+                } else {
+                  setSkillSuggestions([])
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') { setSkillSuggestions([]); return }
+                if (e.key === 'Enter' && !e.shiftKey) send()
+              }}
+              placeholder={isListening ? '> Listening...' : teamMode ? '> Describe a complex task for the swarm...' : '> Execute command or /skill...'}
               autoFocus
             />
             {loading && <div className="absolute right-4 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-cyan-400 animate-ping" />}

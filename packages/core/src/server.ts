@@ -17,6 +17,11 @@ import { analyticsRoutes } from './api/routes/analytics.js'
 import { toolRoutes } from './api/routes/tools.js'
 import { channelRoutes } from './api/routes/channels.js'
 import { userRoutes } from './api/routes/users.js'
+import { cronRoutes } from './api/routes/crons.js'
+import { skillRoutes } from './api/routes/skills.js'
+import { CronStore } from './cron/store.js'
+import { CronScheduler } from './cron/scheduler.js'
+import { SkillStore } from './skills/store.js'
 import { UserStore } from './users/store.js'
 import { AgentRegistry } from './agents/registry.js'
 import { PermissionGate } from './agents/permission-gate.js'
@@ -91,7 +96,27 @@ export async function buildServer() {
   await fastify.register(channelRoutes, { manager: channelManager })
   await fastify.register(userRoutes, { store: userStore })
 
+  const cronStore = new CronStore(db)
+  const cronScheduler = new CronScheduler(cronStore, async (agentId, task) => {
+    const res = await fetch(`http://127.0.0.1:${config.port}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: task, sessionId: `cron_${agentId}_${Date.now()}` }),
+    })
+    const data = await res.json() as any
+    return data.reply ?? JSON.stringify(data)
+  })
+  await fastify.register(cronRoutes, { store: cronStore, scheduler: cronScheduler })
+
+  const skillStore = new SkillStore(db)
+  await fastify.register(skillRoutes, { store: skillStore })
+
+  fastify.addHook('onReady', async () => {
+    cronScheduler.start()
+  })
+
   fastify.addHook('onClose', async () => {
+    cronScheduler.stop()
     agentRegistry.close()
     db.close()
   })

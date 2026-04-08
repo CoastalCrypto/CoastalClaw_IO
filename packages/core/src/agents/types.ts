@@ -47,6 +47,7 @@ export interface AgentConfig {
   soulPath: string
   tools: string[]
   modelPref?: string
+  voice?: string       // browser SpeechSynthesis voice name, e.g. "Google UK English Male"
   builtIn: boolean
   active: boolean
   createdAt: number

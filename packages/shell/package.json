@@ -8,7 +8,9 @@
     "dev": "tsc && CC_DEV=1 electron dist/main.js",
     "compile": "tsc"
   },
-  "dependencies": {},
+  "dependencies": {
+    "electron-updater": "^6.8.3"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "electron": "^30.0.0",

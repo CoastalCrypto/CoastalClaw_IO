@@ -18,7 +18,7 @@ export async function agentRoutes(
 
   // POST /api/admin/agents
   fastify.post<{
-    Body: { name: string; role: string; soul: string; tools: string[]; modelPref?: string }
+    Body: { name: string; role: string; soul: string; tools: string[]; modelPref?: string; voice?: string }
   }>('/api/admin/agents', {
     schema: {
       body: {
@@ -30,15 +30,15 @@ export async function agentRoutes(
           soul: { type: 'string' },
           tools: { type: 'array', items: { type: 'string' } },
           modelPref: { type: 'string' },
+          voice: { type: 'string' },
         },
       },
     },
   }, async (req, reply) => {
-    const { name, role, soul, tools, modelPref } = req.body
+    const { name, role, soul, tools, modelPref, voice } = req.body
     const soulsDir = join(config.dataDir, 'agents', 'souls')
     mkdirSync(soulsDir, { recursive: true })
-    // ID is generated inside create(), soul file written after
-    const id = opts.registry.create({ name, role, soulPath: '', tools, modelPref })
+    const id = opts.registry.create({ name, role, soulPath: '', tools, modelPref, voice })
     const soulPath = join(soulsDir, `${id}.md`)
     writeFileSync(soulPath, soul, 'utf8')
     opts.registry.update(id, { soulPath })
@@ -48,7 +48,7 @@ export async function agentRoutes(
   // PATCH /api/admin/agents/:id
   fastify.patch<{
     Params: { id: string }
-    Body: { name?: string; role?: string; soul?: string; tools?: string[]; modelPref?: string; active?: boolean }
+    Body: { name?: string; role?: string; soul?: string; tools?: string[]; modelPref?: string; voice?: string; active?: boolean }
   }>('/api/admin/agents/:id', async (req, reply) => {
     const agent = opts.registry.get(req.params.id)
     if (!agent) return reply.status(404).send({ error: 'Agent not found' })

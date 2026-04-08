@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const ALL_TOOLS = [
   { name: 'read_file', category: 'File', reversible: true },
@@ -25,8 +25,8 @@ const ALL_TOOLS = [
 ]
 
 interface Props {
-  initial?: { name: string; role: string; soul: string; tools: string[] }
-  onSave: (data: { name: string; role: string; soul: string; tools: string[] }) => Promise<void>
+  initial?: { name: string; role: string; soul: string; tools: string[]; voice?: string }
+  onSave: (data: { name: string; role: string; soul: string; tools: string[]; voice: string }) => Promise<void>
   onCancel: () => void
 }
 
@@ -35,7 +35,52 @@ export function AgentEditor({ initial, onSave, onCancel }: Props) {
   const [role, setRole] = useState(initial?.role ?? '')
   const [soul, setSoul] = useState(initial?.soul ?? '')
   const [tools, setTools] = useState<string[]>(initial?.tools ?? [])
+  const [voice, setVoice] = useState(initial?.voice ?? '')
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([])
   const [saving, setSaving] = useState(false)
+
+  const [vibeVoices, setVibeVoices] = useState<{ id: string; label: string }[]>([])
+
+  useEffect(() => {
+    const load = () => {
+      const vs = window.speechSynthesis?.getVoices() ?? []
+      if (vs.length) setAvailableVoices(vs.filter(v => v.lang.startsWith('en')))
+    }
+    load()
+    window.speechSynthesis?.addEventListener('voiceschanged', load)
+    return () => window.speechSynthesis?.removeEventListener('voiceschanged', load)
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/voices')
+      .then(r => r.ok ? r.json() : { voices: [] })
+      .then(d => { if (d.vibeAvailable) setVibeVoices(d.voices) })
+      .catch(() => {})
+  }, [])
+
+  const previewVoice = async () => {
+    const previewText = `Hi, I'm ${name || 'your agent'}. Ready to assist.`
+    if (voice.startsWith('vv:')) {
+      const vibeId = voice.slice(3)
+      const session = sessionStorage.getItem('cc_admin_session') ?? ''
+      const res = await fetch('/api/admin/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(session ? { 'x-admin-session': session } : {}) },
+        body: JSON.stringify({ text: previewText, voice: vibeId }),
+      })
+      if (!res.ok) return
+      const blob = await res.blob()
+      new Audio(URL.createObjectURL(blob)).play()
+      return
+    }
+    if (!('speechSynthesis' in window)) return
+    window.speechSynthesis.cancel()
+    const u = new SpeechSynthesisUtterance(previewText)
+    const match = availableVoices.find(v => v.name === voice)
+    if (match) u.voice = match
+    u.rate = 1.0; u.pitch = 1.0
+    window.speechSynthesis.speak(u)
+  }
 
   const toggleTool = (t: string) =>
     setTools(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])
@@ -45,7 +90,7 @@ export function AgentEditor({ initial, onSave, onCancel }: Props) {
 
   const handleSave = async () => {
     setSaving(true)
-    try { await onSave({ name, role, soul, tools }) } finally { setSaving(false) }
+    try { await onSave({ name, role, soul, tools, voice }) } finally { setSaving(false) }
   }
 
   const categories = [...new Set(ALL_TOOLS.map(t => t.category))]
@@ -71,6 +116,46 @@ export function AgentEditor({ initial, onSave, onCancel }: Props) {
             placeholder="e.g. Legal & compliance"
           />
         </div>
+      </div>
+
+      {/* Voice picker */}
+      <div>
+        <label className="block text-xs text-gray-400 mb-1">Voice</label>
+        <div className="flex gap-2">
+          <select
+            value={voice}
+            onChange={e => setVoice(e.target.value)}
+            className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
+          >
+            <option value="">— System default —</option>
+            {availableVoices.length > 0 && (
+              <optgroup label="Browser voices">
+                {availableVoices.map(v => (
+                  <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
+                ))}
+              </optgroup>
+            )}
+            {vibeVoices.length > 0 && (
+              <optgroup label="VibeVoice (AI · on-device)">
+                {vibeVoices.map(v => (
+                  <option key={v.id} value={`vv:${v.id}`}>{v.label}</option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+          <button
+            type="button"
+            onClick={previewVoice}
+            disabled={!voice}
+            className="px-3 py-2 text-xs font-mono text-cyan-400 border border-cyan-800/50 rounded-lg hover:border-cyan-500/50 disabled:opacity-30 transition-colors"
+            title="Preview voice"
+          >
+            ▶ preview
+          </button>
+        </div>
+        {availableVoices.length === 0 && (
+          <p className="text-xs text-gray-600 mt-1">No voices available — browser may not support speech synthesis.</p>
+        )}
       </div>
 
       <div>

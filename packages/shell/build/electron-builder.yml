@@ -5,6 +5,10 @@ directories:
 files:
   - dist/**/*
   - package.json
+publish:
+  provider: github
+  owner: CoastalCrypto
+  repo: CoastalClaw_IO
 win:
   target: nsis
 mac:

@@ -4,7 +4,7 @@ import { AgentEditor } from '../components/AgentEditor'
 import { NavBar, type NavPage } from '../components/NavBar'
 
 interface Agent {
-  id: string; name: string; role: string; tools: string[]; builtIn: boolean; active: boolean
+  id: string; name: string; role: string; tools: string[]; builtIn: boolean; active: boolean; voice?: string
 }
 
 function adminHeaders(): Record<string, string> {
@@ -24,7 +24,7 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
 
   useEffect(() => { load() }, [])
 
-  const handleSave = async (data: { name: string; role: string; soul: string; tools: string[] }) => {
+  const handleSave = async (data: { name: string; role: string; soul: string; tools: string[]; voice: string }) => {
     if (editing) {
       await fetch(`/api/admin/agents/${editing.id}`, {
         method: 'PATCH',
@@ -78,7 +78,7 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
               <span className="animate-pulse">_</span> {editing ? 'RECONFIGURE_AGENT' : 'NEW_AGENT_PROTOCOL'}
             </h2>
             <AgentEditor
-              initial={editing ? { ...editing, soul: '' } : undefined}
+              initial={editing ? { ...editing, soul: '', voice: editing.voice ?? '' } : undefined}
               onSave={handleSave}
               onCancel={() => { setAdding(false); setEditing(null) }}
             />

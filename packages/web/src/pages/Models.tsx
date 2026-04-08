@@ -12,53 +12,7 @@ interface QuantProgress {
   message: string
 }
 
-function AdminLoginGate({ onLogin }: { onLogin: () => void }) {
-  const [token, setToken] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-    try {
-      await adminClient.login(token.trim())
-      onLogin()
-    } catch {
-      setError('Invalid admin token. Check CC_ADMIN_TOKEN in your core startup output.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
-      <form onSubmit={handleSubmit} className="bg-gray-900 border border-gray-800 rounded-xl p-8 w-full max-w-sm space-y-4">
-        <h2 className="text-white font-semibold text-lg">Admin Login</h2>
-        <p className="text-gray-400 text-sm">Enter your Coastal Claw admin token to continue.</p>
-        <input
-          type="password"
-          value={token}
-          onChange={e => setToken(e.target.value)}
-          placeholder="Admin token"
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500"
-          autoFocus
-        />
-        {error && <p className="text-red-400 text-xs">{error}</p>}
-        <button
-          type="submit"
-          disabled={!token.trim() || loading}
-          className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg py-2 text-sm font-medium transition-colors"
-        >
-          {loading ? 'Logging in…' : 'Login'}
-        </button>
-      </form>
-    </div>
-  )
-}
-
 export function Models() {
-  const [authed, setAuthed] = useState(adminClient.isAuthenticated)
   const [agents, setAgents] = useState<AgentRecord[]>([])
   const [models, setModels] = useState<ModelGroup[]>([])
   const [registry, setRegistry] = useState<Record<string, Record<string, string>>>({})
@@ -82,11 +36,7 @@ export function Models() {
     }
   }, [])
 
-  useEffect(() => { if (authed) refresh() }, [authed, refresh])
-
-  if (!authed) {
-    return <AdminLoginGate onLogin={() => setAuthed(true)} />
-  }
+  useEffect(() => { refresh() }, [refresh])
 
   const handleInstall = async (hfModelId: string, quant: string) => {
     setInstalling(true)

@@ -73,7 +73,8 @@ export class CoreClient {
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl
-    this.sessionToken = sessionStorage.getItem('cc_admin_session') ?? undefined
+    // Don't cache at construction — read fresh in adminHeaders() so user
+    // sessions set after module load are picked up automatically.
   }
 
   /** Exchange the raw admin token for a short-lived (24h) session token. */
@@ -90,11 +91,12 @@ export class CoreClient {
   }
 
   get isAuthenticated(): boolean {
-    return Boolean(this.sessionToken)
+    return Boolean(this.sessionToken ?? sessionStorage.getItem('cc_admin_session'))
   }
 
   private adminHeaders(): Record<string, string> {
-    return this.sessionToken ? { 'x-admin-session': this.sessionToken } : {}
+    const token = this.sessionToken ?? sessionStorage.getItem('cc_admin_session') ?? ''
+    return token ? { 'x-admin-session': token } : {}
   }
 
   async sendMessage(options: SendMessageOptions): Promise<SendMessageResult> {

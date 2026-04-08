@@ -1,9 +1,11 @@
 import type { FastifyInstance } from 'fastify'
 import { PersonaManager, type Persona } from '../../persona/manager.js'
+import { AgentRegistry } from '../../agents/registry.js'
 import { loadConfig } from '../../config.js'
+import { writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 
-export async function personaRoutes(fastify: FastifyInstance) {
+export async function personaRoutes(fastify: FastifyInstance, opts: { registry: AgentRegistry }) {
   const config = loadConfig()
   const mgr = new PersonaManager(join(config.dataDir, 'persona.db'))
 
@@ -35,6 +37,43 @@ export async function personaRoutes(fastify: FastifyInstance) {
     },
   }, async (req, reply) => {
     const updated = mgr.set(req.body)
+
+    // Sync persona → AgentRegistry so the configured agent appears in the Agents page
+    const soul = [
+      `# ${updated.agentName}`,
+      '',
+      updated.personality,
+      '',
+      updated.orgContext ? `## Organisation\n${updated.orgContext}` : '',
+    ].filter(Boolean).join('\n').trim()
+
+    const soulsDir = join(config.dataDir, 'agents', 'souls')
+    mkdirSync(soulsDir, { recursive: true })
+
+    const existingId = mgr.getPersonaAgentId()
+    if (existingId && opts.registry.get(existingId)) {
+      // Update existing persona agent
+      const soulPath = join(soulsDir, `${existingId}.md`)
+      writeFileSync(soulPath, soul, 'utf8')
+      opts.registry.update(existingId, {
+        name: updated.agentName,
+        role: updated.agentRole,
+        soulPath,
+      })
+    } else {
+      // Create new persona agent
+      const id = opts.registry.create({
+        name: updated.agentName,
+        role: updated.agentRole,
+        soulPath: '',
+        tools: ['read_file', 'list_dir', 'http_get'],
+      })
+      const soulPath = join(soulsDir, `${id}.md`)
+      writeFileSync(soulPath, soul, 'utf8')
+      opts.registry.update(id, { soulPath })
+      mgr.setPersonaAgentId(id)
+    }
+
     return reply.send({ persona: updated, configured: mgr.isConfigured() })
   })
 }

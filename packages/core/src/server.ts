@@ -84,7 +84,7 @@ export async function buildServer() {
 
   await fastify.register(agentRoutes, { registry: agentRegistry, gate })
   await fastify.register(teamRoutes)
-  await fastify.register(personaRoutes)
+  await fastify.register(personaRoutes, { registry: agentRegistry })
   await fastify.register(systemRoutes)
   await fastify.register(sessionRoutes)
   await fastify.register(uploadRoutes)

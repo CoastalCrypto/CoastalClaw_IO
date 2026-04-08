@@ -80,6 +80,18 @@ export class PersonaManager {
     return this.get()
   }
 
+  getPersonaAgentId(): string | null {
+    const row = this.db.prepare('SELECT value FROM persona WHERE key = ?').get('_personaAgentId') as { value: string } | undefined
+    return row?.value ?? null
+  }
+
+  setPersonaAgentId(id: string): void {
+    this.db.prepare(`
+      INSERT INTO persona (key, value) VALUES (?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value
+    `).run('_personaAgentId', id)
+  }
+
   /** Interpolates {{persona.*}} tokens in a soul template string. */
   static interpolate(template: string, persona: Persona): string {
     return template

@@ -5,6 +5,7 @@ interface Agent {
   tools: string[]
   builtIn: boolean
   active: boolean
+  voice?: string
 }
 
 interface Props {
@@ -38,6 +39,11 @@ export function AgentCard({ agent, onEdit, onDelete, onToggle }: Props) {
             <span className="border border-gray-800 px-2 py-0.5 rounded bg-black/20">
               {agent.tools.length} TOOLS
             </span>
+            {agent.voice && (
+              <span className="border border-gray-800 px-2 py-0.5 rounded bg-black/20 max-w-[120px] truncate" title={agent.voice}>
+                {agent.voice.startsWith('vv:') ? 'AI VOICE' : '🔊 ' + agent.voice.split(' ')[0]}
+              </span>
+            )}
             <button
               onClick={() => onToggle(agent.id, !agent.active)}
               title={agent.active ? 'Click to take offline' : 'Click to bring online'}

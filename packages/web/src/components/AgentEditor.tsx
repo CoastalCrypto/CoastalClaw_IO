@@ -153,9 +153,13 @@ export function AgentEditor({ initial, onSave, onCancel }: Props) {
             ▶ preview
           </button>
         </div>
-        {availableVoices.length === 0 && (
-          <p className="text-xs text-gray-600 mt-1">No voices available — browser may not support speech synthesis.</p>
-        )}
+        <p className="text-xs text-gray-600 mt-1">
+          {availableVoices.length === 0
+            ? 'No browser voices detected — try refreshing, or use a Chromium-based browser.'
+            : `${availableVoices.length} browser voice${availableVoices.length !== 1 ? 's' : ''} available.`
+          }
+          {vibeVoices.length === 0 && ' VibeVoice (AI) not running.'}
+        </p>
       </div>
 
       <div>

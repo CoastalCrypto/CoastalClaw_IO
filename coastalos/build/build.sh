@@ -31,10 +31,15 @@ lb config \
 # Add package list
 cp "${SCRIPT_DIR}/packages.list" config/package-lists/coastalos.list.chroot
 
-# Add post-install hook
+# Add post-install hook (runs inside chroot)
 mkdir -p config/hooks/live
 cp "${SCRIPT_DIR}/hooks/post-install.sh" config/hooks/live/99-coastalos.hook.chroot
 chmod +x config/hooks/live/99-coastalos.hook.chroot
+
+# Add binary hook — patches grub.cfg to enable serial console for QEMU/CI
+mkdir -p config/hooks/binary
+cp "${SCRIPT_DIR}/hooks/grub-serial.hook.binary" config/hooks/binary/99-grub-serial.hook.binary
+chmod +x config/hooks/binary/99-grub-serial.hook.binary
 
 # Add labwc config
 mkdir -p config/includes.chroot/tmp/labwc

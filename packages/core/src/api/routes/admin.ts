@@ -319,7 +319,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
   // PATCH /api/admin/registry
   fastify.patch<{
-    Body: Partial<Record<'cfo' | 'cto' | 'coo' | 'general', Record<string, string>>>
+    Body: Record<string, Record<string, string>>
   }>('/api/admin/registry', {
     schema: {
       body: {

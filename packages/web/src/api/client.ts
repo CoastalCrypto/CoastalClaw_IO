@@ -41,7 +41,15 @@ export interface OllamaModel {
   imported: boolean
 }
 
-export type RegistryUpdate = Partial<Record<'cfo' | 'cto' | 'coo' | 'general', Record<'high' | 'medium' | 'low', string>>>
+export type RegistryUpdate = Record<string, Record<string, string>>
+
+export interface AgentRecord {
+  id: string
+  name: string
+  role: string
+  builtIn: boolean
+  active: boolean
+}
 
 export interface SystemStats {
   cpu: { percent: number }
@@ -429,6 +437,12 @@ export class CoreClient {
     this.sessionToken = undefined
     sessionStorage.removeItem('cc_admin_session')
     sessionStorage.removeItem('cc_user')
+  }
+
+  async listAgents(): Promise<AgentRecord[]> {
+    const res = await fetch(`${this.baseUrl}/api/admin/agents`, { headers: this.adminHeaders() })
+    if (!res.ok) throw new Error(`Failed to list agents (${res.status})`)
+    return res.json()
   }
 
   async listUsers(): Promise<any[]> {

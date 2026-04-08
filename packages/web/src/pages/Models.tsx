@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { adminClient, type ModelGroup, type RegistryUpdate } from '../api/client'
+import { adminClient, type AgentRecord, type ModelGroup, type RegistryUpdate } from '../api/client'
 import { ModelCard } from '../components/ModelCard'
 import { ModelInstaller } from '../components/ModelInstaller'
 import { DomainAssigner } from '../components/DomainAssigner'
@@ -59,6 +59,7 @@ function AdminLoginGate({ onLogin }: { onLogin: () => void }) {
 
 export function Models() {
   const [authed, setAuthed] = useState(adminClient.isAuthenticated)
+  const [agents, setAgents] = useState<AgentRecord[]>([])
   const [models, setModels] = useState<ModelGroup[]>([])
   const [registry, setRegistry] = useState<Record<string, Record<string, string>>>({})
   const [installing, setInstalling] = useState(false)
@@ -68,12 +69,14 @@ export function Models() {
 
   const refresh = useCallback(async () => {
     try {
-      const [m, reg] = await Promise.all([
+      const [m, reg, agentList] = await Promise.all([
         adminClient.listModels(),
         adminClient.getRegistry(),
+        adminClient.listAgents(),
       ])
       setModels(m)
       setRegistry(reg as Record<string, Record<string, string>>)
+      setAgents(agentList)
     } catch (e) {
       console.error('Failed to load models', e)
     }
@@ -171,6 +174,7 @@ export function Models() {
           error={error}
         />
         <DomainAssigner
+          agents={agents}
           models={models}
           registry={registry}
           onChange={handleRegistryChange}

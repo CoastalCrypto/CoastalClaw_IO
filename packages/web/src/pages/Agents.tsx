@@ -7,7 +7,10 @@ interface Agent {
   id: string; name: string; role: string; tools: string[]; builtIn: boolean; active: boolean
 }
 
-const BASE = `http://localhost:${(import.meta as any).env?.VITE_CORE_PORT ?? 4747}`
+function adminHeaders(): Record<string, string> {
+  const session = sessionStorage.getItem('cc_admin_session') ?? ''
+  return session ? { 'x-admin-session': session } : {}
+}
 
 export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
   const [agents, setAgents] = useState<Agent[]>([])
@@ -15,8 +18,7 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
   const [adding, setAdding] = useState(false)
 
   const load = async () => {
-    // Note: uses internal session headers logic if needed. However we use fetch raw here as per plan
-    const res = await fetch(`${BASE}/api/admin/agents`, { headers: { 'x-admin-token': sessionStorage.getItem('cc_admin_session') ?? '' } })
+    const res = await fetch('/api/admin/agents', { headers: adminHeaders() })
     if (res.ok) setAgents(await res.json())
   }
 
@@ -24,15 +26,15 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
 
   const handleSave = async (data: { name: string; role: string; soul: string; tools: string[] }) => {
     if (editing) {
-      await fetch(`${BASE}/api/admin/agents/${editing.id}`, {
+      await fetch(`/api/admin/agents/${editing.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-admin-token': sessionStorage.getItem('cc_admin_session') ?? '' },
+        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
         body: JSON.stringify(data),
       })
     } else {
-      await fetch(`${BASE}/api/admin/agents`, {
+      await fetch('/api/admin/agents', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-token': sessionStorage.getItem('cc_admin_session') ?? '' },
+        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
         body: JSON.stringify(data),
       })
     }
@@ -43,9 +45,9 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this agent?')) return
-    await fetch(`${BASE}/api/admin/agents/${id}`, {
+    await fetch(`/api/admin/agents/${id}`, {
       method: 'DELETE',
-      headers: { 'x-admin-token': sessionStorage.getItem('cc_admin_session') ?? '' },
+      headers: adminHeaders(),
     })
     load()
   }

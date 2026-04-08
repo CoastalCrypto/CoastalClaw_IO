@@ -1,7 +1,9 @@
 # ============================================================
-#  Coastal Claw — Windows installer
-#  Run in PowerShell (as Administrator):
-#  irm https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/install.ps1 | iex
+#  Coastal Claw - Windows installer
+#  Download and run:
+#    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/install.ps1" -OutFile "$env:USERPROFILE\Downloads\coastalclaw-install.ps1"
+#    Unblock-File "$env:USERPROFILE\Downloads\coastalclaw-install.ps1"
+#    & "$env:USERPROFILE\Downloads\coastalclaw-install.ps1"
 # ============================================================
 #Requires -Version 5.1
 Set-StrictMode -Version Latest
@@ -13,27 +15,20 @@ function Write-Info  { param($msg) Write-Host "  --> $msg" -ForegroundColor Cyan
 function Write-Warn  { param($msg) Write-Host "  [!] $msg" -ForegroundColor Yellow }
 function Write-Fail  { param($msg) Write-Host "  [X] $msg" -ForegroundColor Red; exit 1 }
 
-Write-Host @"
+Write-Host ""
+Write-Host "  COASTAL CLAW" -ForegroundColor Cyan
+Write-Host "  Your private AI executive team - running on your hardware." -ForegroundColor DarkCyan
+Write-Host ""
 
-   ██████╗ ██████╗  █████╗ ███████╗████████╗ █████╗ ██╗      ██████╗██╗      █████╗ ██╗    ██╗
-  ██╔════╝██╔═══██╗██╔══██╗██╔════╝╚══██╔══╝██╔══██╗██║     ██╔════╝██║     ██╔══██╗██║    ██║
-  ██║     ██║   ██║███████║███████╗   ██║   ███████║██║     ██║     ██║     ███████║██║ █╗ ██║
-  ██║     ██║   ██║██╔══██║╚════██║   ██║   ██╔══██║██║     ██║     ██║     ██╔══██║██║███╗██║
-  ╚██████╗╚██████╔╝██║  ██║███████║   ██║   ██║  ██║███████╗╚██████╗███████╗██║  ██║╚███╔███╔╝
-   ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝ ╚═════╝╚══════╝╚═╝  ╚═╝ ╚══╝╚══╝
-
-  Your private AI executive team — running on your hardware.
-"@ -ForegroundColor Cyan
-
-# ── Check running as Administrator ───────────────────────────
+# ── Check running as Administrator ────────────────────────────
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-    Write-Warn "Not running as Administrator. Some installs (Ollama, Node) may require elevation."
+    Write-Warn "Not running as Administrator. Some installs may require elevation."
     Write-Warn "Re-run PowerShell as Administrator if you hit permission errors."
 }
 
 # ── Install location ──────────────────────────────────────────
-Write-Step "① Choosing install location"
+Write-Step "1) Choosing install location"
 $InstallDir = if ($env:CC_INSTALL_DIR) { $env:CC_INSTALL_DIR } else { "$env:USERPROFILE\coastal-claw" }
 Write-Info "Installing to: $InstallDir"
 
@@ -41,7 +36,7 @@ Write-Info "Installing to: $InstallDir"
 function Has-Command { param($name) return [bool](Get-Command $name -ErrorAction SilentlyContinue) }
 
 # ── Check / install winget ────────────────────────────────────
-Write-Step "② Checking prerequisites"
+Write-Step "2) Checking prerequisites"
 
 if (-not (Has-Command winget)) {
     Write-Fail "winget not found. Install 'App Installer' from the Microsoft Store, then re-run."
@@ -54,15 +49,18 @@ if (-not (Has-Command git)) {
     winget install --id Git.Git -e --source winget --accept-package-agreements --accept-source-agreements
     $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('PATH', 'User')
 }
-$gitVer = git --version
-Write-Ok $gitVer
+Write-Ok (git --version)
 
 # ── Node.js 22 ────────────────────────────────────────────────
 $needNode = $true
 if (Has-Command node) {
     $nodeMajor = [int]((node --version) -replace 'v(\d+).*','$1')
-    if ($nodeMajor -ge 22) { Write-Ok "Node.js $(node --version)"; $needNode = $false }
-    else { Write-Warn "Node.js $(node --version) found — need v22+. Upgrading..." }
+    if ($nodeMajor -ge 22) {
+        Write-Ok "Node.js $(node --version)"
+        $needNode = $false
+    } else {
+        Write-Warn "Node.js $(node --version) found but v22+ is required. Upgrading..."
+    }
 }
 if ($needNode) {
     Write-Info "Installing Node.js 22 LTS..."
@@ -87,7 +85,7 @@ if (-not (Has-Command ollama)) {
 Write-Ok "Ollama $(ollama --version 2>$null | Select-Object -First 1)"
 
 # ── Clone or update repo ──────────────────────────────────────
-Write-Step "③ Fetching Coastal Claw"
+Write-Step "3) Fetching Coastal Claw"
 $RepoUrl    = "https://github.com/CoastalCrypto/CoastalClaw_IO.git"
 $RepoBranch = "master"
 
@@ -106,41 +104,35 @@ if (Test-Path "$InstallDir\.git") {
 Write-Ok "Repository at $InstallDir"
 
 # ── Install dependencies ──────────────────────────────────────
-Write-Step "④ Installing dependencies"
+Write-Step "4) Installing dependencies"
 Set-Location $InstallDir
 pnpm install
 Write-Ok "Dependencies installed"
 
 # ── Build ─────────────────────────────────────────────────────
-Write-Step "⑤ Building"
+Write-Step "5) Building"
 pnpm build
 Write-Ok "Build complete"
 
 # ── Create .env.local files ───────────────────────────────────
-Write-Step "⑥ Creating configuration"
+Write-Step "6) Creating configuration"
 $CoreEnv = "$InstallDir\packages\core\.env.local"
 $WebEnv  = "$InstallDir\packages\web\.env.local"
 
 if (-not (Test-Path $CoreEnv)) {
-    @"
-CC_PORT=4747
-CC_HOST=127.0.0.1
-CC_DATA_DIR=./data
-CC_OLLAMA_URL=http://127.0.0.1:11434
-CC_DEFAULT_MODEL=llama3.2
-"@ | Set-Content $CoreEnv
+    Set-Content $CoreEnv "CC_PORT=4747`nCC_HOST=127.0.0.1`nCC_DATA_DIR=./data`nCC_OLLAMA_URL=http://127.0.0.1:11434`nCC_DEFAULT_MODEL=llama3.2"
     Write-Ok "Created $CoreEnv"
 } else {
-    Write-Info "Core config already exists — skipping."
+    Write-Info "Core config already exists - skipping."
 }
 
 if (-not (Test-Path $WebEnv)) {
-    "VITE_CORE_PORT=4747" | Set-Content $WebEnv
+    Set-Content $WebEnv "VITE_CORE_PORT=4747"
     Write-Ok "Created $WebEnv"
 }
 
 # ── Pull default model ────────────────────────────────────────
-Write-Step "⑦ Pulling default model (llama3.2)"
+Write-Step "7) Pulling default model (llama3.2)"
 $ollamaList = ollama list 2>$null
 if ($ollamaList -match "llama3\.2") {
     Write-Ok "llama3.2 already pulled"
@@ -151,11 +143,10 @@ if ($ollamaList -match "llama3\.2") {
 }
 
 # ── Launch ────────────────────────────────────────────────────
-Write-Step "⑧ Launching Coastal Claw"
+Write-Step "8) Launching Coastal Claw"
 Set-Location $InstallDir
 
 Write-Info "Starting core service on :4747..."
-# Use minimized windows (not hidden) so AV can see the processes
 $coreJob = Start-Process -FilePath "node" `
     -ArgumentList "packages\core\dist\main.js" `
     -WorkingDirectory $InstallDir `
@@ -165,7 +156,6 @@ $coreJob = Start-Process -FilePath "node" `
 $coreJob.Id | Set-Content "$env:TEMP\coastal-claw-core.pid"
 Write-Ok "Core service started (PID $($coreJob.Id))"
 
-# Wait for core to be ready
 Write-Info "Waiting for core API to be ready..."
 $ready = $false
 for ($i = 0; $i -lt 15; $i++) {
@@ -175,7 +165,11 @@ for ($i = 0; $i -lt 15; $i++) {
         if ($r.StatusCode -eq 200) { $ready = $true; break }
     } catch {}
 }
-if ($ready) { Write-Ok "Core API ready" } else { Write-Warn "Core API didn't respond in 15s — check $env:TEMP\coastal-claw-core-err.log" }
+if ($ready) {
+    Write-Ok "Core API ready"
+} else {
+    Write-Warn "Core API did not respond in 15s - check $env:TEMP\coastal-claw-core-err.log"
+}
 
 Write-Info "Starting web portal on :5173..."
 $webJob = Start-Process -FilePath "pnpm" `
@@ -188,21 +182,21 @@ $webJob.Id | Set-Content "$env:TEMP\coastal-claw-web.pid"
 Write-Ok "Web portal started (PID $($webJob.Id))"
 Start-Sleep 2
 
-# Open browser
 Start-Process "http://127.0.0.1:5173"
 
 Write-Host ""
-Write-Host "════════════════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host "=================================================" -ForegroundColor Cyan
 Write-Host "  Coastal Claw is running!" -ForegroundColor White
 Write-Host ""
 Write-Host "  Web portal:  http://127.0.0.1:5173"
 Write-Host "  Core API:    http://127.0.0.1:4747"
 Write-Host ""
 Write-Host "  Default login:  admin / admin"
-Write-Host "  (you will be asked to set a new password)"
+Write-Host "  (you will be prompted to set a new password)"
 Write-Host ""
 Write-Host "  Logs:  $env:TEMP\coastal-claw-core.log"
 Write-Host "         $env:TEMP\coastal-claw-web.log"
 Write-Host ""
-Write-Host "  To stop:  Stop-Process -Id (Get-Content $env:TEMP\coastal-claw-core.pid)" -ForegroundColor DarkGray
-Write-Host "════════════════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host "  To stop the servers, run:" -ForegroundColor DarkGray
+Write-Host "  Stop-Process -Id (Get-Content $env:TEMP\coastal-claw-core.pid)" -ForegroundColor DarkGray
+Write-Host "=================================================" -ForegroundColor Cyan

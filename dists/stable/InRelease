@@ -1,0 +1,42 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Architectures: amd64
+Codename: stable
+Components: main
+Date: Wed, 08 Apr 2026 17:50:40 +0000
+Label: CoastalClaw
+Origin: CoastalClaw
+Suite: stable
+MD5Sum:
+ 6e09ca06a233d9858d3725588e01f798              146 Release
+ a8aeb36016464219b73f989c871872d9              787 main/binary-amd64/Packages
+ b13afc1b77633729eb47922eb4803d4d              563 main/binary-amd64/Packages.gz
+SHA1:
+ 34ac2605a21a1373d19b4fb2e97c07efd3111c90              146 Release
+ d6fd94540c6dea46fbbddf7c04f21a2ebcb90c7c              787 main/binary-amd64/Packages
+ d7a9ff5269fe188f825f279e938ba213192bcba6              563 main/binary-amd64/Packages.gz
+SHA256:
+ 35eb550c1f454f754c08c778abb3ac7e493b99dfcf5439faa3b488cc97e7ab72              146 Release
+ 21c2acdba838cd696b05dfd78e918268c5b690eb54acc1026295acab0a92a9c8              787 main/binary-amd64/Packages
+ 8e4cadfb97059180e4194e43fe27d3acfc93a644a1d7aa9d815d7e711e096768              563 main/binary-amd64/Packages.gz
+SHA512:
+ 723316161138d3a891edfdaeb1b89a25389e2aa083c5ea7aa63e824bc7b5770d510118820907ef04f5dd324df1152bee60c61743c20d7f118f234f6d44731548              146 Release
+ a644872eed9e0ef43018f2247e409d386a655a2d69dee4ed994f1febf1e73d8d7cfbf74129a74c2759e90ba0311f35ed08db4d040d81d84ca172787806180ab8              787 main/binary-amd64/Packages
+ 37d59bd2e71074da0bcbae30925caa9fd8ac223898fd41b55e40a768586ad9cd623e0da21dc656718e15e33ceae59c8c6fceed69ce79ad8b83ef283ffad801c7              563 main/binary-amd64/Packages.gz
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCgAdFiEEgir/cxCIBaPRSTlnVp45qzuDhwoFAmnWlXAACgkQVp45qzuD
+hwonSw//bdFXLbWei9nPdzoRBCCYGBrWq8ornkVVRl/vqHRYAEOuQbTAQPBwHXDS
+yxxUx8u4iDTzpSSzs5MRzCO6HN1m4VxmIEUFoN4K1+/OE/qhY+VuxT2UL+kV0+SO
+nlhCCFUvuIPlWvzIB/ePgx1IhohB9mhutCxoNuLHCPO/4VUZbb29aAHdml+Gc4VG
+9umwamkP3+BYPc6gFL8Di5ZAo90YbEqUBRE3HXi52eI7vIhPxGHLSbNuQxk42b5L
+Nh96EnAxl11qKObvyKy2wkTqkB7UhLUuzgD1ZF4FzzldjSYok5IoxGk3++gu73Se
+ax3Njdvlava3XG2LNSBtpk12NS8TwNOSxtLf35xV6BxH43Q8kRSyrPOSspoiv/FQ
+7T6NZ2ZNw0wBE/+M2/yzbaLOOfxvbefYtu4xmmhuldNXzUrENMIj1xjR36jnLaJ/
+zyqC1vVmLERd9/Ok6eEoyVMTv7mg42oiS7ysM+gGaNrpawVLDfWp8IlzMDAC7H6d
+/kTdQB2dP++1Y+afJ+P0aV+kRa4EBWht30q/ef6O1Yz7Jd+tYrNW/2SfbXupk3H4
+dzvdARd+DWMSU8KwwVrceavgAYme/HQAREOjAxzYpPZNcWCZOCPzj1ix35XtImnG
+6/Qs7eAQE2FHkaokhF8qBFmlV+JyN1MP9HzqS88YL0YkNkPumG0=
+=RKSp
+-----END PGP SIGNATURE-----

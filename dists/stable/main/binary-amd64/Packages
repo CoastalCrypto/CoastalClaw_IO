@@ -1,14 +1,14 @@
 Package: coastalclaw
-Version: 1.0.0
+Version: 1.2.0
 Architecture: amd64
 Maintainer: CoastalClaw contributors <hello@coastalclaw.io>
 Depends: nodejs (>= 22), npm, curl, git, sqlite3
 Recommends: ollama
-Filename: pool/main/coastalclaw_1.0.0_amd64.deb
-Size: 8604818
-MD5sum: 1423acb8e5da832d441abcedb305b739
-SHA1: b46b82b99b6c197c13dc59fe75ff0e699ef0a67f
-SHA256: 87c529871d63841ec339d69e28156bf79ed0b98e79b382aaed1d631366a84154
+Filename: pool/main/coastalclaw_1.2.0_amd64.deb
+Size: 8636488
+MD5sum: f51331dc8771f730af2d065aaf702eca
+SHA1: c63e5ce42d5dbb21337d5b1626c4df3e2d0fe112
+SHA256: 470686812e57306b32abb06410a82bba1b1538b9879dc9b7b589f9b5dd1477c9
 Section: utils
 Priority: optional
 Homepage: https://github.com/CoastalCrypto/CoastalClaw_IO

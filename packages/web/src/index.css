@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", system-ui, sans-serif;
+  --font-sans: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
 
   /* Animations */
@@ -11,23 +12,31 @@
   --animate-glow-pulse: glow-pulse 3s    infinite alternate;
   --animate-blink:      blink      1s    step-end infinite;
 
-  /* Brand palette */
-  --color-console-cyan:    #00e5ff;
+  /* Brand palette — CoastalClaw Option 1 */
+  --color-accent:          #00D4FF;
+  --color-accent-hover:    #00B8D9;
+  --color-accent-glow:     rgba(0, 212, 255, 0.25);
+  --color-console-cyan:    #00D4FF;
   --color-console-magenta: #e040fb;
   --color-console-amber:   #ffb300;
   --color-console-green:   #00e676;
   --color-console-red:     #ff5252;
 
   /* Surfaces */
-  --color-surface-0: #050d1a;
-  --color-surface-1: #091525;
+  --color-surface-0: #0A0F1C;
+  --color-surface-1: #0D1829;
   --color-surface-2: rgba(255,255,255,0.04);
   --color-surface-3: rgba(255,255,255,0.07);
+  --color-card:      #1A2744;
+
+  /* Text */
+  --color-text-primary: #FFFFFF;
+  --color-text-muted:   #A0AEC0;
 
   /* Glassmorphism */
   --backdrop-blur-glass: blur(16px);
-  --color-glass-bg:     rgba(9, 21, 37, 0.75);
-  --color-glass-border: rgba(255, 255, 255, 0.08);
+  --color-glass-bg:     rgba(13, 24, 41, 0.80);
+  --color-glass-border: rgba(0, 212, 255, 0.10);
 }
 
 /* ── Keyframes ───────────────────────────────────────────── */
@@ -63,7 +72,7 @@
 
   body {
     background-color: var(--color-surface-0);
-    color: #c9d1d9;
+    color: var(--color-text-muted);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -111,17 +120,65 @@
     align-items: center;
     justify-content: center;
     padding: 0.625rem 1.25rem;
-    background: #00c8b4;
+    background: var(--color-accent);
     color: #000;
-    font-weight: 600;
+    font-weight: 700;
     font-size: 0.875rem;
     border-radius: 0.5rem;
-    transition: background 0.15s, transform 0.1s;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
     cursor: pointer;
+    letter-spacing: 0.02em;
   }
-  .btn-primary:hover    { background: #00e5d0; }
+  .btn-primary:hover    { background: var(--color-accent-hover); box-shadow: 0 0 20px var(--color-accent-glow); }
   .btn-primary:active   { transform: scale(0.97); }
   .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Section heading banner — cyan filled rect */
+  .section-heading {
+    display: inline-block;
+    background: var(--color-accent);
+    color: #000;
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    padding: 0.375rem 1rem;
+    border-radius: 0.375rem;
+    font-family: var(--font-sans);
+  }
+
+  /* Feature card — dark slate with ✳ icon pattern */
+  .feature-card {
+    background: var(--color-card);
+    border: 1px solid rgba(0, 212, 255, 0.12);
+    border-radius: 0.875rem;
+    padding: 1.5rem;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  }
+  .feature-card:hover {
+    border-color: rgba(0, 212, 255, 0.35);
+    box-shadow: 0 8px 32px rgba(0, 212, 255, 0.08);
+    transform: translateY(-2px);
+  }
+
+  /* KPI stat card — cyan bar bottom */
+  .stat-card {
+    background: var(--color-surface-1);
+    border: 1px solid rgba(0, 212, 255, 0.10);
+    border-radius: 0.875rem;
+    overflow: hidden;
+  }
+  .stat-card-bar {
+    background: var(--color-accent);
+    padding: 0.5rem 1rem;
+    text-align: center;
+  }
+
+  /* Cyan border image frame */
+  .image-frame {
+    border: 2px solid var(--color-accent);
+    border-radius: 0.75rem;
+    overflow: hidden;
+  }
 
   /* Ghost button */
   .btn-ghost {

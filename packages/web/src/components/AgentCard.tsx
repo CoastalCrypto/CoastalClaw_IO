@@ -17,57 +17,82 @@ interface Props {
 
 export function AgentCard({ agent, onEdit, onDelete, onToggle }: Props) {
   return (
-    <div className="glass-panel p-5 hover:border-cyan-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_4px_20px_rgba(0,255,255,0.15)] group relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500/0 group-hover:bg-cyan-500/80 transition-colors"></div>
-      <div className="flex items-start justify-between gap-3 pl-2">
+    <div className="feature-card group relative overflow-hidden cursor-default"
+      style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+      {/* Active indicator strip */}
+      <div className="absolute top-0 left-0 w-0.5 h-full transition-all duration-300"
+        style={{ background: agent.active ? '#00D4FF' : 'rgba(255,255,255,0.08)' }} />
+
+      <div className="pl-3 flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-white font-mono text-sm tracking-wide flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse"></span>
+          {/* Header row: ✳ icon + name */}
+          <div className="flex items-center gap-2.5 mb-2">
+            <span className="text-lg shrink-0" style={{ color: '#00D4FF', lineHeight: 1 }}>✳</span>
+            <span className="font-bold text-white text-sm tracking-wide truncate"
+              style={{ letterSpacing: '0.04em' }}>
               {agent.name.toUpperCase()}
             </span>
             {agent.builtIn && (
-              <span className="text-[10px] text-cyan-400/80 border border-cyan-800 bg-cyan-950/30 rounded px-1.5 py-0.5 tracking-wider font-mono">
-                CORE_MODULE
+              <span className="text-[10px] font-mono shrink-0 px-1.5 py-0.5 rounded"
+                style={{ color: '#00D4FF', border: '1px solid rgba(0,212,255,0.30)', background: 'rgba(0,212,255,0.06)', letterSpacing: '0.08em' }}>
+                CORE
               </span>
             )}
           </div>
-          <div className="text-xs text-gray-400 mb-3 font-mono leading-relaxed line-clamp-2">
-            {'>'} {agent.role}
-          </div>
-          <div className="flex gap-2 text-[10px] font-mono tracking-widest text-cyan-500/60 flex-wrap">
-            <span className="border border-gray-800 px-2 py-0.5 rounded bg-black/20">
+
+          {/* Role */}
+          <p className="text-xs mb-3 leading-relaxed line-clamp-2" style={{ color: '#A0AEC0' }}>
+            {agent.role}
+          </p>
+
+          {/* Badges row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded"
+              style={{ color: 'rgba(0,212,255,0.70)', border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.20)' }}>
               {agent.tools.length} TOOLS
             </span>
+
             {agent.voice && (
-              <span className="border border-gray-800 px-2 py-0.5 rounded bg-black/20 max-w-[120px] truncate" title={agent.voice}>
-                {agent.voice.startsWith('vv:') ? 'AI VOICE' : '🔊 ' + agent.voice.split(' ')[0]}
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded max-w-[110px] truncate"
+                style={{ color: 'rgba(0,212,255,0.70)', border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.20)' }}
+                title={agent.voice}>
+                {agent.voice.startsWith('vv:') ? 'AI VOICE' : '♪ ' + agent.voice.split(' ')[0]}
               </span>
             )}
+
+            {/* Online/offline toggle */}
             <button
               onClick={() => onToggle(agent.id, !agent.active)}
               title={agent.active ? 'Click to take offline' : 'Click to bring online'}
-              className={`border px-2 py-0.5 rounded transition-colors cursor-pointer ${
-                agent.active
-                  ? 'border-green-900/50 text-green-400 bg-green-950/20 hover:bg-red-950/20 hover:text-red-400 hover:border-red-900/50'
-                  : 'border-red-900/50 text-red-400 bg-red-950/20 hover:bg-green-950/20 hover:text-green-400 hover:border-green-900/50'
-              }`}
+              className="text-[10px] font-mono px-2 py-0.5 rounded transition-all cursor-pointer"
+              style={agent.active ? {
+                color: '#00e676',
+                border: '1px solid rgba(0,230,118,0.30)',
+                background: 'rgba(0,230,118,0.08)',
+              } : {
+                color: '#ff5252',
+                border: '1px solid rgba(255,82,82,0.30)',
+                background: 'rgba(255,82,82,0.08)',
+              }}
             >
-              {agent.active ? 'ONLINE' : 'OFFLINE'}
+              {agent.active ? '● ONLINE' : '○ OFFLINE'}
             </button>
           </div>
         </div>
-        <div className="flex flex-col gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+
+        {/* Edit / Delete — visible on hover */}
+        <div className="flex flex-col gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => onEdit(agent)}
-            className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors font-mono hover:underline"
+            className="text-[11px] font-mono transition-colors hover:underline"
+            style={{ color: '#00D4FF' }}
           >
             [EDIT]
           </button>
           {!agent.builtIn && (
             <button
               onClick={() => onDelete(agent.id)}
-              className="text-xs text-red-500 hover:text-red-400 transition-colors font-mono hover:underline"
+              className="text-[11px] font-mono transition-colors hover:underline text-red-500 hover:text-red-400"
             >
               [KILL]
             </button>

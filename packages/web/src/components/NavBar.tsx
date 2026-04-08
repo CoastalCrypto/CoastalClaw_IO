@@ -72,50 +72,49 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5"
-        style={{ background: 'rgba(5,13,26,0.92)', backdropFilter: 'blur(16px)' }}>
+      <nav className="fixed top-0 left-0 right-0 z-50"
+        style={{ background: 'rgba(10,15,28,0.94)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(0,212,255,0.10)' }}>
         <div className="px-4 sm:px-6 h-14 flex items-center justify-between max-w-7xl mx-auto">
 
           {/* Brand */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            {/* Wave logo */}
-            <svg viewBox="0 0 100 100" width="34" height="34" className="shrink-0 text-cyan-400" fill="none" aria-hidden="true">
-              <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="3.5"/>
-              <path stroke="currentColor" strokeWidth="9" strokeLinecap="round" fill="none"
-                d="M8 48 C18 34 30 34 38 44 C46 54 58 54 66 44 C74 34 86 34 94 44"/>
-              <circle cx="24" cy="36" r="3.5" fill="currentColor" opacity="0.8"/>
-              <circle cx="80" cy="36" r="3.5" fill="currentColor" opacity="0.8"/>
-              <path stroke="currentColor" strokeWidth="7" strokeLinecap="round" fill="none" opacity="0.65"
-                d="M8 62 C18 50 32 50 42 60 C52 70 66 68 76 58 C84 50 92 50 96 56"/>
-              <path stroke="currentColor" strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.35"
-                d="M8 76 C22 68 38 70 50 78 C62 86 78 84 90 76"/>
-            </svg>
-            <span className="font-mono text-xs tracking-widest text-cyan-500 shrink-0 hidden sm:block">
-              COASTAL_OS
+          <div className="flex items-center gap-3 min-w-0">
+            {/* ✳ brand mark */}
+            <div className="shrink-0 w-8 h-8 rounded-md flex items-center justify-center"
+              style={{ background: 'rgba(0,212,255,0.12)', border: '1px solid rgba(0,212,255,0.30)' }}>
+              <span style={{ color: '#00D4FF', fontSize: '16px', fontWeight: 700, lineHeight: 1 }}>✳</span>
+            </div>
+            <span className="font-bold tracking-tight text-white text-sm shrink-0 hidden sm:block"
+              style={{ fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.01em' }}>
+              CoastalClaw
             </span>
-            <span className="font-mono text-xs tracking-widest text-cyan-500 shrink-0 sm:hidden">
+            <span className="font-bold tracking-tight text-white text-sm shrink-0 sm:hidden"
+              style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               CC
             </span>
             {title && (
-              <span className="text-xs font-mono text-gray-500 truncate hidden md:block">
+              <span className="text-xs font-mono truncate hidden md:block" style={{ color: '#A0AEC0' }}>
                 / {title}
               </span>
             )}
           </div>
 
           {/* Desktop nav */}
-          <div className="hidden sm:flex items-center gap-1">
+          <div className="hidden sm:flex items-center gap-0.5">
             {visibleItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => onNav(item.id)}
-                className={`px-3 py-1.5 rounded-md font-mono text-xs transition-all ${
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all tracking-wide ${
                   page === item.id
-                    ? 'text-black bg-cyan-400 font-bold'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    ? 'text-black font-bold'
+                    : 'hover:text-white hover:bg-white/5'
                 }`}
+                style={page === item.id
+                  ? { background: '#00D4FF', fontFamily: 'Space Grotesk, sans-serif' }
+                  : { color: '#A0AEC0', fontFamily: 'Space Grotesk, sans-serif' }
+                }
               >
-                /{item.label.toLowerCase()}
+                {item.label}
               </button>
             ))}
           </div>
@@ -124,15 +123,16 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
           <div className="flex items-center gap-3">
             {currentUser && (
               <div className="hidden sm:flex items-center gap-2">
-                <span className="font-mono text-xs text-gray-500">
+                <span className="text-xs" style={{ color: '#A0AEC0', fontFamily: 'Space Grotesk, sans-serif' }}>
                   {currentUser.username}
-                  <span className={`ml-1.5 text-[10px] ${currentUser.role === 'admin' ? 'text-cyan-600' : 'text-gray-600'}`}>
+                  <span className={`ml-1.5 text-[10px] font-mono ${currentUser.role === 'admin' ? '' : 'text-gray-600'}`}
+                    style={currentUser.role === 'admin' ? { color: '#00D4FF' } : {}}>
                     [{currentUser.role}]
                   </span>
                 </span>
                 {onLogout && (
                   <button onClick={onLogout}
-                    className="font-mono text-xs text-gray-600 hover:text-red-400 transition-colors">
+                    className="text-xs text-gray-600 hover:text-red-400 transition-colors font-mono">
                     logout
                   </button>
                 )}
@@ -145,9 +145,9 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
               onClick={() => setOpen(o => !o)}
               aria-label="Toggle menu"
             >
-              <span className={`block h-0.5 w-5 bg-gray-400 transition-transform origin-center ${open ? 'rotate-45 translate-y-2' : ''}`} />
-              <span className={`block h-0.5 w-5 bg-gray-400 transition-opacity ${open ? 'opacity-0' : ''}`} />
-              <span className={`block h-0.5 w-5 bg-gray-400 transition-transform origin-center ${open ? '-rotate-45 -translate-y-2' : ''}`} />
+              <span className={`block h-0.5 w-5 transition-transform origin-center ${open ? 'rotate-45 translate-y-2' : ''}`} style={{ background: '#A0AEC0' }} />
+              <span className={`block h-0.5 w-5 transition-opacity ${open ? 'opacity-0' : ''}`} style={{ background: '#A0AEC0' }} />
+              <span className={`block h-0.5 w-5 transition-transform origin-center ${open ? '-rotate-45 -translate-y-2' : ''}`} style={{ background: '#A0AEC0' }} />
             </button>
           </div>
         </div>
@@ -172,33 +172,34 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
 
         {/* Mobile dropdown */}
         {open && (
-          <div className="sm:hidden border-t border-white/5 px-4 py-3 flex flex-col gap-1"
-            style={{ background: 'rgba(5,13,26,0.98)' }}>
+          <div className="sm:hidden border-t px-4 py-3 flex flex-col gap-1"
+            style={{ background: 'rgba(10,15,28,0.99)', borderColor: 'rgba(0,212,255,0.10)' }}>
             {visibleItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => { onNav(item.id); setOpen(false) }}
-                className={`w-full text-left px-4 py-2.5 rounded-lg font-mono text-sm transition-all flex items-center gap-3 ${
-                  page === item.id
-                    ? 'text-cyan-400 bg-cyan-500/10 border border-cyan-500/20'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all flex items-center gap-3 ${
+                  page === item.id ? '' : 'hover:bg-white/5'
                 }`}
+                style={page === item.id
+                  ? { color: '#00D4FF', background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.20)', fontFamily: 'Space Grotesk, sans-serif' }
+                  : { color: '#A0AEC0', fontFamily: 'Space Grotesk, sans-serif' }
+                }
               >
                 <span>{item.icon}</span>
-                <span>/{item.label.toLowerCase()}</span>
-                {page === item.id && <span className="ml-auto text-cyan-500">●</span>}
+                <span>{item.label}</span>
+                {page === item.id && <span className="ml-auto" style={{ color: '#00D4FF' }}>●</span>}
               </button>
             ))}
 
-            {/* User info + logout in mobile menu */}
             {currentUser && (
-              <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between px-4">
-                <span className="font-mono text-xs text-gray-500">
+              <div className="mt-3 pt-3 flex items-center justify-between px-4" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <span className="text-xs" style={{ color: '#A0AEC0' }}>
                   {currentUser.username} <span className="text-gray-600">[{currentUser.role}]</span>
                 </span>
                 {onLogout && (
                   <button onClick={() => { onLogout(); setOpen(false) }}
-                    className="font-mono text-xs text-red-700 hover:text-red-400 transition-colors">
+                    className="text-xs text-red-700 hover:text-red-400 transition-colors font-mono">
                     logout
                   </button>
                 )}

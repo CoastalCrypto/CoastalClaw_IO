@@ -67,49 +67,67 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
   }
 
   return (
-    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)' }}>
+    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #0A0F1C 0%, #0D1829 60%, #0A0F1C 100%)' }}>
       <NavBar page="agents" onNav={onNav} />
 
       <div className="pt-20 pb-12 px-4 sm:px-6 max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8 animate-slide-up">
-          <h1 className="text-2xl font-mono tracking-wide flex items-center gap-3">
-            <span className="w-2 h-6 bg-cyan-500 inline-block"></span> Workforce Matrix
-          </h1>
+          <div className="flex items-center gap-3">
+            <span style={{ color: '#00D4FF', fontSize: '24px', lineHeight: 1 }}>✳</span>
+            <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em' }}>
+              AI Agents
+            </h1>
+          </div>
           {!adding && !editing && (
             <button
               onClick={() => setAdding(true)}
-              className="px-4 py-2 bg-cyan-500/10 border border-cyan-500 hover:bg-cyan-500/30 text-cyan-400 font-mono rounded-md text-sm transition-all hover:shadow-[0_0_15px_rgba(0,255,255,0.4)]"
+              className="px-4 py-2 text-black font-bold rounded-lg text-sm transition-all"
+              style={{ background: '#00D4FF', fontFamily: 'Space Grotesk, sans-serif' }}
+              onMouseEnter={e => { (e.target as HTMLElement).style.background = '#00B8D9'; (e.target as HTMLElement).style.boxShadow = '0 0 20px rgba(0,212,255,0.30)' }}
+              onMouseLeave={e => { (e.target as HTMLElement).style.background = '#00D4FF'; (e.target as HTMLElement).style.boxShadow = 'none' }}
             >
-              [+ INITIALIZE_AGENT]
+              + New Agent
             </button>
           )}
         </div>
 
         {(adding || editing) && (
-          <div className="glass-panel p-6 mb-8 animate-fade-in console-border relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600"></div>
-            <h2 className="text-sm font-mono mb-6 flex items-center gap-2 text-cyan-400">
-              <span className="animate-pulse">_</span> {editing ? 'RECONFIGURE_AGENT' : 'NEW_AGENT_PROTOCOL'}
-            </h2>
-            <AgentEditor
-              initial={editing ? { ...editing, soul: '', voice: editing.voice ?? '' } : undefined}
-              onSave={handleSave}
-              onCancel={() => { setAdding(false); setEditing(null) }}
-            />
+          <div className="mb-8 animate-fade-in rounded-xl overflow-hidden" style={{ background: 'rgba(26,39,68,0.80)', border: '1px solid rgba(0,212,255,0.20)' }}>
+            <div className="px-6 py-3 flex items-center gap-2" style={{ background: 'rgba(0,212,255,0.06)', borderBottom: '1px solid rgba(0,212,255,0.12)' }}>
+              <span style={{ color: '#00D4FF' }}>✳</span>
+              <span className="text-sm font-bold" style={{ color: '#00D4FF', fontFamily: 'Space Grotesk, sans-serif' }}>
+                {editing ? 'Edit Agent' : 'New Agent'}
+              </span>
+            </div>
+            <div className="p-6">
+              <AgentEditor
+                initial={editing ? { ...editing, soul: '', voice: editing.voice ?? '' } : undefined}
+                onSave={handleSave}
+                onCancel={() => { setAdding(false); setEditing(null) }}
+              />
+            </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {agents.map(agent => (
-            <AgentCard
-              key={agent.id}
-              agent={agent}
-              onEdit={a => { setEditing(a); setAdding(false) }}
-              onDelete={handleDelete}
-              onToggle={handleToggle}
-            />
-          ))}
-        </div>
+        {agents.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <span style={{ fontSize: '48px', color: '#00D4FF', opacity: 0.3 }}>✳</span>
+            <p className="mt-4 text-white font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>No agents configured</p>
+            <p className="mt-1 text-sm" style={{ color: '#A0AEC0' }}>Create your first agent to get started.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {agents.map(agent => (
+              <AgentCard
+                key={agent.id}
+                agent={agent}
+                onEdit={a => { setEditing(a); setAdding(false) }}
+                onDelete={handleDelete}
+                onToggle={handleToggle}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

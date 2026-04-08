@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useCallback, type DragEvent } from 'react'
 import { ChatBubble } from '../components/ChatBubble'
 import { ApprovalCard } from '../components/ApprovalCard'
 import { AgentThinkingAnimation, guessDomain, type AgentDomain } from '../components/AgentThinkingAnimation'
-import { RiveAgent } from '../components/animations/RiveAgent'
 import { coreClient, type Session } from '../api/client'
 
 type MessageRole = 'user' | 'assistant' | 'approval' | 'team'
@@ -589,7 +588,6 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
           <path stroke="currentColor" strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.35"
             d="M8 76 C22 68 38 70 50 78 C62 86 78 84 90 76"/>
         </svg>
-        <RiveAgent domain={activeDomain} isThinking={loading} size={48} />
         <div>
           <div className="text-xs text-cyan-400 font-mono tracking-widest">
             {teamMode ? '⚡ TEAM MODE' : activeDomain.toUpperCase()}

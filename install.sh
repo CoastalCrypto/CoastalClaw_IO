@@ -139,6 +139,12 @@ REPO_URL="https://github.com/CoastalCrypto/CoastalClaw_IO.git"
 if [[ -d "${INSTALL_DIR}/.git" ]]; then
   info "Updating existing installation..."
   git -C "$INSTALL_DIR" pull --ff-only
+elif [[ -d "$INSTALL_DIR" ]]; then
+  # Directory exists but is not a git repo — stale or partial previous install
+  warn "Found ${INSTALL_DIR} but it is not a git repository."
+  info "Removing stale directory and re-cloning..."
+  rm -rf "$INSTALL_DIR"
+  git clone --depth=1 "$REPO_URL" "$INSTALL_DIR"
 else
   git clone --depth=1 "$REPO_URL" "$INSTALL_DIR"
 fi
@@ -147,7 +153,7 @@ success "Repository at ${INSTALL_DIR}"
 # ── Install dependencies ─────────────────────────────────────
 step "④ Installing dependencies"
 cd "$INSTALL_DIR"
-pnpm install --frozen-lockfile
+pnpm install
 success "Dependencies installed"
 
 # ── Build ────────────────────────────────────────────────────

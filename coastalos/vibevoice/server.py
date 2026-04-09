@@ -38,6 +38,7 @@ def load_asr():
 
 # ---------- TTS ----------
 TTS_MODEL_ID = os.getenv("VIBEVOICE_TTS_MODEL", "microsoft/VibeVoice-Realtime-0.5B")
+TTS_SAMPLE_RATE = int(os.getenv("VIBEVOICE_SAMPLE_RATE", "22050"))
 tts_processor = None
 tts_model = None
 
@@ -93,8 +94,8 @@ async def tts_stream(ws: WebSocket):
     streamer = AsyncAudioStreamer(batch_size=1)
     inputs = tts_processor(text=[text], voice=voice, return_tensors="pt")
     inputs = {k: v.to(tts_model.device) for k, v in inputs.items()}
-    loop = asyncio.get_event_loop()
-    loop.run_in_executor(None, lambda: tts_model.generate(**inputs, streamer=streamer))
+    asyncio.create_task(asyncio.to_thread(tts_model.generate, **inputs, streamer=streamer))
+    await ws.send_text(json.dumps({"sample_rate": TTS_SAMPLE_RATE, "channels": 1}))
     async for chunk in streamer:
         pcm = (chunk[0].cpu().numpy() * 32767).astype(np.int16).tobytes()
         await ws.send_bytes(pcm)

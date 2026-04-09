@@ -3,14 +3,15 @@
 </p>
 
 <p align="center">
-  <strong>A self-improving AI Agent OS — runs on your hardware, your data never leaves.</strong>
+  <strong>A private, self-hosted AI Agent OS — intelligent agents, scheduled tasks, custom tools, and a full web UI. Your data never leaves your hardware.</strong>
 </p>
 
 <p align="center">
+  <a href="#-choose-your-path">Choose Your Path</a> ·
   <a href="#-quick-start">Quick Start</a> ·
   <a href="#-first-boot-walkthrough">Walkthrough</a> ·
   <a href="#-features">Features</a> ·
-  <a href="#-coastalos--bootable-usb">CoastalOS</a> ·
+  <a href="#-coastalos--standalone-os">CoastalOS</a> ·
   <a href="#-architecture">Architecture</a> ·
   <a href="#%EF%B8%8F-configuration">Configuration</a> ·
   <a href="#-api-reference">API</a>
@@ -20,15 +21,53 @@
 
 ## What is CoastalClaw?
 
-CoastalClaw is an open-source **AI Agent Operating System** you run on your own computer or server. Your data stays entirely on your hardware — nothing is sent to any cloud.
+CoastalClaw is an open-source **AI Agent Operating System** that runs entirely on your own hardware. No cloud subscription, no API keys, no data leaving your machine.
 
-Think of it as a private AI command center: chat with intelligent agents, set them on automated schedules, build custom tools, and manage everything through a clean web interface.
+It gives you a private command center for AI: chat with intelligent agents that know your organisation, schedule them to run automatically, build custom tools they can call, and push results to Telegram, Discord, or Slack — all through a clean web interface.
 
 **Who is this for?**
-- People who want a private, local alternative to cloud AI services
-- Teams that want shared AI agents with role-based access
+- Anyone who wants a private, local alternative to cloud AI services
+- Teams that want shared AI agents with role-based access control
 - Developers who want to build and automate with AI tools
-- Anyone who wants to run AI on their own hardware
+- Power users who want AI running on their own hardware 24/7
+
+---
+
+## 🗺 Choose Your Path
+
+CoastalClaw runs three different ways. Pick the one that fits your situation:
+
+---
+
+### Path 1 — Install on your existing computer *(recommended for most people)*
+
+Runs alongside your current OS (Mac, Linux, or Windows). Nothing is erased. You can stop and start it whenever you want.
+
+**Best for:** personal use, development, trying it out
+
+→ **[Jump to Quick Start](#-quick-start)**
+
+---
+
+### Path 2 — Install as a system service on a Linux server
+
+Installs as a `systemd` service that starts automatically on boot. Ideal for a dedicated machine, home server, or VPS.
+
+**Best for:** always-on setups, team deployments, production use
+
+→ **[Jump to Server Install](#ubuntu--debian--apt-install)**
+
+---
+
+### Path 3 — Boot from USB as a standalone OS (CoastalOS)
+
+Flash a bootable USB drive. Plug it into any UEFI machine and boot — no installation, nothing written to the host disk. CoastalOS is a minimal Linux environment built entirely around CoastalClaw.
+
+**Best for:** dedicated AI appliances, air-gapped setups, taking your AI anywhere
+
+→ **[Jump to CoastalOS](#-coastalos--standalone-os)**
+
+---
 
 ---
 
@@ -36,8 +75,13 @@ Think of it as a private AI command center: chat with intelligent agents, set th
 
 | Feature | What it does |
 |---------|-------------|
-| **Chat** | Talk to AI agents that know your organization, remember past conversations, and can use tools |
-| **Agent Voice** | Each agent can speak responses aloud — choose from browser voices or the built-in VibeVoice engine |
+| **Chat** | Talk to AI agents that know your organisation, remember past conversations, and can use tools |
+| **Persistent Sessions** | Chat history survives page navigation — your conversation stays intact as you move around the UI |
+| **Agent Voice** | Each agent speaks responses aloud — choose from browser voices or the built-in VibeVoice engine |
+| **Ollama Auto-Scan** | On startup, CoastalClaw scans your local Ollama install, imports every model it finds, and auto-assigns them to routing domains — no manual configuration needed |
+| **Model Routing** | Messages are automatically routed to the right model (high / medium / low priority) based on domain (COO, CFO, CTO, general) — hot-reloads if you change the registry |
+| **Ollama Pull** | Pull any model from the Ollama library directly from the Models page with live progress |
+| **HuggingFace Install** | Download and quantize HuggingFace models (Q4, Q5, Q8) directly from the web UI |
 | **Skills Library** | Save reusable prompt templates with fill-in variables, triggered with `/command` shortcuts in chat |
 | **Scheduled Agents** | Set agents to run automatically on a cron schedule — daily briefings, alerts, reports |
 | **Multi-Agent Swarm** | Send complex tasks to a team of specialist agents (COO, CFO, CTO) that work in parallel |
@@ -47,7 +91,7 @@ Think of it as a private AI command center: chat with intelligent agents, set th
 | **Output Channels** | Push agent messages to Telegram, Discord, Slack, or Zapier |
 | **Multi-User Auth** | Username + password login with three roles: admin, operator, viewer |
 | **Self-Build Loop** | The system can read its own code, propose improvements, and open pull requests |
-| **Privacy First** | Entirely local inference — no external API required |
+| **Privacy First** | Entirely local inference — no external API keys or cloud accounts required |
 
 ---
 
@@ -231,7 +275,9 @@ The **Tools** page lets you write custom JavaScript tools that agents can call. 
 
 ---
 
-## 💿 CoastalOS — Bootable USB
+## 💿 CoastalOS — Standalone OS
+
+> **This is Path 3.** CoastalOS boots from a USB drive as a complete, self-contained operating system — no existing OS required on the host machine.
 
 CoastalOS is a dedicated Linux image that runs CoastalClaw as a complete operating system. Boot from a USB drive — no installation required, nothing written to your machine's disk.
 

@@ -17,3 +17,6 @@ packages/shell/dist-electron/
 .claude/
 .superpowers/
 .worktrees/
+
+# Root-level runtime data directory
+data/

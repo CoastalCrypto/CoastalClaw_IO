@@ -1,7 +1,7 @@
 [Unit]
 Description=CoastalClaw Web Portal (Vite static preview)
-After=coastalclaw-server.service
-Wants=coastalclaw-server.service
+After=coastal-server.service
+Wants=coastal-server.service
 
 [Service]
 Type=simple

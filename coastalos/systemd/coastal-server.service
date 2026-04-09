@@ -17,6 +17,8 @@ Environment=CC_AGENT_WORKDIR=/var/lib/coastalclaw/workspace
 Environment=CC_INFINITY_URL=http://127.0.0.1:23817
 Environment=CC_VIBEVOICE_URL=http://127.0.0.1:8001
 Environment=CC_AIRLLM_URL=http://127.0.0.1:8002
+Environment=CC_OLLAMA_URL=http://127.0.0.1:11434
+Environment=CC_DEFAULT_MODEL=llama3.2
 AmbientCapabilities=CAP_SYS_ADMIN CAP_NET_ADMIN
 CapabilityBoundingSet=CAP_SYS_ADMIN CAP_NET_ADMIN
 

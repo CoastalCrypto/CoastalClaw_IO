@@ -40,6 +40,15 @@ export interface AgentFileConfig {
   voiceModel?: string  // e.g. "en_US-lessac-medium" — Piper .onnx model name
 }
 
+export interface AgentBinding {
+  /** Regex string matched against sessionId */
+  sessionPattern?: string
+  /** Exact match against x-source request header */
+  source?: string
+  /** Higher number = evaluated first */
+  priority: number
+}
+
 export interface AgentConfig {
   id: string
   name: string
@@ -52,6 +61,7 @@ export interface AgentConfig {
   active: boolean
   createdAt: number
   hand?: AgentHandConfig
+  bindings?: AgentBinding[]
 }
 
 export interface LoopResult {

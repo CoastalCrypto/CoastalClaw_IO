@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { AgentConfig, AgentFileConfig, AgentHandConfig } from './types.js'
+import type { AgentConfig, AgentBinding, AgentFileConfig, AgentHandConfig } from './types.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -125,8 +125,20 @@ export class AgentRegistry {
         created_at INTEGER NOT NULL
       )
     `)
-    // Migration: add voice column if it doesn't exist yet
+    // Migrations
     try { this.db.exec('ALTER TABLE agents ADD COLUMN voice TEXT') } catch {}
+    try { this.db.exec("ALTER TABLE agents ADD COLUMN bindings TEXT DEFAULT '[]'") } catch {}
+
+    // Per-agent credential store
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS agent_credentials (
+        agent_id   TEXT NOT NULL,
+        key        TEXT NOT NULL,
+        value      TEXT NOT NULL,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (agent_id, key)
+      )
+    `)
 
     const insert = this.db.prepare(`
       INSERT OR IGNORE INTO agents (id, name, role, soul_path, tools, built_in, active, created_at)
@@ -167,7 +179,7 @@ export class AgentRegistry {
     return id
   }
 
-  update(id: string, fields: Partial<Pick<AgentConfig, 'name' | 'role' | 'soulPath' | 'tools' | 'modelPref' | 'voice' | 'active'>>): void {
+  update(id: string, fields: Partial<Pick<AgentConfig, 'name' | 'role' | 'soulPath' | 'tools' | 'modelPref' | 'voice' | 'active' | 'bindings'>>): void {
     const sets: string[] = []
     const values: unknown[] = []
     if (fields.name !== undefined) { sets.push('name = ?'); values.push(fields.name) }
@@ -177,6 +189,7 @@ export class AgentRegistry {
     if (fields.modelPref !== undefined) { sets.push('model_pref = ?'); values.push(fields.modelPref) }
     if (fields.voice !== undefined) { sets.push('voice = ?'); values.push(fields.voice || null) }
     if (fields.active !== undefined) { sets.push('active = ?'); values.push(fields.active ? 1 : 0) }
+    if (fields.bindings !== undefined) { sets.push('bindings = ?'); values.push(JSON.stringify(fields.bindings)) }
     if (sets.length === 0) return
     values.push(id)
     const result = this.db.prepare(`UPDATE agents SET ${sets.join(', ')} WHERE id = ?`).run(...values)
@@ -188,6 +201,44 @@ export class AgentRegistry {
     if (!row) throw new Error(`Agent not found: ${id}`)
     if (row.built_in) throw new Error('Cannot delete built-in agent')
     this.db.prepare('DELETE FROM agents WHERE id = ?').run(id)
+  }
+
+  /** Get all credentials for an agent as a key/value map. */
+  getCredentials(agentId: string): Record<string, string> {
+    const rows = this.db.prepare('SELECT key, value FROM agent_credentials WHERE agent_id = ?').all(agentId) as Array<{ key: string; value: string }>
+    return Object.fromEntries(rows.map(r => [r.key, r.value]))
+  }
+
+  /** Set a single credential. Upserts. */
+  setCredential(agentId: string, key: string, value: string): void {
+    if (!this.get(agentId)) throw new Error(`Agent not found: ${agentId}`)
+    this.db.prepare(
+      'INSERT OR REPLACE INTO agent_credentials (agent_id, key, value, updated_at) VALUES (?, ?, ?, ?)'
+    ).run(agentId, key, value, Date.now())
+  }
+
+  /** Delete a single credential. Throws if not found. */
+  deleteCredential(agentId: string, key: string): void {
+    const result = this.db.prepare('DELETE FROM agent_credentials WHERE agent_id = ? AND key = ?').run(agentId, key)
+    if (result.changes === 0) throw new Error(`Credential not found: ${agentId}/${key}`)
+  }
+
+  /**
+   * Find the highest-priority agent whose binding rules match the given sessionId or source header.
+   * Returns null if no binding matches (fall through to domain routing).
+   */
+  findBindingMatch(sessionId: string, source: string | null): AgentConfig | null {
+    const candidates = this.list().filter(a => a.bindings && a.bindings.length > 0)
+    const pairs = candidates
+      .flatMap(a => (a.bindings ?? []).map(b => ({ agent: a, binding: b })))
+      .sort((a, b) => b.binding.priority - a.binding.priority)
+    for (const { agent, binding } of pairs) {
+      if (binding.sessionPattern) {
+        try { if (new RegExp(binding.sessionPattern).test(sessionId)) return agent } catch {}
+      }
+      if (binding.source && source !== null && binding.source === source) return agent
+    }
+    return null
   }
 
   close(): void { this.db.close() }
@@ -230,7 +281,13 @@ export class AgentRegistry {
       active: Boolean(row.active),
       createdAt: row.created_at,
       hand: fileConfig?.hand,
+      bindings: this.parseBindings(row.bindings),
     }
+  }
+
+  private parseBindings(raw: string | null): AgentBinding[] {
+    if (!raw) return []
+    try { return JSON.parse(raw) as AgentBinding[] } catch { return [] }
   }
 
   private parseTools(agentId: string, raw: string): string[] {

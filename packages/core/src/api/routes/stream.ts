@@ -63,8 +63,11 @@ export async function streamRoutes(fastify: FastifyInstance) {
       const history = await memory.queryHistory({ sessionId, limit: 20 })
       const messages = history.slice().reverse().map(e => ({ role: e.role as any, content: e.content }))
 
-      // Use explicitly selected agent, or fall back to domain routing
-      const agent = (agentId ? agentRegistry.get(agentId) : null)
+      // Binding rules → explicit selection → domain routing
+      const sourceHeader = req.headers['x-source']
+      const source = typeof sourceHeader === 'string' ? sourceHeader : (Array.isArray(sourceHeader) ? sourceHeader[0] : null) ?? null
+      const agent = agentRegistry.findBindingMatch(sessionId, source)
+        ?? (agentId ? agentRegistry.get(agentId) : null)
         ?? agentRegistry.getByDomain((await router.cascade.route(message)).domain)
         ?? agentRegistry.get('general')!
       write('domain', { domain: agent.id })

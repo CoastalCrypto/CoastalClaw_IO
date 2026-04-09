@@ -12,6 +12,13 @@ import { systemRoutes } from './api/routes/system.js'
 import { sessionRoutes } from './api/routes/sessions.js'
 import { uploadRoutes } from './api/routes/upload.js'
 import { streamRoutes } from './api/routes/stream.js'
+import { pipelineRoutes } from './api/routes/pipeline.js'
+import { ModelRouter } from './models/router.js'
+import { ToolRegistry } from './tools/registry.js'
+import { ActionLog } from './agents/action-log.js'
+import { PersonaManager } from './persona/manager.js'
+import { createBackend } from './tools/backends/index.js'
+import { mkdirSync } from 'node:fs'
 import { eventRoutes } from './api/routes/events.js'
 import { analyticsRoutes } from './api/routes/analytics.js'
 import { toolRoutes } from './api/routes/tools.js'
@@ -90,6 +97,24 @@ export async function buildServer() {
   await fastify.register(uploadRoutes)
   await fastify.register(chatRoutes)
   await fastify.register(streamRoutes)
+
+  // Pipeline: needs its own instances of shared infrastructure
+  mkdirSync(config.dataDir, { recursive: true })
+  mkdirSync(config.agentWorkdir, { recursive: true })
+  const pipelineRouter = new ModelRouter({ ollamaUrl: config.ollamaUrl, vllmUrl: config.vllmUrl, airllmUrl: config.airllmUrl, defaultModel: config.defaultModel })
+  const pipelineBackend = await createBackend(config.agentTrustLevel, [config.agentWorkdir])
+  const pipelineToolRegistry = new ToolRegistry(pipelineBackend)
+  const pipelineLog = new ActionLog(db)
+  const pipelinePersonaMgr = new PersonaManager(join(config.dataDir, 'persona.db'))
+  await fastify.register(pipelineRoutes, {
+    registry: agentRegistry,
+    router: pipelineRouter,
+    toolRegistry: pipelineToolRegistry,
+    gate,
+    log: pipelineLog,
+    personaMgr: pipelinePersonaMgr,
+  })
+
   await fastify.register(eventRoutes)
   await fastify.register(analyticsRoutes, { db })
   await fastify.register(toolRoutes, { loader: customToolLoader })
@@ -118,6 +143,8 @@ export async function buildServer() {
   fastify.addHook('onClose', async () => {
     cronScheduler.stop()
     agentRegistry.close()
+    pipelinePersonaMgr.close()
+    pipelineRouter.close()
     db.close()
   })
 

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, type DragEvent } from 'react'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { ChatBubble } from '../components/ChatBubble'
 import { ApprovalCard } from '../components/ApprovalCard'
 import { guessDomain, type AgentDomain } from '../components/AgentThinkingAnimation'
@@ -215,6 +216,8 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   const [pendingImage, setPendingImage] = useState<string | null>(null) // base64 data URL
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
   const [agentList, setAgentList] = useState<Array<{ id: string; name: string; active: boolean }>>([])
+  const [agentDrawerOpen, setAgentDrawerOpen] = useState(false)
+  const isMobile = useIsMobile()
   const [voiceMuted, setVoiceMuted] = useState(false)
   const [architectToast, setArchitectToast] = useState<{
     proposalId: string; summary: string; vetoDeadline: number
@@ -818,8 +821,8 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
       {/* Body: left character rail + main chat column */}
       <div className="flex flex-1 min-h-0">
 
-      {/* ── Character rail ─────────────────────────────────────── */}
-      {agentList.length > 0 && (
+      {/* ── Character rail (desktop only) ──────────────────────── */}
+      {!isMobile && agentList.length > 0 && (
         <div
           className="flex flex-col items-center gap-1 py-4 overflow-y-auto shrink-0 z-10"
           style={{
@@ -898,7 +901,50 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
         <div ref={bottomRef} />
       </div>
 
-      <div className="glass-panel rounded-none border-x-0 border-b-0 px-4 pt-2 pb-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-10">
+      {/* Mobile agent drawer toggle */}
+      {isMobile && agentList.length > 0 && (
+        <>
+          <button
+            onClick={() => setAgentDrawerOpen(o => !o)}
+            style={{
+              position: 'fixed', bottom: '84px', left: '12px', zIndex: 30,
+              background: 'rgba(5,13,26,0.92)', border: '1px solid rgba(0,212,255,0.30)',
+              borderRadius: '50%', width: '40px', height: '40px',
+              color: '#00D4FF', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+            aria-label="Toggle agent selector"
+          >
+            ✳
+          </button>
+          {agentDrawerOpen && (
+            <div
+              style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+              onClick={() => setAgentDrawerOpen(false)}
+            >
+              <div
+                style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0,
+                  background: 'rgba(5,13,26,0.97)', borderTop: '1px solid rgba(0,212,255,0.20)',
+                  borderRadius: '16px 16px 0 0', padding: '20px 16px 32px',
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                <p className="text-xs font-mono text-center mb-4" style={{ color: '#A0AEC0' }}>Select Agent</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
+                  <AgentCharacters
+                    agents={agentList}
+                    selected={selectedAgentId}
+                    onSelect={(id) => { setSelectedAgentId(id); setAgentDrawerOpen(false) }}
+                    vertical={false}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <div className="glass-panel rounded-none border-x-0 border-b-0 px-4 pt-2 pb-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-10" style={isMobile ? { paddingBottom: '24px' } : {}}>
         {/* Team mode toggle */}
         <div className="flex justify-end max-w-4xl mx-auto mb-2">
           <button
@@ -995,6 +1041,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
             <input
               ref={inputRef2}
               className="w-full bg-gray-950/80 border border-gray-700 text-cyan-50 font-mono rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-cyan-500 focus:shadow-[0_0_15px_rgba(0,255,255,0.2)] transition-all placeholder:text-gray-600"
+              style={{ fontSize: '16px' /* 16px prevents iOS auto-zoom on focus */ }}
               value={input}
               onChange={(e) => {
                 const val = e.target.value

@@ -7,15 +7,220 @@ interface Agent {
   id: string; name: string; role: string; tools: string[]; builtIn: boolean; active: boolean; voice?: string
 }
 
+interface Binding {
+  sessionPattern?: string
+  source?: string
+  priority: number
+}
+
 function adminHeaders(): Record<string, string> {
   const session = sessionStorage.getItem('cc_admin_session') ?? ''
   return session ? { 'x-admin-session': session } : {}
 }
 
+const PANEL_STYLE = {
+  background: 'rgba(26,39,68,0.80)',
+  border: '1px solid rgba(0,212,255,0.20)',
+  borderRadius: '12px',
+  padding: '20px',
+} as const
+
+// ── Credentials panel ─────────────────────────────────────────────
+function CredentialsPanel({ agentId, agentName, onClose }: { agentId: string; agentName: string; onClose: () => void }) {
+  const [, setCreds] = useState<Record<string, string>>({})
+  const [rows, setRows] = useState<Array<{ key: string; value: string }>>([])
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/admin/agents/${agentId}/credentials`, { headers: adminHeaders() })
+      .then(r => r.json())
+      .then((data: Record<string, string>) => {
+        setCreds(data)
+        setRows(Object.entries(data).map(([key, value]) => ({ key, value })))
+      })
+      .catch(() => {})
+  }, [agentId])
+
+  const save = async () => {
+    setSaving(true)
+    const credentials: Record<string, string> = {}
+    for (const row of rows) {
+      if (row.key.trim()) credentials[row.key.trim()] = row.value
+    }
+    await fetch(`/api/admin/agents/${agentId}/credentials`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+      body: JSON.stringify({ credentials }),
+    })
+    setCreds(credentials)
+    setSaving(false)
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.70)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+      <div style={{ ...PANEL_STYLE, width: '100%', maxWidth: '480px', fontFamily: 'Space Grotesk, sans-serif' }}>
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <p className="text-xs font-mono" style={{ color: '#00D4FF', letterSpacing: '0.08em' }}>CREDENTIALS</p>
+            <p className="text-sm font-bold text-white mt-0.5">{agentName}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-600 hover:text-gray-400 text-lg">✕</button>
+        </div>
+
+        <div className="space-y-2 mb-4">
+          {rows.map((row, i) => (
+            <div key={i} className="flex gap-2">
+              <input
+                placeholder="KEY"
+                value={row.key}
+                onChange={e => setRows(r => r.map((x, j) => j === i ? { ...x, key: e.target.value } : x))}
+                className="flex-1 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none"
+                style={{ background: 'rgba(5,13,26,0.8)', border: '1px solid rgba(0,212,255,0.20)', color: '#e2e8f0' }}
+              />
+              <input
+                placeholder="value"
+                value={row.value}
+                type="password"
+                onChange={e => setRows(r => r.map((x, j) => j === i ? { ...x, value: e.target.value } : x))}
+                className="flex-1 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none"
+                style={{ background: 'rgba(5,13,26,0.8)', border: '1px solid rgba(0,212,255,0.20)', color: '#e2e8f0' }}
+              />
+              <button onClick={() => setRows(r => r.filter((_, j) => j !== i))} className="text-red-700 hover:text-red-400 text-xs px-1">✕</button>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setRows(r => [...r, { key: '', value: '' }])}
+          className="text-xs font-mono mb-5"
+          style={{ color: '#00D4FF' }}
+        >
+          + Add key
+        </button>
+
+        <div className="flex gap-3 justify-end">
+          <button onClick={onClose} className="text-xs font-mono text-gray-600 hover:text-gray-400">Cancel</button>
+          <button
+            onClick={save}
+            disabled={saving}
+            className="px-4 py-2 rounded-lg text-xs font-mono font-bold transition-all"
+            style={{ background: '#00D4FF', color: '#050d1a' }}
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Bindings panel ────────────────────────────────────────────────
+function BindingsPanel({ agentId, agentName, onClose }: { agentId: string; agentName: string; onClose: () => void }) {
+  const [bindings, setBindings] = useState<Binding[]>([])
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/admin/agents/${agentId}`, { headers: adminHeaders() })
+      .then(r => r.json())
+      .then((a: { bindings?: Binding[] }) => setBindings(a.bindings ?? []))
+      .catch(() => {})
+  }, [agentId])
+
+  const update = (i: number, patch: Partial<Binding>) =>
+    setBindings(b => b.map((x, j) => j === i ? { ...x, ...patch } : x))
+
+  const save = async () => {
+    setSaving(true)
+    await fetch(`/api/admin/agents/${agentId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+      body: JSON.stringify({ bindings }),
+    })
+    setSaving(false)
+    onClose()
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.70)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+      <div style={{ ...PANEL_STYLE, width: '100%', maxWidth: '560px', fontFamily: 'Space Grotesk, sans-serif' }}>
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <p className="text-xs font-mono" style={{ color: '#00D4FF', letterSpacing: '0.08em' }}>ROUTING BINDINGS</p>
+            <p className="text-sm font-bold text-white mt-0.5">{agentName}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-600 hover:text-gray-400 text-lg">✕</button>
+        </div>
+        <p className="text-xs mb-5" style={{ color: '#A0AEC0' }}>
+          Binding rules bypass domain routing. Higher priority = evaluated first.
+        </p>
+
+        {bindings.length === 0 && (
+          <p className="text-xs font-mono text-gray-600 mb-4">No bindings — add one below.</p>
+        )}
+
+        <div className="space-y-3 mb-4">
+          {bindings.map((b, i) => (
+            <div key={i} className="rounded-lg p-3 flex flex-col gap-2" style={{ background: 'rgba(5,13,26,0.6)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="flex gap-2">
+                <input
+                  placeholder="sessionPattern (regex)"
+                  value={b.sessionPattern ?? ''}
+                  onChange={e => update(i, { sessionPattern: e.target.value || undefined })}
+                  className="flex-1 rounded px-3 py-1.5 text-xs font-mono focus:outline-none"
+                  style={{ background: 'rgba(0,0,0,0.30)', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0' }}
+                />
+                <input
+                  placeholder="x-source exact"
+                  value={b.source ?? ''}
+                  onChange={e => update(i, { source: e.target.value || undefined })}
+                  className="flex-1 rounded px-3 py-1.5 text-xs font-mono focus:outline-none"
+                  style={{ background: 'rgba(0,0,0,0.30)', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0' }}
+                />
+                <input
+                  placeholder="priority"
+                  type="number"
+                  value={b.priority}
+                  onChange={e => update(i, { priority: Number(e.target.value) })}
+                  className="w-20 rounded px-2 py-1.5 text-xs font-mono focus:outline-none"
+                  style={{ background: 'rgba(0,0,0,0.30)', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0' }}
+                />
+                <button onClick={() => setBindings(b => b.filter((_, j) => j !== i))} className="text-red-700 hover:text-red-400 text-xs px-1">✕</button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setBindings(b => [...b, { priority: 10 }])}
+          className="text-xs font-mono mb-5"
+          style={{ color: '#00D4FF' }}
+        >
+          + Add rule
+        </button>
+
+        <div className="flex gap-3 justify-end">
+          <button onClick={onClose} className="text-xs font-mono text-gray-600 hover:text-gray-400">Cancel</button>
+          <button
+            onClick={save}
+            disabled={saving}
+            className="px-4 py-2 rounded-lg text-xs font-mono font-bold transition-all"
+            style={{ background: '#00D4FF', color: '#050d1a' }}
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Main page ─────────────────────────────────────────────────────
 export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
   const [agents, setAgents] = useState<Agent[]>([])
   const [editing, setEditing] = useState<Agent | null>(null)
   const [adding, setAdding] = useState(false)
+  const [credAgentId, setCredAgentId] = useState<string | null>(null)
+  const [bindAgentId, setBindAgentId] = useState<string | null>(null)
 
   const load = async () => {
     const res = await fetch('/api/admin/agents', { headers: adminHeaders() })
@@ -53,7 +258,6 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
   }
 
   const handleToggle = async (id: string, active: boolean) => {
-    // Optimistic update
     setAgents(prev => prev.map(a => a.id === id ? { ...a, active } : a))
     const res = await fetch(`/api/admin/agents/${id}`, {
       method: 'PATCH',
@@ -61,14 +265,23 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
       body: JSON.stringify({ active }),
     })
     if (!res.ok) {
-      // Revert on failure
       setAgents(prev => prev.map(a => a.id === id ? { ...a, active: !active } : a))
     }
   }
 
+  const credAgent = credAgentId ? agents.find(a => a.id === credAgentId) : null
+  const bindAgent = bindAgentId ? agents.find(a => a.id === bindAgentId) : null
+
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #0A0F1C 0%, #0D1829 60%, #0A0F1C 100%)' }}>
       <NavBar page="agents" onNav={onNav} />
+
+      {credAgent && (
+        <CredentialsPanel agentId={credAgent.id} agentName={credAgent.name} onClose={() => setCredAgentId(null)} />
+      )}
+      {bindAgent && (
+        <BindingsPanel agentId={bindAgent.id} agentName={bindAgent.name} onClose={() => setBindAgentId(null)} />
+      )}
 
       <div className="pt-20 pb-12 px-4 sm:px-6 max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8 animate-slide-up">
@@ -124,6 +337,8 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
                 onEdit={a => { setEditing(a); setAdding(false) }}
                 onDelete={handleDelete}
                 onToggle={handleToggle}
+                onCredentials={id => setCredAgentId(id)}
+                onBindings={id => setBindAgentId(id)}
               />
             ))}
           </div>

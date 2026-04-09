@@ -13,6 +13,8 @@ interface Props {
   onEdit: (agent: Agent) => void
   onDelete: (id: string) => void
   onToggle: (id: string, active: boolean) => void
+  onCredentials?: (id: string) => void
+  onBindings?: (id: string) => void
 }
 
 const BADGE_STYLE = {
@@ -21,7 +23,7 @@ const BADGE_STYLE = {
   background: 'rgba(0,0,0,0.20)',
 } as const
 
-export function AgentCard({ agent, onEdit, onDelete, onToggle }: Props) {
+export function AgentCard({ agent, onEdit, onDelete, onToggle, onCredentials, onBindings }: Props) {
   return (
     <div className="feature-card group relative overflow-hidden cursor-default"
       style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -94,6 +96,24 @@ export function AgentCard({ agent, onEdit, onDelete, onToggle }: Props) {
           >
             [EDIT]
           </button>
+          {onCredentials && (
+            <button
+              onClick={() => onCredentials(agent.id)}
+              className="text-[11px] font-mono transition-colors hover:underline"
+              style={{ color: '#A0AEC0' }}
+            >
+              [CREDS]
+            </button>
+          )}
+          {onBindings && (
+            <button
+              onClick={() => onBindings(agent.id)}
+              className="text-[11px] font-mono transition-colors hover:underline"
+              style={{ color: '#A0AEC0' }}
+            >
+              [BIND]
+            </button>
+          )}
           {!agent.builtIn && (
             <button
               onClick={() => onDelete(agent.id)}

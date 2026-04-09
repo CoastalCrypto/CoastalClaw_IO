@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 
-export type NavPage = 'chat' | 'dashboard' | 'analytics' | 'tools' | 'skills' | 'channels' | 'models' | 'agents' | 'users' | 'settings' | 'system'
+export type NavPage = 'chat' | 'dashboard' | 'analytics' | 'tools' | 'skills' | 'channels' | 'models' | 'agents' | 'pipeline' | 'users' | 'settings' | 'system'
 
 interface NavItem { id: NavPage; label: string; icon: string; adminOnly?: boolean }
 
@@ -14,6 +14,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'channels',  label: 'Channels',  icon: '📣', adminOnly: true },
   { id: 'models',    label: 'Models',    icon: '🧠', adminOnly: true },
   { id: 'agents',    label: 'Agents',    icon: '🤖', adminOnly: true },
+  { id: 'pipeline',  label: 'Pipeline',  icon: '⛓',  adminOnly: true },
   { id: 'users',     label: 'Users',     icon: '👤', adminOnly: true },
   { id: 'settings',  label: 'Settings',  icon: '⚙️', adminOnly: true },
   { id: 'system',    label: 'System',    icon: '📡', adminOnly: true },

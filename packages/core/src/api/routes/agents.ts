@@ -48,7 +48,7 @@ export async function agentRoutes(
   // PATCH /api/admin/agents/:id
   fastify.patch<{
     Params: { id: string }
-    Body: { name?: string; role?: string; soul?: string; tools?: string[]; modelPref?: string; voice?: string; active?: boolean }
+    Body: { name?: string; role?: string; soul?: string; tools?: string[]; modelPref?: string; voice?: string; active?: boolean; bindings?: Array<{ sessionPattern?: string; source?: string; priority: number }> }
   }>('/api/admin/agents/:id', async (req, reply) => {
     const agent = opts.registry.get(req.params.id)
     if (!agent) return reply.status(404).send({ error: 'Agent not found' })
@@ -56,6 +56,33 @@ export async function agentRoutes(
     if (soul !== undefined) writeFileSync(agent.soulPath, soul, 'utf8')
     opts.registry.update(req.params.id, rest)
     return opts.registry.get(req.params.id)
+  })
+
+  // GET /api/admin/agents/:id/credentials
+  fastify.get<{ Params: { id: string } }>('/api/admin/agents/:id/credentials', async (req, reply) => {
+    const agent = opts.registry.get(req.params.id)
+    if (!agent) return reply.status(404).send({ error: 'Agent not found' })
+    return opts.registry.getCredentials(req.params.id)
+  })
+
+  // PUT /api/admin/agents/:id/credentials
+  fastify.put<{
+    Params: { id: string }
+    Body: { credentials: Record<string, string> }
+  }>('/api/admin/agents/:id/credentials', async (req, reply) => {
+    const agent = opts.registry.get(req.params.id)
+    if (!agent) return reply.status(404).send({ error: 'Agent not found' })
+    const incoming = req.body.credentials ?? {}
+    const existing = opts.registry.getCredentials(req.params.id)
+    // Delete keys removed from the incoming map
+    for (const key of Object.keys(existing)) {
+      if (!(key in incoming)) opts.registry.deleteCredential(req.params.id, key)
+    }
+    // Upsert all incoming keys
+    for (const [key, value] of Object.entries(incoming)) {
+      if (typeof value === 'string') opts.registry.setCredential(req.params.id, key, value)
+    }
+    return opts.registry.getCredentials(req.params.id)
   })
 
   // DELETE /api/admin/agents/:id

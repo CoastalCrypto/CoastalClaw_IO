@@ -2,11 +2,14 @@
 import { OllamaClient, type LocalChatMessage } from './ollama.js'
 import { VllmClient } from './vllm.js'
 import { AirLLMClient } from './airllm.js'
+import { OpenAICompatibleClient, type InferenceClient } from './openai-compat.js'
 import { CascadeRouter } from '../routing/cascade.js'
 import type { RouteDecision } from '../routing/types.js'
 import type { ChatMessage, OllamaToolSchema } from '../agents/session.js'
 import type { ToolCall } from '../agents/types.js'
 import { loadConfig } from '../config.js'
+
+export type { InferenceClient } from './openai-compat.js'
 
 export interface RouterConfig {
   ollamaUrl: string
@@ -42,8 +45,13 @@ export class ModelRouter {
     })
   }
 
+  /** Create an ad-hoc OpenAI-compatible client (e.g. for per-agent model overrides). */
+  createCompatClient(baseUrl: string, apiKey?: string): InferenceClient {
+    return new OpenAICompatibleClient({ baseUrl, apiKey })
+  }
+
   /** Lazy probe: checks vLLM → AirLLM → Ollama once, caches result. */
-  private async inferenceClient(): Promise<OllamaClient | VllmClient | AirLLMClient> {
+  private async inferenceClient(): Promise<InferenceClient> {
     if (this.vllmAvailable === null) {
       this.vllmAvailable = await this.vllm.isAvailable()
       if (!this.vllmAvailable) {

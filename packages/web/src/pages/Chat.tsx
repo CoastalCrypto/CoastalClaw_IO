@@ -484,6 +484,12 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
       let buffer = ''
       let fullReply = ''
       let eventType = ''
+      let gotFirstEvent = false
+
+      // Timeout guard: if no SSE event arrives within 90s, abort and show error
+      const timeoutId = setTimeout(() => {
+        reader.cancel()
+      }, 90_000)
 
       while (true) {
         const { done, value } = await reader.read()
@@ -493,7 +499,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
         buffer = lines.pop() ?? ''
 
         for (const line of lines) {
-          if (line.startsWith('event: ')) { eventType = line.slice(7).trim(); continue }
+          if (line.startsWith('event: ')) { eventType = line.slice(7).trim(); if (!gotFirstEvent) { gotFirstEvent = true; clearTimeout(timeoutId) } continue }
           if (!line.startsWith('data: ')) { eventType = ''; continue }
           try {
             const data = JSON.parse(line.slice(6))
@@ -535,13 +541,18 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
         }
       }
 
-      // Stream ended with no content — model may have returned nothing
+      clearTimeout(timeoutId)
+
+      // Stream ended with no content — Ollama timed out or returned nothing
       if (!fullReply) {
         setMessages(m => {
           const copy = [...m]
           const last = copy[copy.length - 1]
           if (last?.role === 'assistant' && !last.content) {
-            copy[copy.length - 1] = { ...last, content: '(No response received. Check that Ollama is running and a model is loaded.)' }
+            const msg = gotFirstEvent
+              ? '(No response received. The model may have returned an empty reply.)'
+              : '(No response from server — Ollama may be loading the model or not running. Try again in a moment.)'
+            copy[copy.length - 1] = { ...last, content: msg }
           }
           return copy
         })

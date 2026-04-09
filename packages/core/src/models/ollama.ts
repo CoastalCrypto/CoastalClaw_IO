@@ -25,6 +25,7 @@ export class OllamaClient {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model, messages, stream: false }),
+      signal: AbortSignal.timeout(180_000),
     })
     if (!res.ok) throw new Error(`Ollama error ${res.status}: ${await res.text()}`)
     const data = await res.json() as { message: LocalChatMessage }
@@ -36,6 +37,7 @@ export class OllamaClient {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model, messages, stream: true }),
+      signal: AbortSignal.timeout(300_000),
     })
     if (!res.ok) throw new Error(`Ollama stream error ${res.status}: ${await res.text()}`)
     const reader = res.body!.getReader()
@@ -66,6 +68,7 @@ export class OllamaClient {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model, messages, tools, stream: false }),
+      signal: AbortSignal.timeout(180_000),
     })
     if (!res.ok) throw new Error(`Ollama error ${res.status}: ${await res.text()}`)
     const data = await res.json() as {

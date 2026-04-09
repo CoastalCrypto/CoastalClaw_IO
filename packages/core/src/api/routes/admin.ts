@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
+import type { FastifyInstance } from 'fastify'
 import { loadConfig } from '../../config.js'
 import { ModelRegistry } from '../../models/registry.js'
 import { QuantizationPipeline } from '../../models/quantizer.js'
@@ -74,24 +74,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
   })
 
   // Auth hook — accepts either x-admin-token (raw) or x-admin-session (login-derived)
-  fastify.addHook('onRequest', async (req: FastifyRequest, reply: FastifyReply) => {
-    if (!req.url.startsWith('/api/admin')) return
-    if (req.url === '/api/admin/login') return // exempt: this IS the login endpoint
-
-    const rawHeader = req.headers['x-admin-token'] ?? ''
-    const raw = typeof rawHeader === 'string' ? rawHeader : rawHeader[0] ?? ''
-    if (raw) {
-      const a = Buffer.from(raw, 'utf8')
-      const b = Buffer.from(adminToken, 'utf8')
-      if (a.length === b.length && timingSafeEqual(a, b)) return
-    }
-
-    const sessionHeader = req.headers['x-admin-session'] ?? ''
-    const session = typeof sessionHeader === 'string' ? sessionHeader : sessionHeader[0] ?? ''
-    if (session && validateSessionToken(adminToken, session)) return
-
-    return reply.status(401).send({ error: 'Unauthorized' })
-  })
+  // Auth for all /api/admin routes is handled by the root-level hook in server.ts
+  // (supports raw token, HMAC session, and user JWT with admin role).
 
   // GET /api/admin/models
   fastify.get('/api/admin/models', async () => {

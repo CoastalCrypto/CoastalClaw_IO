@@ -110,15 +110,14 @@ export function OllamaSection({ onModelsChanged }: Props) {
     }
 
     await new Promise<void>((resolve) => {
-      if (ws.readyState === WebSocket.OPEN) {
+      const timeout = setTimeout(() => { ws.close(); resolve() }, 5000)
+      const register = () => {
+        clearTimeout(timeout)
         ws.send(JSON.stringify({ type: 'register', sessionId }))
         resolve()
-      } else {
-        ws.onopen = () => {
-          ws.send(JSON.stringify({ type: 'register', sessionId }))
-          resolve()
-        }
       }
+      if (ws.readyState === WebSocket.OPEN) register()
+      else ws.onopen = register
     })
 
     try {
@@ -170,20 +169,11 @@ export function OllamaSection({ onModelsChanged }: Props) {
       {/* Connection / auth error */}
       {scanError && (
         <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 space-y-2">
-          {scanError === 'SESSION_EXPIRED' ? (
+          <p className="text-sm text-red-400 font-medium">
+            {scanError === 'SESSION_EXPIRED' ? 'Session expired — please refresh the page' : 'Cannot reach Ollama'}
+          </p>
+          {scanError !== 'SESSION_EXPIRED' && (
             <>
-              <p className="text-sm text-red-400 font-medium">Session expired</p>
-              <p className="text-xs text-red-400/80">Your login session has expired.</p>
-              <button
-                onClick={() => { sessionStorage.clear(); window.location.reload() }}
-                className="text-xs font-mono text-white bg-red-500/20 border border-red-500/40 rounded px-3 py-1 hover:bg-red-500/30 transition-colors"
-              >
-                Log out and refresh
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-red-400 font-medium">Cannot reach Ollama</p>
               <p className="text-xs text-red-400/80 font-mono">{scanError}</p>
               {ollamaUrl && (
                 <p className="text-xs text-gray-500">

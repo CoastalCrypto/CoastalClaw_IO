@@ -21,8 +21,6 @@ export function Models() {
   const [error, setError] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
 
-  const [sessionExpired, setSessionExpired] = useState(false)
-
   const refresh = useCallback(async () => {
     try {
       const [m, reg, agentList] = await Promise.all([
@@ -34,7 +32,6 @@ export function Models() {
       setRegistry(reg as Record<string, Record<string, string>>)
       setAgents(agentList)
     } catch (e: any) {
-      if (e?.message === 'SESSION_EXPIRED') { setSessionExpired(true); return }
       console.error('Failed to load models', e)
     }
   }, [])
@@ -59,15 +56,14 @@ export function Models() {
     }
 
     await new Promise<void>((resolve) => {
-      if (ws.readyState === WebSocket.OPEN) {
+      const timeout = setTimeout(() => { ws.close(); resolve() }, 5000)
+      const register = () => {
+        clearTimeout(timeout)
         ws.send(JSON.stringify({ type: 'register', sessionId }))
         resolve()
-      } else {
-        ws.onopen = () => {
-          ws.send(JSON.stringify({ type: 'register', sessionId }))
-          resolve()
-        }
       }
+      if (ws.readyState === WebSocket.OPEN) register()
+      else ws.onopen = register
     })
 
     try {
@@ -98,24 +94,6 @@ export function Models() {
   const handleRegistryChange = async (update: RegistryUpdate) => {
     await adminClient.updateRegistry(update)
     setRegistry(prev => ({ ...prev, ...update }))
-  }
-
-  if (sessionExpired) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0A0F1C' }}>
-        <div className="text-center space-y-4">
-          <p className="text-white font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Session expired</p>
-          <p className="text-sm" style={{ color: '#A0AEC0' }}>Please log out and sign back in.</p>
-          <button
-            onClick={() => { sessionStorage.clear(); window.location.reload() }}
-            className="px-6 py-2 text-black font-bold rounded-lg text-sm"
-            style={{ background: '#00D4FF' }}
-          >
-            Log out & refresh
-          </button>
-        </div>
-      </div>
-    )
   }
 
   return (

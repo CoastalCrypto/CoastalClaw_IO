@@ -309,7 +309,11 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
         headers: { 'Content-Type': 'application/json', ...(session ? { 'x-admin-session': session } : {}) },
         body: JSON.stringify({ text: clean, voice: vibeId }),
       }).then(r => r.ok ? r.blob() : null).then(blob => {
-        if (blob) new Audio(URL.createObjectURL(blob)).play()
+        if (!blob) return
+        const url = URL.createObjectURL(blob)
+        const audio = new Audio(url)
+        audio.onended = () => URL.revokeObjectURL(url)
+        audio.play()
       }).catch(() => {})
       return
     }

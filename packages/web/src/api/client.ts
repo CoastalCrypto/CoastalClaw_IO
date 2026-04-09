@@ -133,6 +133,7 @@ export class CoreClient {
       method: 'DELETE',
       headers: this.adminHeaders(),
     })
+    this.checkAuth(res)
     if (!res.ok) throw new Error(`Failed to remove model (${res.status})`)
   }
 

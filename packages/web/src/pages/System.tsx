@@ -68,19 +68,20 @@ export function System({ onNav }: { onNav: (page: NavPage) => void }) {
     return () => clearInterval(id)
   }, [fetchStats])
 
-  useEffect(() => {
-    const check = () => {
-      coreClient.checkForUpdate()
-        .then(({ updateAvailable: avail, remoteCommit: rc }) => {
-          setUpdateAvailable(avail)
-          setRemoteCommit(rc)
-        })
-        .catch(() => {})
-    }
-    check()
-    const id = setInterval(check, 5 * 60 * 1000) // recheck every 5 min
-    return () => clearInterval(id)
+  const checkUpdate = useCallback(() => {
+    coreClient.checkForUpdate()
+      .then(({ updateAvailable: avail, remoteCommit: rc }) => {
+        setUpdateAvailable(avail)
+        setRemoteCommit(rc)
+      })
+      .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    checkUpdate()
+    const id = setInterval(checkUpdate, 24 * 60 * 60 * 1000) // recheck daily
+    return () => clearInterval(id)
+  }, [checkUpdate])
 
   useEffect(() => { fetchLogs(logService) }, [logService, fetchLogs])
 
@@ -122,7 +123,7 @@ export function System({ onNav }: { onNav: (page: NavPage) => void }) {
                     : 'bg-gray-800 hover:bg-gray-700 border-gray-700'
                 }`}
               >
-                {updating ? 'Updating...' : updateAvailable ? 'Update available ↑' : 'Up to date'}
+                {updating ? 'Updating...' : updateAvailable ? 'Update available ↑' : 'Update CoastalClaw'}
               </button>
               {updateAvailable && (
                 <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-cyan-400 animate-ping" />
@@ -131,6 +132,11 @@ export function System({ onNav }: { onNav: (page: NavPage) => void }) {
             {updateAvailable && remoteCommit && (
               <span className="text-xs text-cyan-500 font-mono">→ {remoteCommit}</span>
             )}
+            <button
+              onClick={checkUpdate}
+              className="text-xs text-gray-600 hover:text-gray-400 font-mono transition-colors"
+              title="Check for updates now"
+            >check</button>
           </div>
         </div>
 

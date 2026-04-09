@@ -241,6 +241,30 @@ Click **Preview** next to any voice to hear a sample before saving.
 
 ---
 
+### Meet the Agents
+
+<p align="center">
+  <img src="docs/screenshots/agent-characters.png" alt="CoastalClaw built-in agent characters" width="90%"/>
+</p>
+
+CoastalClaw ships with **9 built-in specialist agents**, each with its own domain, personality, and illustrated character. Click any character in the left sidebar of the Chat page to switch into a conversation with that agent.
+
+| Character | Role | Domain |
+|-----------|------|--------|
+| 🤖 **General Assistant** | Your everyday AI companion — answers questions, drafts text, runs tools, and routes tasks to the right specialist. | General |
+| 💰 **CFO** | Chief Financial Officer. Tracks ledgers, models cash flow, analyses crypto positions, and spots financial risks. | Finance |
+| 🖥️ **CTO** | Chief Technology Officer. Reviews architecture, evaluates tech choices, reads logs, and drives engineering decisions. | Tech |
+| ⚙️ **COO** | Chief Operating Officer. Coordinates workflows, schedules operations, monitors KPIs, and keeps the business running smoothly. | Operations |
+| 🗺️ **Product Manager** | Owns the roadmap. Writes specs, prioritises features, tracks milestones, and keeps the team focused on what ships next. | Product |
+| 🔥 **Front-End Wizard** | UI/UX engineer. Writes components, reviews designs, debugs layouts, and turns Figma frames into production code. | Frontend |
+| 🐙 **UX Architect** | Maps user flows, runs heuristic reviews, designs information architecture, and champions accessible experiences. | UX |
+| 🔍 **QA Lead** | Hunts bugs, writes test plans, reviews edge cases, and won't let anything ship until it's been properly tortured. | QA |
+| 🔌 **System Integrator** | Wires services together — APIs, webhooks, databases, message queues, and anything else that needs to talk to anything else. | Systems |
+
+Each agent uses the same underlying model but has a tailored system prompt that shapes its reasoning, vocabulary, and priorities. You can create additional custom agents on the **Agents** page.
+
+---
+
 ### Skills
 
 <p align="center">

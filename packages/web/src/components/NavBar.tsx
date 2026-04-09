@@ -78,11 +78,18 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
 
           {/* Brand */}
           <div className="flex items-center gap-3 min-w-0">
-            {/* ✳ brand mark */}
-            <div className="shrink-0 w-8 h-8 rounded-md flex items-center justify-center"
-              style={{ background: 'rgba(0,212,255,0.12)', border: '1px solid rgba(0,212,255,0.30)' }}>
-              <span style={{ color: '#00D4FF', fontSize: '16px', fontWeight: 700, lineHeight: 1 }}>✳</span>
-            </div>
+            {/* Wave logo */}
+            <svg viewBox="0 0 100 100" width="32" height="32" className="shrink-0 text-cyan-400" fill="none" aria-hidden="true">
+              <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="3.5"/>
+              <path stroke="currentColor" strokeWidth="9" strokeLinecap="round" fill="none"
+                d="M8 48 C18 34 30 34 38 44 C46 54 58 54 66 44 C74 34 86 34 94 44"/>
+              <circle cx="24" cy="36" r="3.5" fill="currentColor" opacity="0.8"/>
+              <circle cx="80" cy="36" r="3.5" fill="currentColor" opacity="0.8"/>
+              <path stroke="currentColor" strokeWidth="7" strokeLinecap="round" fill="none" opacity="0.65"
+                d="M8 62 C18 50 32 50 42 60 C52 70 66 68 76 58 C84 50 92 50 96 56"/>
+              <path stroke="currentColor" strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.35"
+                d="M8 76 C22 68 38 70 50 78 C62 86 78 84 90 76"/>
+            </svg>
             <span className="font-bold tracking-tight text-white text-sm shrink-0 hidden sm:block"
               style={{ fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.01em' }}>
               CoastalClaw

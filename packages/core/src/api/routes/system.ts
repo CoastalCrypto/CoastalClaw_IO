@@ -5,6 +5,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadConfig } from '../../config.js'
 import { VibeVoiceClient } from '../../voice/vibevoice.js'
+import { restartServer } from './system-restart.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -189,7 +190,10 @@ export async function systemRoutes(fastify: FastifyInstance) {
   fastify.get('/api/admin/update-check', async (_req, reply) => {
     try {
       const localFull  = gitCommit() // already uses execSync safely
-      const remoteLine = execSync('git ls-remote origin HEAD', { timeout: 10_000 }).toString().trim()
+      const remoteLine = execSync('git ls-remote origin HEAD', {
+        timeout: 10_000,
+        env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+      }).toString().trim()
       const remoteFull = remoteLine.split(/\s+/)[0] ?? ''
       if (!remoteFull) return reply.send({ updateAvailable: false, localCommit: localFull, remoteCommit: null })
       const localLong = execSync('git rev-parse HEAD', { timeout: 2000 }).toString().trim()
@@ -214,12 +218,8 @@ export async function systemRoutes(fastify: FastifyInstance) {
         execSync('git pull --ff-only', { cwd: installDir, timeout: 60_000 })
         execSync('pnpm install --frozen-lockfile', { cwd: installDir, timeout: 120_000 })
         execSync('pnpm build', { cwd: installDir, timeout: 120_000 })
-        // Restart via systemd if running under it, otherwise send SIGHUP
-        try {
-          execSync('systemctl restart coastalclaw-server 2>/dev/null || true', { timeout: 10_000 })
-        } catch {
-          process.exit(0) // supervisor (systemd Restart=always) will restart us
-        }
+        // Platform-aware restart: Windows uses detached cmd.exe, Linux uses systemd
+        restartServer(installDir)
       } catch (e) {
         console.error('[update] failed:', e)
       }

@@ -3,6 +3,7 @@ import { ChatBubble } from '../components/ChatBubble'
 import { ApprovalCard } from '../components/ApprovalCard'
 import { guessDomain, type AgentDomain } from '../components/AgentThinkingAnimation'
 import { coreClient, type Session } from '../api/client'
+import { AgentCharacters } from '../components/AgentCharacters'
 
 type MessageRole = 'user' | 'assistant' | 'approval' | 'team'
 interface Message {
@@ -212,6 +213,8 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   const [dragging, setDragging] = useState(false)
   const [fileNotice, setFileNotice] = useState('')
   const [pendingImage, setPendingImage] = useState<string | null>(null) // base64 data URL
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
+  const [agentList, setAgentList] = useState<Array<{ id: string; name: string; active: boolean }>>([])
   const [voiceMuted, setVoiceMuted] = useState(false)
   const [architectToast, setArchitectToast] = useState<{
     proposalId: string; summary: string; vetoDeadline: number
@@ -268,6 +271,12 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
     coreClient.listSessions(30).then(({ sessions: s }) => setSessions(s)).catch(() => {})
   }, [])
   useEffect(() => { if (sidebarOpen) loadSessions() }, [sidebarOpen, loadSessions])
+
+  useEffect(() => {
+    coreClient.listAgents()
+      .then(agents => setAgentList(agents.map(a => ({ id: a.id, name: a.name, active: a.active }))))
+      .catch(() => {})
+  }, [])
 
   // Speech recognition
   const recognitionRef = useRef<any>(null)
@@ -471,6 +480,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
           message: text,
           sessionId: currentSessionId,
           ...(imageForSend ? { images: [imageForSend.replace(/^data:[^;]+;base64,/, '')] } : {}),
+          ...(selectedAgentId ? { agentId: selectedAgentId } : {}),
         }),
       })
 
@@ -862,7 +872,18 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
         <div ref={bottomRef} />
       </div>
 
-      <div className="glass-panel rounded-none border-x-0 border-b-0 px-4 py-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-10">
+      <div className="glass-panel rounded-none border-x-0 border-b-0 px-4 pt-2 pb-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-10">
+        {/* Agent character strip */}
+        {agentList.length > 0 && (
+          <div className="max-w-4xl mx-auto mb-2 border-b border-white/5 pb-2">
+            <AgentCharacters
+              agents={agentList}
+              selected={selectedAgentId}
+              onSelect={setSelectedAgentId}
+            />
+          </div>
+        )}
+
         {/* Team mode toggle */}
         <div className="flex justify-end max-w-4xl mx-auto mb-2">
           <button

@@ -32,7 +32,7 @@ export async function streamRoutes(fastify: FastifyInstance) {
 
   // POST /api/chat/stream — SSE streaming chat
   fastify.post<{
-    Body: { message: string; sessionId?: string; images?: string[] }
+    Body: { message: string; sessionId?: string; images?: string[]; agentId?: string }
   }>('/api/chat/stream', {
     schema: {
       body: {
@@ -42,11 +42,12 @@ export async function streamRoutes(fastify: FastifyInstance) {
           message: { type: 'string', minLength: 1, maxLength: 8192 },
           sessionId: { type: 'string' },
           images: { type: 'array', items: { type: 'string' }, maxItems: 4 },
+          agentId: { type: 'string', maxLength: 64 },
         },
       },
     },
   }, async (req, reply) => {
-    const { message, images } = req.body
+    const { message, images, agentId } = req.body
     const sessionId = req.body.sessionId ?? randomUUID()
 
     reply.raw.setHeader('Content-Type', 'text/event-stream')
@@ -62,10 +63,11 @@ export async function streamRoutes(fastify: FastifyInstance) {
       const history = await memory.queryHistory({ sessionId, limit: 20 })
       const messages = history.slice().reverse().map(e => ({ role: e.role as any, content: e.content }))
 
-      const decision = await router.cascade.route(message)
-      write('domain', { domain: decision.domain })
-
-      const agent = agentRegistry.getByDomain(decision.domain) ?? agentRegistry.get('general')!
+      // Use explicitly selected agent, or fall back to domain routing
+      const agent = (agentId ? agentRegistry.get(agentId) : null)
+        ?? agentRegistry.getByDomain((await router.cascade.route(message)).domain)
+        ?? agentRegistry.get('general')!
+      write('domain', { domain: agent.id })
       const toolDefs = toolRegistry.getDefinitionsFor(agent.tools)
       const session = new AgentSession(agent, toolDefs, personaMgr.get())
 
@@ -87,7 +89,7 @@ export async function streamRoutes(fastify: FastifyInstance) {
         write('reply', { reply: result.reply, domain: result.domain })
       }
 
-      await memory.write({ id: randomUUID(), sessionId, role: 'user', content: message, timestamp: Date.now() }, decision.signals.retention)
+      await memory.write({ id: randomUUID(), sessionId, role: 'user', content: message, timestamp: Date.now() }, 'useful')
       await memory.write({ id: randomUUID(), sessionId, role: 'assistant', content: result.reply, timestamp: Date.now() }, 'useful')
 
       // Upsert session title

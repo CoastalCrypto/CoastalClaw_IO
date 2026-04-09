@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, watch, type FSWatcher } from 'node:fs'
+import { dirname, basename } from 'node:path'
 
 type UrgencyLevel = 'high' | 'medium' | 'low'
 type DomainName = 'coo' | 'cfo' | 'cto' | 'general'
@@ -25,8 +26,14 @@ export class DomainModelRegistry {
 
   constructor(private filePath: string) {
     this.load()
-    if (existsSync(filePath)) {
-      this.watcher = watch(filePath, { persistent: false }, () => this.load())
+    // Watch the parent directory so we also catch the file being created after startup
+    // (e.g. bootstrapDomainRegistry writes it on first Ollama scan)
+    const dir = dirname(filePath)
+    const base = basename(filePath)
+    if (existsSync(dir)) {
+      this.watcher = watch(dir, { persistent: false }, (_event, fn) => {
+        if (fn === base) this.load()
+      })
     }
   }
 

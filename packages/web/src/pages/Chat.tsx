@@ -300,7 +300,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
     if (!clean) return
     const agentVoiceName = agentVoicesRef.current.get(activeDomainRef.current)
 
-    // VibeVoice (AI on-device TTS)
+    // VibeVoice (AI on-device TTS) — falls back to Web Speech API if unavailable
     if (agentVoiceName?.startsWith('vv:')) {
       const vibeId = agentVoiceName.slice(3)
       const session = sessionStorage.getItem('cc_admin_session') ?? ''
@@ -308,56 +308,74 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(session ? { 'x-admin-session': session } : {}) },
         body: JSON.stringify({ text: clean, voice: vibeId }),
-      }).then(r => r.ok ? r.blob() : null).then(blob => {
-        if (!blob) return
+      }).then(r => {
+        if (!r.ok) throw new Error('vv_unavailable')
+        return r.blob()
+      }).then(blob => {
         const url = URL.createObjectURL(blob)
         const audio = new Audio(url)
         audio.onended = () => URL.revokeObjectURL(url)
         audio.play()
-      }).catch(() => {})
+      }).catch(() => {
+        // VibeVoice service unavailable — fall back to Web Speech API
+        speakWithWebSpeech(clean, null)
+      })
       return
     }
 
-    // Browser Web Speech API
-    // Fix for Chrome's 15s garbling bug: split text into short sentence chunks
-    // and queue them all at once — Chrome sequences the queue without garbling.
-    // Don't use onend chaining (timing holes) or pause/resume (audible clicks).
+    speakWithWebSpeech(clean, agentVoiceName ?? null)
+  }, [])
+
+  // Extracted so VibeVoice fallback can call it directly
+  // Chrome 15s garble fix: queue all chunks, then reset the internal timer
+  // between utterances via pause()+resume() in onend (silent — no audio playing).
+  function speakWithWebSpeech(text: string, voiceName: string | null) {
     if (!('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
 
-    // Wait one tick so cancel() fully clears Chrome's internal queue
     setTimeout(() => {
-      if (voiceMutedRef.current) return
-
       const voices = window.speechSynthesis.getVoices()
-      const preferredVoice = agentVoiceName
-        ? (voices.find(v => v.name === agentVoiceName) ?? null)
+      const preferredVoice = voiceName
+        ? (voices.find(v => v.name === voiceName) ?? null)
         : (voices.find(v => v.name.includes('Google UK English Male'))
             || voices.find(v => v.lang.startsWith('en-') && !v.name.toLowerCase().includes('zira') && !v.name.toLowerCase().includes('david'))
             || voices.find(v => v.lang.startsWith('en'))
             || null)
 
-      // Split on sentence boundaries, merge short fragments
-      const sentences = clean.match(/[^.!?]+[.!?]*/g) ?? [clean]
+      // Split on sentence and clause boundaries; cap chunks at 100 chars
+      const parts = text.split(/(?<=[.!?;,])\s+/)
       const chunks: string[] = []
       let current = ''
-      for (const s of sentences) {
-        current += s
-        if (current.length >= 120) { chunks.push(current.trim()); current = '' }
+      for (const part of parts) {
+        if (current.length + part.length > 100 && current) {
+          chunks.push(current.trim())
+          current = part
+        } else {
+          current += (current ? ' ' : '') + part
+        }
       }
       if (current.trim()) chunks.push(current.trim())
 
-      // Queue all chunks — Chrome plays them in sequence
-      for (const chunk of chunks) {
-        if (!chunk) continue
+      const utterances = chunks.filter(Boolean).map(chunk => {
         const u = new SpeechSynthesisUtterance(chunk)
         u.voice = preferredVoice
         u.rate = 1.0
         u.pitch = 1.0
-        window.speechSynthesis.speak(u)
+        return u
+      })
+
+      // Between utterances: pause()+resume() resets Chrome's 15s internal timer
+      // silently — no audio is playing at that moment.
+      for (let i = 0; i < utterances.length - 1; i++) {
+        utterances[i].onend = () => {
+          window.speechSynthesis.pause()
+          window.speechSynthesis.resume()
+        }
       }
+
+      utterances.forEach(u => window.speechSynthesis.speak(u))
     }, 50)
-  }, [])
+  }
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { randomUUID } from '../utils/uuid'
 
 interface Message {
@@ -17,10 +17,10 @@ interface Props {
   agents: Agent[]
   focused: boolean
   onFocus: () => void
-  compact: boolean   // true when 3+ panes — shrinks font/padding
+  compact: boolean   // true at 4+ panes — shrinks font/padding for dense layouts
 }
 
-export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props) {
+export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props): React.ReactElement {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)

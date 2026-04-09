@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, type DragEvent } from 'react'
+import React, { useState, useRef, useEffect, useCallback, type DragEvent } from 'react'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { ChatBubble } from '../components/ChatBubble'
 import { ApprovalCard } from '../components/ApprovalCard'
@@ -124,7 +124,7 @@ const PANE_GRID: Record<number, [number, number]> = {
   1: [1, 1], 2: [2, 1], 3: [3, 1], 4: [2, 2], 6: [3, 2], 8: [4, 2], 9: [3, 3],
 }
 
-function LayoutIcon({ count, size }: { count: number; size: number }) {
+function LayoutIcon({ count, size }: { count: number; size: number }): React.ReactElement {
   const [cols, rows] = PANE_GRID[count] ?? [1, 1]
   const gap = 1.5
   const w = (size - gap * (cols - 1)) / cols
@@ -940,6 +940,8 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
       })()}
 
       {/* Body: left character rail + main chat column */}
+      {/* display:none (not conditional render) preserves the single-pane state — avoids
+          remounting the SSE stream and scroll position when switching back from multi-pane */}
       <div className="flex flex-1 min-h-0" style={{ display: paneCount > 1 ? 'none' : 'flex' }}>
 
       {/* ── Character rail (desktop only) ──────────────────────── */}

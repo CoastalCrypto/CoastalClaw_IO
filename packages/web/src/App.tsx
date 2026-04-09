@@ -144,7 +144,10 @@ export default function App() {
           </div>
         </div>
       )}
-      {page === 'chat' && <Chat sessionId={sessionId} onNav={p => nav(p as NavPage)} />}
+      {/* Always mounted so chat history and session survive page navigation */}
+      <div style={{ display: page === 'chat' ? 'block' : 'none' }}>
+        <Chat sessionId={sessionId} onNav={p => nav(p as NavPage)} />
+      </div>
     </AuthContext.Provider>
   )
 }

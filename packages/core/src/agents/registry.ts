@@ -144,6 +144,11 @@ export class AgentRegistry {
     return rows.map(row => this.rowToConfig(row))
   }
 
+  listAll(): AgentConfig[] {
+    const rows = this.db.prepare('SELECT * FROM agents ORDER BY built_in DESC, created_at ASC').all() as any[]
+    return rows.map(row => this.rowToConfig(row))
+  }
+
   get(id: string): AgentConfig | null {
     const row = this.db.prepare('SELECT * FROM agents WHERE id = ?').get(id) as any
     return row ? this.rowToConfig(row) : null

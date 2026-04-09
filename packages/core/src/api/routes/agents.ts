@@ -13,7 +13,7 @@ export async function agentRoutes(
 
   // GET /api/admin/agents
   fastify.get('/api/admin/agents', async () => {
-    return opts.registry.list()
+    return opts.registry.listAll()
   })
 
   // POST /api/admin/agents

@@ -5,6 +5,7 @@ import { ApprovalCard } from '../components/ApprovalCard'
 import { guessDomain, type AgentDomain } from '../components/AgentThinkingAnimation'
 import { coreClient, type Session } from '../api/client'
 import { AgentCharacters } from '../components/AgentCharacters'
+import { ChatPane } from '../components/ChatPane'
 
 type MessageRole = 'user' | 'assistant' | 'approval' | 'team'
 interface Message {
@@ -118,6 +119,32 @@ const SHORTCUTS = [
   { key: 'Print Screen', desc: 'Screenshot (OS)' },
 ]
 
+// ── Multi-pane layout helpers ─────────────────────────────────────
+const PANE_GRID: Record<number, [number, number]> = {
+  1: [1, 1], 2: [2, 1], 3: [3, 1], 4: [2, 2], 6: [3, 2], 8: [4, 2], 9: [3, 3],
+}
+
+function LayoutIcon({ count, size }: { count: number; size: number }) {
+  const [cols, rows] = PANE_GRID[count] ?? [1, 1]
+  const gap = 1.5
+  const w = (size - gap * (cols - 1)) / cols
+  const h = (size - gap * (rows - 1)) / rows
+  const rects: { x: number; y: number }[] = []
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++)
+      rects.push({ x: c * (w + gap), y: r * (h + gap) })
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {rects.map((rect, i) => (
+        <rect key={i} x={rect.x} y={rect.y} width={w} height={h} rx="1"
+          fill="rgba(0,212,255,0.55)" />
+      ))}
+    </svg>
+  )
+}
+
+const LAYOUT_ICONS: Record<number, string> = { 1: '□', 2: '⊟', 3: '≡', 4: '⊞', 6: '⊟', 8: '⊟', 9: '⊠' }
+
 function exportMarkdown(messages: Message[], sessionId: string) {
   const lines = [`# Conversation ${sessionId}`, `_Exported ${new Date().toLocaleString()}_`, '']
   for (const m of messages) {
@@ -218,6 +245,9 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   const [agentList, setAgentList] = useState<Array<{ id: string; name: string; active: boolean }>>([])
   const [agentDrawerOpen, setAgentDrawerOpen] = useState(false)
   const isMobile = useIsMobile()
+  const [paneCount, setPaneCount] = useState(1)
+  const [focusedPane, setFocusedPane] = useState(0)
+  const [layoutOpen, setLayoutOpen] = useState(false)
   const [voiceMuted, setVoiceMuted] = useState(false)
   const [architectToast, setArchitectToast] = useState<{
     proposalId: string; summary: string; vetoDeadline: number
@@ -751,6 +781,49 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
           <div className="text-xs font-mono" style={{ color: 'rgba(0,212,255,0.40)' }}>SESSION {currentSessionId.slice(-8).toUpperCase()}</div>
         </div>
         <div className="ml-auto flex gap-4 items-center">
+          {/* Layout picker */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setLayoutOpen(o => !o)}
+              title="Split panes"
+              className="text-xs font-mono transition-colors"
+              style={{ color: paneCount > 1 ? '#00D4FF' : '#4a5568' }}
+              onMouseEnter={e => { if (paneCount === 1) (e.currentTarget as HTMLElement).style.color = '#a0aec0' }}
+              onMouseLeave={e => { if (paneCount === 1) (e.currentTarget as HTMLElement).style.color = '#4a5568' }}
+            >
+              {LAYOUT_ICONS[paneCount] ?? '⊞'}
+            </button>
+            {layoutOpen && (
+              <div
+                style={{
+                  position: 'absolute', top: '28px', right: 0, zIndex: 60,
+                  background: 'rgba(5,13,26,0.97)', border: '1px solid rgba(0,212,255,0.20)',
+                  borderRadius: '10px', padding: '10px', display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px',
+                }}
+                onMouseLeave={() => setLayoutOpen(false)}
+              >
+                {([1,2,3,4,6,8,9] as const).map(n => (
+                  <button
+                    key={n}
+                    onClick={() => { setPaneCount(n); setFocusedPane(0); setLayoutOpen(false) }}
+                    title={`${n} pane${n > 1 ? 's' : ''}`}
+                    style={{
+                      width: '36px', height: '36px', borderRadius: '6px',
+                      background: paneCount === n ? 'rgba(0,212,255,0.18)' : 'rgba(255,255,255,0.04)',
+                      border: paneCount === n ? '1px solid rgba(0,212,255,0.45)' : '1px solid rgba(255,255,255,0.06)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', transition: 'all 0.12s',
+                    }}
+                    onMouseEnter={e => { if (paneCount !== n) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)' }}
+                    onMouseLeave={e => { if (paneCount !== n) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)' }}
+                  >
+                    <LayoutIcon count={n} size={20} />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button onClick={() => exportMarkdown(messages, currentSessionId)} className="text-gray-500 hover:text-gray-300 text-xs font-mono transition-colors" title="Export conversation">↓ export</button>
           <button onClick={() => { setVoiceMuted(m => !m); window.speechSynthesis?.cancel() }} className={`text-xs font-mono transition-colors ${voiceMuted ? 'text-red-500 hover:text-red-400' : 'text-gray-500 hover:text-gray-300'}`} title={voiceMuted ? 'Voice muted' : 'Mute voice'}>
             {voiceMuted ? '🔇' : '🔊'}
@@ -818,8 +891,33 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
         </div>
       )}
 
+      {/* ── Multi-pane grid (2+ panes) ─────────────────────────── */}
+      {paneCount > 1 && (() => {
+        const [cols] = PANE_GRID[paneCount] ?? [2, 1]
+        return (
+          <div
+            style={{
+              flex: 1, minHeight: 0, display: 'grid',
+              gridTemplateColumns: `repeat(${cols}, 1fr)`,
+              gap: '4px', padding: '4px',
+            }}
+          >
+            {Array.from({ length: paneCount }, (_, i) => (
+              <ChatPane
+                key={i}
+                paneIndex={i}
+                agents={agentList}
+                focused={focusedPane === i}
+                onFocus={() => setFocusedPane(i)}
+                compact={paneCount >= 4}
+              />
+            ))}
+          </div>
+        )
+      })()}
+
       {/* Body: left character rail + main chat column */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0" style={{ display: paneCount > 1 ? 'none' : 'flex' }}>
 
       {/* ── Character rail (desktop only) ──────────────────────── */}
       {!isMobile && agentList.length > 0 && (

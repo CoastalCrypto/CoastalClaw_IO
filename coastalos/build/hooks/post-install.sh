@@ -63,7 +63,7 @@ chown -R coastal:coastal /opt/coastalclaw /var/lib/coastalclaw
 mkdir -p /etc/systemd/system/coastal.slice.d
 cat > /etc/systemd/system/coastal.slice.d/limits.conf << 'SLICE_EOF'
 [Slice]
-MemoryMax=512M
+MemoryMax=2G
 CPUQuota=200%
 SLICE_EOF
 
@@ -74,11 +74,18 @@ cp /tmp/labwc/autostart /home/coastal/.config/labwc/
 chmod +x /home/coastal/.config/labwc/autostart
 chown -R coastal:coastal /home/coastal/.config
 
+# Resolve coastal UID and patch service file placeholder before enabling
+COASTAL_UID=$(id -u coastal)
+sed -i "s|__COASTAL_UID__|${COASTAL_UID}|g" \
+  /etc/systemd/system/coastal-shell.service
+systemctl daemon-reload
+
 # Enable core services
 systemctl enable coastal-server.service
 systemctl enable coastal-daemon.service
 systemctl enable coastal-architect.timer
 systemctl enable coastal-shell.service
+systemctl enable coastal-web.service
 
 # Set autologin for coastal user
 mkdir -p /etc/systemd/system/getty@tty1.service.d

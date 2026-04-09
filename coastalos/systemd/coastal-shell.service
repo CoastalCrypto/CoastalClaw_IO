@@ -8,7 +8,7 @@ Type=simple
 User=coastal
 PAMName=login
 Environment=XDG_SESSION_TYPE=wayland
-Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=XDG_RUNTIME_DIR=/run/user/__COASTAL_UID__
 Environment=HOME=/home/coastal
 ExecStart=/usr/bin/labwc
 Restart=always

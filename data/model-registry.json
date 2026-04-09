@@ -1,0 +1,22 @@
+{
+  "coo": {
+    "high": "qwen3:30b",
+    "medium": "gemma4:26b",
+    "low": "llama3.2:latest"
+  },
+  "cfo": {
+    "high": "qwen3:30b",
+    "medium": "gemma4:26b",
+    "low": "llama3.2:latest"
+  },
+  "cto": {
+    "high": "qwen3:30b",
+    "medium": "gemma4:26b",
+    "low": "llama3.2:latest"
+  },
+  "general": {
+    "high": "qwen3:30b",
+    "medium": "gemma4:26b",
+    "low": "llama3.2:latest"
+  }
+}

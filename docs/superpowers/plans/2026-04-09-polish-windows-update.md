@@ -4,7 +4,7 @@
 
 **Goal:** Fix the invisible layout toggle button in the multi-pane chat UI, fix Windows auto-update restart, and clean dead code from the multi-pane additions.
 
-**Architecture:** Three independent surgical edits — UI-only toggle redesign in `Chat.tsx`, platform-aware restart in `system.ts`, and a dead-code/quality pass across the multi-pane files. No new abstractions, no new files (except a test file for the toggle).
+**Architecture:** Three independent surgical edits — UI-only toggle redesign in `Chat.tsx`, platform-aware restart extracted into `system-restart.ts` and wired into `system.ts`, and a dead-code/quality pass across the multi-pane files. New files: `system-restart.ts` (production), `ChatPane.test.tsx` and `system.test.ts` (tests).
 
 **Tech Stack:** React + Tailwind v4 (web), Fastify + Node 22 ESM (core), vitest + @testing-library/react (tests), pnpm monorepo
 
@@ -16,10 +16,12 @@
 
 | File | Change |
 |------|--------|
-| `packages/web/src/pages/Chat.tsx` | Replace bare unicode button with styled pill + SVG; remove `LAYOUT_ICONS` |
+| `packages/web/src/pages/Chat.tsx` | Replace bare unicode button with styled pill + SVG; remove `LAYOUT_ICONS`; add return type to `LayoutIcon`; add `display:none` comment |
+| `packages/web/src/components/ChatPane.tsx` | Fix `compact` comment; add return type; remove any console.log/TODO |
 | `packages/web/src/components/ChatPane.test.tsx` | New — tests for layout toggle visibility |
-| `packages/core/src/api/routes/system.ts` | Platform-aware restart; `GIT_TERMINAL_PROMPT` guard |
-| `packages/core/src/api/routes/__tests__/system.test.ts` | New test for Windows restart path |
+| `packages/core/src/api/routes/system-restart.ts` | New — platform-aware restart logic extracted for testability |
+| `packages/core/src/api/routes/system.ts` | Import `restartServer`; replace restart block; add `GIT_TERMINAL_PROMPT` guard |
+| `packages/core/src/api/routes/__tests__/system.test.ts` | New — unit tests for Windows and Linux restart paths |
 
 ---
 
@@ -29,16 +31,17 @@
 
 **File:** `packages/web/src/components/ChatPane.test.tsx` (create new)
 
-The test renders Chat and verifies the layout picker button has a visible background (not just a bare unicode char with a near-black color).
+The test renders Chat and verifies the layout picker button has a visible background. Use static imports — `vi.mock` calls are hoisted by Vitest's transformer before any imports, so no dynamic import is needed.
 
 - [ ] **Step 1: Create the test file**
 
 ```tsx
 // packages/web/src/components/ChatPane.test.tsx
 import { render, screen } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+import Chat from '../pages/Chat'
 
-// Chat.tsx has many dependencies — mock the heaviest ones
+// vi.mock is hoisted to before imports by Vitest — mocks are in place when Chat loads
 vi.mock('../api/client', () => ({
   CoreClient: vi.fn().mockImplementation(() => ({
     listAgents: vi.fn().mockResolvedValue([]),
@@ -47,28 +50,23 @@ vi.mock('../api/client', () => ({
 }))
 vi.mock('../hooks/useIsMobile', () => ({ useIsMobile: () => false }))
 
-// Dynamically import after mocks are in place
-const { default: Chat } = await import('../pages/Chat')
-
 describe('Layout toggle button', () => {
   beforeEach(() => {
-    // Mock fetch for agent list
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ agents: [] }),
     } as unknown as Response)
   })
 
-  it('has a visible background at rest (not just a bare unicode char)', async () => {
+  it('has a visible background at rest (not just bare color)', async () => {
     render(<Chat />)
     const btn = await screen.findByTitle('Split panes')
     const bg = btn.style.background || btn.style.backgroundColor
-    // Must have some background — not empty string
     expect(bg).not.toBe('')
     expect(bg).not.toBe('transparent')
   })
 
-  it('renders an SVG grid icon inside the trigger (not a unicode char)', async () => {
+  it('renders an SVG grid icon inside the trigger button', async () => {
     render(<Chat />)
     const btn = await screen.findByTitle('Split panes')
     expect(btn.querySelector('svg')).not.toBeNull()
@@ -82,19 +80,17 @@ describe('Layout toggle button', () => {
 cd packages/web && pnpm test -- ChatPane.test
 ```
 
-Expected output: FAIL — `background` is `''`, no SVG found (button currently has unicode char).
+Expected output: FAIL — `background` is `''`, no SVG inside the button (currently a unicode char).
 
 ---
 
 ### Task 2: Implement the styled pill trigger button
 
-**File:** `packages/web/src/pages/Chat.tsx` — lines 786–795
+**File:** `packages/web/src/pages/Chat.tsx`
 
-Replace the bare button with a styled pill that uses the existing `LayoutIcon` SVG.
+- [ ] **Step 3: Replace the trigger button (lines 786–795)**
 
-- [ ] **Step 3: Replace the trigger button**
-
-Find this block (lines 786–795):
+Find:
 ```tsx
 <button
   onClick={() => setLayoutOpen(o => !o)}
@@ -146,9 +142,9 @@ Replace with:
 </button>
 ```
 
-- [ ] **Step 4: Delete the dead `LAYOUT_ICONS` map**
+- [ ] **Step 4: Delete the dead `LAYOUT_ICONS` map (line 146)**
 
-Find and delete line 146:
+Find and delete:
 ```tsx
 const LAYOUT_ICONS: Record<number, string> = { 1: '□', 2: '⊟', 3: '≡', 4: '⊞', 6: '⊟', 8: '⊟', 9: '⊠' }
 ```
@@ -159,7 +155,7 @@ const LAYOUT_ICONS: Record<number, string> = { 1: '□', 2: '⊟', 3: '≡', 4: 
 cd packages/web && pnpm test -- ChatPane.test
 ```
 
-Expected: PASS (background set, SVG present).
+Expected: PASS.
 
 - [ ] **Step 6: Build web to verify no TS errors**
 
@@ -167,7 +163,7 @@ Expected: PASS (background set, SVG present).
 cd packages/web && pnpm build
 ```
 
-Expected: exits 0, no TypeScript errors. (`LAYOUT_ICONS` was the only consumer of itself — deleting it won't break anything.)
+Expected: exits 0.
 
 - [ ] **Step 7: Commit**
 
@@ -182,46 +178,32 @@ git commit -m "feat(web): restyle layout toggle as visible pill with SVG icon"
 
 ### Task 3: Add Windows restart path to the update route
 
-**File:** `packages/core/src/api/routes/system.ts`
-
 - [ ] **Step 1: Write the failing test**
 
-Find the existing test file for system routes (or check if one exists):
-
-```bash
-ls packages/core/src/api/routes/__tests__/
-```
-
-If no `system.test.ts` exists, create it. If it exists, add the test case.
-
-**New test file or additions at:** `packages/core/src/api/routes/__tests__/system.test.ts`
+Create **`packages/core/src/api/routes/__tests__/system.test.ts`**:
 
 ```ts
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-// We test the restart logic in isolation — not the full Fastify route.
-// Extract the restart function from system.ts so it can be unit-tested.
-
-describe('Windows restart path', () => {
+describe('restartServer', () => {
+  // vi.resetModules() ensures each test gets a fresh module instance
+  // with its own set of mocks — prevents cache bleeding between win32/linux tests
+  beforeEach(() => { vi.resetModules() })
   afterEach(() => { vi.restoreAllMocks() })
 
   it('spawns a detached cmd.exe on win32 instead of calling systemctl', async () => {
-    // Arrange: mock process.platform
     Object.defineProperty(process, 'platform', { value: 'win32', configurable: true })
 
     const spawnMock = vi.fn().mockReturnValue({ unref: vi.fn() })
-    vi.doMock('node:child_process', () => ({
-      execSync: vi.fn(),
-      spawn: spawnMock,
-    }))
-    vi.doMock('node:fs', () => ({
-      readFileSync: vi.fn(),
-      existsSync: vi.fn(),
-      writeFileSync: vi.fn(),
-    }))
+    vi.doMock('node:child_process', () => ({ execSync: vi.fn(), spawn: spawnMock }))
+    vi.doMock('node:fs', () => ({ writeFileSync: vi.fn() }))
     vi.doMock('node:os', () => ({ tmpdir: () => '/tmp' }))
+    vi.doMock('node:path', () => ({ join: (...p: string[]) => p.join('/') }))
 
     const { restartServer } = await import('../system-restart.js')
+    // Intercept process.exit so the test doesn't actually exit
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never)
+
     restartServer('/install/dir')
 
     expect(spawnMock).toHaveBeenCalledWith(
@@ -229,6 +211,7 @@ describe('Windows restart path', () => {
       expect.arrayContaining(['/c', expect.stringContaining('coastalclaw-restart.cmd')]),
       expect.objectContaining({ detached: true }),
     )
+    expect(exitSpy).toHaveBeenCalledWith(0)
   })
 
   it('calls systemctl on linux', async () => {
@@ -236,15 +219,17 @@ describe('Windows restart path', () => {
 
     const execSyncMock = vi.fn()
     vi.doMock('node:child_process', () => ({ execSync: execSyncMock, spawn: vi.fn() }))
-    vi.doMock('node:fs', () => ({ readFileSync: vi.fn(), existsSync: vi.fn(), writeFileSync: vi.fn() }))
+    vi.doMock('node:fs', () => ({ writeFileSync: vi.fn() }))
     vi.doMock('node:os', () => ({ tmpdir: () => '/tmp' }))
+    vi.doMock('node:path', () => ({ join: (...p: string[]) => p.join('/') }))
 
     const { restartServer } = await import('../system-restart.js')
+
     restartServer('/install/dir')
 
     expect(execSyncMock).toHaveBeenCalledWith(
-      expect.stringContaining('systemctl'),
-      expect.any(Object),
+      'systemctl restart coastalclaw-server',
+      expect.objectContaining({ timeout: 10_000 }),
     )
   })
 })
@@ -256,9 +241,9 @@ describe('Windows restart path', () => {
 cd packages/core && pnpm test -- system.test
 ```
 
-Expected: FAIL — `system-restart.js` doesn't exist yet.
+Expected: FAIL — `system-restart.js` module not found.
 
-- [ ] **Step 3: Extract restart logic into `system-restart.ts`**
+- [ ] **Step 3: Create `system-restart.ts`**
 
 Create **`packages/core/src/api/routes/system-restart.ts`**:
 
@@ -269,9 +254,12 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 /**
- * Restart the server process after an update.
- * On Windows: writes a detached .cmd script that waits 2s then re-launches node.
- * On Linux/Mac: tries systemctl, falls back to process.exit(0) for non-systemd supervisors.
+ * Restart the server process after an in-place update.
+ *
+ * Windows: writes a detached .cmd that waits 2 s then re-launches node.
+ *          cmd.exe is always available; no external service manager needed.
+ * Linux/Mac: tries systemctl first (systemd installations), falls back to
+ *            process.exit(0) so a supervisor (systemd Restart=always, pm2, etc.) restarts us.
  */
 export function restartServer(installDir: string): void {
   if (process.platform === 'win32') {
@@ -299,18 +287,14 @@ export function restartServer(installDir: string): void {
 }
 ```
 
-- [ ] **Step 4: Update `system.ts` to use `restartServer` and add the git credential guard**
+- [ ] **Step 4: Wire `restartServer` into `system.ts`**
 
-In `packages/core/src/api/routes/system.ts`:
-
-**Add import** at the top (after existing imports):
+**Add import** at end of existing imports in `packages/core/src/api/routes/system.ts`:
 ```ts
 import { restartServer } from './system-restart.js'
 ```
 
-**Update `execSync` import** to also include `spawn` only if needed elsewhere — `spawn` is now in `system-restart.ts` so no change needed here.
-
-**Replace the restart block** in `POST /api/admin/update` (lines 217–222):
+**Replace the restart block** (lines 217–222):
 
 Find:
 ```ts
@@ -324,7 +308,7 @@ Find:
 
 Replace with:
 ```ts
-        // Restart — platform-aware (Windows uses detached cmd.exe; Linux uses systemd)
+        // Platform-aware restart: Windows uses detached cmd.exe, Linux uses systemd
         restartServer(installDir)
 ```
 
@@ -339,25 +323,25 @@ Replace with:
 ```ts
       const remoteLine = execSync('git ls-remote origin HEAD', {
         timeout: 10_000,
-        env: { ...process.env, GIT_TERMINAL_PROMPT: '0', GIT_ASKPASS: 'echo' },
+        env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
       }).toString().trim()
 ```
 
-- [ ] **Step 5: Run the tests to confirm they pass**
+- [ ] **Step 5: Run the tests**
 
 ```bash
 cd packages/core && pnpm test -- system.test
 ```
 
-Expected: PASS — both win32 and linux paths verified.
+Expected: PASS — both win32 spawn and linux systemctl assertions pass.
 
-- [ ] **Step 6: Build core to verify no TS errors**
+- [ ] **Step 6: Build core**
 
 ```bash
 cd packages/core && pnpm build
 ```
 
-Expected: exits 0, no errors.
+Expected: exits 0.
 
 - [ ] **Step 7: Commit**
 
@@ -374,17 +358,17 @@ git commit -m "fix(core): Windows-aware update restart + git credential guard"
 
 ### Task 4: Clean up multi-pane additions
 
-- [ ] **Step 1: Add explanatory comment for the `display: none` single-pane wrapper in `Chat.tsx`**
+- [ ] **Step 1: Add `display:none` comment in `Chat.tsx` (line ~920)**
 
-Find (line ~920):
+Find:
 ```tsx
 <div className="flex flex-1 min-h-0" style={{ display: paneCount > 1 ? 'none' : 'flex' }}>
 ```
 
 Replace with:
 ```tsx
-{/* display:none (not conditional render) preserves the full single-pane chat state — avoids
-    remounting AgentSession, SSE stream, and scroll position when switching back from multi-pane */}
+{/* display:none (not conditional render) preserves the single-pane state — avoids
+    remounting the SSE stream and scroll position when switching back from multi-pane */}
 <div className="flex flex-1 min-h-0" style={{ display: paneCount > 1 ? 'none' : 'flex' }}>
 ```
 
@@ -400,22 +384,21 @@ Replace with:
 function LayoutIcon({ count, size }: { count: number; size: number }): JSX.Element {
 ```
 
-- [ ] **Step 3: Check `ChatPane.tsx` for any `console.log` or incomplete TODO**
+- [ ] **Step 3: Add explicit return type to `ChatPane` in `ChatPane.tsx`**
 
-Run:
-```bash
-grep -n "console\.\|TODO\|FIXME\|XXX" packages/web/src/components/ChatPane.tsx
+Find (line 23):
+```tsx
+export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props) {
 ```
 
-Expected: no output. If any are found, remove them.
+Replace with:
+```tsx
+export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props): JSX.Element {
+```
 
-- [ ] **Step 4: Verify `compact` comment accuracy in `ChatPane.tsx`**
+- [ ] **Step 4: Fix the `compact` comment in `ChatPane.tsx` (line 20)**
 
-Line 20 currently says `// true when 3+ panes`. The design says compact activates at 4+ panes. Verify the comment matches the actual threshold in `Chat.tsx`.
-
-In `Chat.tsx` find: `compact={paneCount >= 4}` — threshold is 4, not 3. Fix the comment:
-
-Find in `ChatPane.tsx`:
+Find:
 ```ts
   compact: boolean   // true when 3+ panes — shrinks font/padding
 ```
@@ -425,7 +408,15 @@ Replace with:
   compact: boolean   // true at 4+ panes — shrinks font/padding for dense layouts
 ```
 
-- [ ] **Step 5: Run full build to confirm everything is clean**
+- [ ] **Step 5: Check for console.log / TODO artifacts in `ChatPane.tsx`**
+
+```bash
+grep -n "console\.\|TODO\|FIXME\|XXX" packages/web/src/components/ChatPane.tsx
+```
+
+Expected: no output. Remove anything found.
+
+- [ ] **Step 6: Run full build**
 
 ```bash
 pnpm --filter @coastal-claw/core build && pnpm --filter web build
@@ -433,7 +424,7 @@ pnpm --filter @coastal-claw/core build && pnpm --filter web build
 
 Expected: both exit 0, zero TypeScript errors.
 
-- [ ] **Step 6: Run full test suite**
+- [ ] **Step 7: Run full test suite**
 
 ```bash
 pnpm --filter @coastal-claw/core test && pnpm --filter web test
@@ -441,10 +432,11 @@ pnpm --filter @coastal-claw/core test && pnpm --filter web test
 
 Expected: all tests pass.
 
-- [ ] **Step 7: Commit and push to master**
+- [ ] **Step 8: Commit and push to master**
 
 ```bash
-git add packages/web/src/pages/Chat.tsx packages/web/src/components/ChatPane.tsx
-git commit -m "chore: clean up multi-pane dead comment, LayoutIcon return type, compact threshold"
+git add packages/web/src/pages/Chat.tsx \
+        packages/web/src/components/ChatPane.tsx
+git commit -m "chore: quality pass — LayoutIcon/ChatPane return types, display:none comment, compact threshold"
 git push origin HEAD:master
 ```

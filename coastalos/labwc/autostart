@@ -40,4 +40,4 @@ chromium-browser \
   --disable-features=TranslateUI \
   --disable-pinch \
   --overscroll-history-navigation=0 \
-  --app=http://localhost:4747 &
+  --app=http://localhost:5173 &

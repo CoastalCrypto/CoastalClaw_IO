@@ -109,11 +109,13 @@ Write-Ok "Repository at $InstallDir"
 Write-Step "4) Installing dependencies"
 Set-Location $InstallDir
 pnpm install
+if ($LASTEXITCODE -ne 0) { Write-Fail "pnpm install failed (exit $LASTEXITCODE)" }
 Write-Ok "Dependencies installed"
 
 # ── Build ─────────────────────────────────────────────────────
 Write-Step "5) Building"
 pnpm build
+if ($LASTEXITCODE -ne 0) { Write-Fail "pnpm build failed (exit $LASTEXITCODE)" }
 Write-Ok "Build complete"
 
 # ── Create .env.local files ───────────────────────────────────
@@ -122,7 +124,7 @@ $CoreEnv = "$InstallDir\packages\core\.env.local"
 $WebEnv  = "$InstallDir\packages\web\.env.local"
 
 if (-not (Test-Path $CoreEnv)) {
-    Set-Content $CoreEnv "CC_PORT=4747`nCC_HOST=127.0.0.1`nCC_DATA_DIR=./data`nCC_OLLAMA_URL=http://127.0.0.1:11434`nCC_DEFAULT_MODEL=llama3.2"
+    Set-Content $CoreEnv "CC_PORT=4747`nCC_HOST=127.0.0.1`nCC_DATA_DIR=./data`nCC_OLLAMA_URL=http://127.0.0.1:11434`nCC_DEFAULT_MODEL=llama3.2`nCC_VRAM_BUDGET_GB=24`nCC_ROUTER_CONFIDENCE=0.7"
     Write-Ok "Created $CoreEnv"
 } else {
     Write-Info "Core config already exists - skipping."

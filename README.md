@@ -112,6 +112,18 @@ Flash a bootable USB drive. Plug it into any UEFI machine and boot — no instal
 
 ### Step 1 — Run the installer
 
+> **⚠️ Antivirus & Firewall notice**
+>
+> CoastalClaw downloads Node.js, Ollama, and an AI model (~2 GB) during setup. Your antivirus or firewall may flag or block these downloads — this is a false positive. The installer only pulls software from official sources (nodejs.org, ollama.com, HuggingFace).
+>
+> **Windows users:** Windows Defender SmartScreen may show a warning when you run the script. Click **"More info" → "Run anyway"** to proceed. If your antivirus quarantines the installer, add your Downloads folder as a temporary exception, then re-run.
+>
+> **Mac users:** Gatekeeper may block Ollama on first launch with *"cannot be opened because the developer cannot be verified"*. Go to **System Settings → Privacy & Security** and click **"Open Anyway"** next to the blocked item.
+>
+> **Firewall:** If your firewall blocks outbound connections, you'll need to allow `nodejs.org`, `ollama.com`, and `huggingface.co` during the initial setup. Once installed, CoastalClaw runs entirely offline — no ongoing internet access is required.
+
+---
+
 **Mac / Linux** — open Terminal and paste:
 
 ```bash

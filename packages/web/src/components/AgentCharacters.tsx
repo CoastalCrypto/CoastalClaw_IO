@@ -275,14 +275,86 @@ interface Props {
   agents: Array<{ id: string; name: string; active: boolean }>
   selected: string | null   // null = auto-routing
   onSelect: (id: string | null) => void
+  vertical?: boolean
 }
 
-export function AgentCharacters({ agents, selected, onSelect }: Props) {
+export function AgentCharacters({ agents, selected, onSelect, vertical = false }: Props) {
   const active = agents.filter(a => a.active)
 
+  if (vertical) {
+    return (
+      <>
+        {/* AUTO button */}
+        <button
+          onClick={() => onSelect(null)}
+          title="Auto-route to best agent"
+          className={`flex flex-col items-center gap-1 transition-all duration-200 ${
+            selected === null ? 'opacity-100' : 'opacity-30 hover:opacity-60'
+          }`}
+        >
+          <div
+            className="w-10 h-10 rounded-full border flex items-center justify-center text-[9px] font-mono transition-all"
+            style={selected === null
+              ? { borderColor: '#00D4FF', background: 'rgba(0,212,255,0.15)', color: '#00D4FF', boxShadow: '0 0 10px rgba(0,212,255,0.35)' }
+              : { borderColor: 'rgba(255,255,255,0.08)', background: 'transparent', color: '#6b7280' }
+            }
+          >
+            AUTO
+          </div>
+          <span className="text-[8px] font-mono" style={{ color: selected === null ? '#00D4FF' : '#4b5563' }}>
+            auto
+          </span>
+        </button>
+
+        {/* Divider */}
+        <div className="w-8 h-px bg-white/5 my-1 shrink-0" />
+
+        {/* Agent portraits */}
+        {active.map(agent => {
+          const meta = AGENT_META[agent.id as AgentId]
+          if (!meta) return null
+          const isSelected = selected === agent.id
+          const glowColor = meta.color
+
+          const ringStyle: CSSProperties = isSelected
+            ? { boxShadow: `0 0 0 2px ${glowColor}, 0 0 18px ${glowColor}55` }
+            : {}
+
+          return (
+            <button
+              key={agent.id}
+              onClick={() => onSelect(isSelected ? null : agent.id)}
+              title={agent.name}
+              className={`flex flex-col items-center gap-1 transition-all duration-200 ${
+                isSelected ? 'scale-110' : 'opacity-35 hover:opacity-75 hover:scale-105'
+              }`}
+            >
+              <div
+                className="w-11 h-11 rounded-full overflow-hidden border transition-all duration-200"
+                style={{
+                  borderColor: isSelected ? glowColor : 'rgba(255,255,255,0.06)',
+                  background: 'rgba(5,13,26,0.9)',
+                  ...ringStyle,
+                }}
+              >
+                <meta.svg />
+              </div>
+              <span
+                className="text-[8px] font-mono tracking-wide leading-none transition-colors"
+                style={{ color: isSelected ? glowColor : '#374151' }}
+              >
+                {meta.label}
+              </span>
+            </button>
+          )
+        })}
+      </>
+    )
+  }
+
+  // Horizontal layout (kept for potential future use)
   return (
     <div className="flex items-end gap-3 overflow-x-auto py-2 px-1 scrollbar-none">
-      {/* Auto pill */}
       <button
         onClick={() => onSelect(null)}
         className={`shrink-0 flex flex-col items-center gap-1 transition-all ${
@@ -300,21 +372,15 @@ export function AgentCharacters({ agents, selected, onSelect }: Props) {
         </div>
         <span className="text-[9px] font-mono text-gray-500">auto</span>
       </button>
-
-      {/* Divider */}
       <div className="w-px h-10 bg-gray-800 shrink-0" />
-
-      {/* Agent characters */}
       {active.map(agent => {
         const meta = AGENT_META[agent.id as AgentId]
         if (!meta) return null
         const isSelected = selected === agent.id
         const glowColor = meta.color
-
         const ringStyle: CSSProperties = isSelected
           ? { boxShadow: `0 0 0 2px ${glowColor}, 0 0 16px ${glowColor}66` }
           : {}
-
         return (
           <button
             key={agent.id}
@@ -326,18 +392,11 @@ export function AgentCharacters({ agents, selected, onSelect }: Props) {
           >
             <div
               className="w-12 h-12 rounded-full overflow-hidden border transition-all duration-200"
-              style={{
-                borderColor: isSelected ? glowColor : 'rgba(255,255,255,0.08)',
-                background: 'rgba(5,13,26,0.8)',
-                ...ringStyle,
-              }}
+              style={{ borderColor: isSelected ? glowColor : 'rgba(255,255,255,0.08)', background: 'rgba(5,13,26,0.8)', ...ringStyle }}
             >
               <meta.svg />
             </div>
-            <span
-              className="text-[9px] font-mono tracking-wide transition-colors"
-              style={{ color: isSelected ? glowColor : 'rgb(107,114,128)' }}
-            >
+            <span className="text-[9px] font-mono tracking-wide transition-colors" style={{ color: isSelected ? glowColor : 'rgb(107,114,128)' }}>
               {meta.label}
             </span>
           </button>

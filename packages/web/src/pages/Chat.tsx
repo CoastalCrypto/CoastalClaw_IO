@@ -815,6 +815,32 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
         </div>
       )}
 
+      {/* Body: left character rail + main chat column */}
+      <div className="flex flex-1 min-h-0">
+
+      {/* ── Character rail ─────────────────────────────────────── */}
+      {agentList.length > 0 && (
+        <div
+          className="flex flex-col items-center gap-1 py-4 overflow-y-auto shrink-0 z-10"
+          style={{
+            width: '72px',
+            borderRight: '1px solid rgba(255,255,255,0.05)',
+            background: 'rgba(5,13,26,0.6)',
+            backdropFilter: 'blur(12px)',
+          }}
+        >
+          <AgentCharacters
+            agents={agentList}
+            selected={selectedAgentId}
+            onSelect={setSelectedAgentId}
+            vertical
+          />
+        </div>
+      )}
+
+      {/* ── Main chat column ───────────────────────────────────── */}
+      <div className="flex flex-col flex-1 min-w-0">
+
       <div className="flex-1 overflow-y-auto px-4 py-6">
         {fileNotice && (
           <div className="mb-3 text-xs text-cyan-400 font-mono px-2 animate-pulse">{fileNotice}</div>
@@ -873,17 +899,6 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
       </div>
 
       <div className="glass-panel rounded-none border-x-0 border-b-0 px-4 pt-2 pb-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-10">
-        {/* Agent character strip */}
-        {agentList.length > 0 && (
-          <div className="max-w-4xl mx-auto mb-2 border-b border-white/5 pb-2">
-            <AgentCharacters
-              agents={agentList}
-              selected={selectedAgentId}
-              onSelect={setSelectedAgentId}
-            />
-          </div>
-        )}
-
         {/* Team mode toggle */}
         <div className="flex justify-end max-w-4xl mx-auto mb-2">
           <button
@@ -1011,6 +1026,9 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
         </div>
         <p className="text-center text-xs text-gray-700 mt-2 font-mono">drag a file to attach · press ? for shortcuts</p>
       </div>
+
+      </div>{/* end main chat column */}
+      </div>{/* end body row */}
     </div>
   )
 }

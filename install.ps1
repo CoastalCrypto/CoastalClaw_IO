@@ -172,8 +172,9 @@ if ($ready) {
 }
 
 Write-Info "Starting web portal on :5173..."
-$webJob = Start-Process -FilePath "pnpm" `
-    -ArgumentList "preview", "--port", "5173", "--host", "127.0.0.1" `
+# pnpm is a .cmd batch file on Windows — must be launched via cmd.exe
+$webJob = Start-Process -FilePath "cmd.exe" `
+    -ArgumentList "/c", "pnpm", "preview", "--port", "5173", "--host", "127.0.0.1" `
     -WorkingDirectory "$InstallDir\packages\web" `
     -RedirectStandardOutput "$env:TEMP\coastal-claw-web.log" `
     -RedirectStandardError  "$env:TEMP\coastal-claw-web-err.log" `

@@ -73,6 +73,8 @@ if ($needNode) {
 if (-not (Has-Command pnpm)) {
     Write-Info "Installing pnpm..."
     npm install -g pnpm@latest
+    # Refresh PATH so pnpm is available in this session
+    $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('PATH', 'User')
 }
 Write-Ok "pnpm $(pnpm --version)"
 
@@ -158,10 +160,10 @@ Write-Ok "Core service started (PID $($coreJob.Id))"
 
 Write-Info "Waiting for core API to be ready..."
 $ready = $false
-for ($i = 0; $i -lt 15; $i++) {
+for ($i = 0; $i -lt 20; $i++) {
     Start-Sleep 1
     try {
-        $r = Invoke-WebRequest -Uri "http://127.0.0.1:4747/health" -UseBasicParsing -TimeoutSec 1 -ErrorAction SilentlyContinue
+        $r = Invoke-WebRequest -Uri "http://127.0.0.1:4747/api/version" -UseBasicParsing -TimeoutSec 2 -ErrorAction SilentlyContinue
         if ($r.StatusCode -eq 200) { $ready = $true; break }
     } catch {}
 }

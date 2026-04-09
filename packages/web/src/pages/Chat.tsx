@@ -143,7 +143,6 @@ function LayoutIcon({ count, size }: { count: number; size: number }) {
   )
 }
 
-const LAYOUT_ICONS: Record<number, string> = { 1: '□', 2: '⊟', 3: '≡', 4: '⊞', 6: '⊟', 8: '⊟', 9: '⊠' }
 
 function exportMarkdown(messages: Message[], sessionId: string) {
   const lines = [`# Conversation ${sessionId}`, `_Exported ${new Date().toLocaleString()}_`, '']
@@ -786,12 +785,36 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
             <button
               onClick={() => setLayoutOpen(o => !o)}
               title="Split panes"
-              className="text-xs font-mono transition-colors"
-              style={{ color: paneCount > 1 ? '#00D4FF' : '#4a5568' }}
-              onMouseEnter={e => { if (paneCount === 1) (e.currentTarget as HTMLElement).style.color = '#a0aec0' }}
-              onMouseLeave={e => { if (paneCount === 1) (e.currentTarget as HTMLElement).style.color = '#4a5568' }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                background: paneCount > 1 ? 'rgba(0,212,255,0.20)' : 'rgba(0,212,255,0.08)',
+                border: paneCount > 1 ? '1px solid rgba(0,212,255,0.55)' : '1px solid rgba(0,212,255,0.25)',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => {
+                if (paneCount === 1) {
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(0,212,255,0.14)'
+                  ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,212,255,0.40)'
+                }
+              }}
+              onMouseLeave={e => {
+                if (paneCount === 1) {
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(0,212,255,0.08)'
+                  ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,212,255,0.25)'
+                }
+              }}
             >
-              {LAYOUT_ICONS[paneCount] ?? '⊞'}
+              <LayoutIcon count={paneCount} size={16} />
+              {paneCount > 1 && (
+                <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#00D4FF', lineHeight: 1 }}>
+                  {paneCount}×
+                </span>
+              )}
             </button>
             {layoutOpen && (
               <div
@@ -1176,4 +1199,8 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
       </div>{/* end body row */}
     </div>
   )
+}
+
+export default function ChatPage() {
+  return <Chat sessionId={`session-${Date.now()}`} onNav={() => {}} />
 }

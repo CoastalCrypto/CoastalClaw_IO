@@ -94,6 +94,11 @@ export class CoreClient {
     return Boolean(this.sessionToken ?? sessionStorage.getItem('cc_admin_session'))
   }
 
+  /** Throw SESSION_EXPIRED if response is 401 so callers can redirect to login */
+  private checkAuth(res: Response): void {
+    if (res.status === 401) throw new Error('SESSION_EXPIRED')
+  }
+
   private adminHeaders(): Record<string, string> {
     const token = this.sessionToken ?? sessionStorage.getItem('cc_admin_session') ?? ''
     return token ? { 'x-admin-session': token } : {}
@@ -118,6 +123,7 @@ export class CoreClient {
     const res = await fetch(`${this.baseUrl}/api/admin/models`, {
       headers: this.adminHeaders(),
     })
+    this.checkAuth(res)
     if (!res.ok) throw new Error(`Failed to list models (${res.status})`)
     return res.json()
   }
@@ -143,7 +149,7 @@ export class CoreClient {
     const res = await fetch(`${this.baseUrl}/api/admin/ollama/models`, {
       headers: this.adminHeaders(),
     })
-    if (res.status === 401) throw new Error('Not authenticated — enter your admin token on the Models page')
+    if (res.status === 401) throw new Error('SESSION_EXPIRED')
     const data = await res.json() as { ollamaUrl: string; models: OllamaModel[]; error?: string }
     return data
   }
@@ -180,6 +186,7 @@ export class CoreClient {
       method: 'GET',
       headers: this.adminHeaders(),
     })
+    this.checkAuth(res)
     if (!res.ok) throw new Error(`Failed to get registry (${res.status})`)
     return res.json()
   }

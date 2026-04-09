@@ -315,40 +315,44 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
     }
 
     // Browser Web Speech API
-    // Chrome has a known bug where speechSynthesis pauses/garbles after ~15s on long texts.
-    // Fix: split into sentence-sized chunks and chain them via onend.
+    // Fix for Chrome's 15s garbling bug: split text into short sentence chunks
+    // and queue them all at once — Chrome sequences the queue without garbling.
+    // Don't use onend chaining (timing holes) or pause/resume (audible clicks).
     if (!('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
 
-    const voices = window.speechSynthesis.getVoices()
-    const preferredVoice = agentVoiceName
-      ? (voices.find(v => v.name === agentVoiceName) ?? null)
-      : (voices.find(v => v.name.includes('Google UK English Male')) || voices.find(v => v.lang.startsWith('en')) || null)
+    // Wait one tick so cancel() fully clears Chrome's internal queue
+    setTimeout(() => {
+      if (voiceMutedRef.current) return
 
-    // Split on sentence boundaries, keeping the delimiter attached
-    const sentences = clean.match(/[^.!?]+[.!?]*/g) ?? [clean]
-    // Merge very short fragments to reduce utterance overhead
-    const chunks: string[] = []
-    let current = ''
-    for (const s of sentences) {
-      current += s
-      if (current.length >= 80) { chunks.push(current.trim()); current = '' }
-    }
-    if (current.trim()) chunks.push(current.trim())
+      const voices = window.speechSynthesis.getVoices()
+      const preferredVoice = agentVoiceName
+        ? (voices.find(v => v.name === agentVoiceName) ?? null)
+        : (voices.find(v => v.name.includes('Google UK English Male'))
+            || voices.find(v => v.lang.startsWith('en-') && !v.name.toLowerCase().includes('zira') && !v.name.toLowerCase().includes('david'))
+            || voices.find(v => v.lang.startsWith('en'))
+            || null)
 
-    let idx = 0
-    // Chain chunks via onend — avoids Chrome's 15s single-utterance pause bug.
-    // No keep-alive interval: pause()/resume() causes audible glitches.
-    const speakNext = () => {
-      if (voiceMutedRef.current || idx >= chunks.length) return
-      const u = new SpeechSynthesisUtterance(chunks[idx++])
-      u.voice = preferredVoice
-      u.rate = 1.0
-      u.pitch = 1.0
-      u.onend = speakNext
-      window.speechSynthesis.speak(u)
-    }
-    speakNext()
+      // Split on sentence boundaries, merge short fragments
+      const sentences = clean.match(/[^.!?]+[.!?]*/g) ?? [clean]
+      const chunks: string[] = []
+      let current = ''
+      for (const s of sentences) {
+        current += s
+        if (current.length >= 120) { chunks.push(current.trim()); current = '' }
+      }
+      if (current.trim()) chunks.push(current.trim())
+
+      // Queue all chunks — Chrome plays them in sequence
+      for (const chunk of chunks) {
+        if (!chunk) continue
+        const u = new SpeechSynthesisUtterance(chunk)
+        u.voice = preferredVoice
+        u.rate = 1.0
+        u.pitch = 1.0
+        window.speechSynthesis.speak(u)
+      }
+    }, 50)
   }, [])
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])

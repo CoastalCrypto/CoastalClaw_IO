@@ -167,18 +167,33 @@ export function OllamaSection({ onModelsChanged }: Props) {
         </div>
       </div>
 
-      {/* Connection error */}
+      {/* Connection / auth error */}
       {scanError && (
-        <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 space-y-1">
-          <p className="text-sm text-red-400 font-medium">Cannot reach Ollama</p>
-          <p className="text-xs text-red-400/80 font-mono">{scanError}</p>
-          {ollamaUrl && (
-            <p className="text-xs text-gray-500">
-              Configured URL: <span className="font-mono text-gray-400">{ollamaUrl}</span>
-              <br />
-              Set <span className="font-mono text-gray-400">CC_OLLAMA_URL</span> in{' '}
-              <span className="font-mono text-gray-400">packages/core/.env.local</span> if Ollama is on a different address.
-            </p>
+        <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 space-y-2">
+          {scanError === 'SESSION_EXPIRED' ? (
+            <>
+              <p className="text-sm text-red-400 font-medium">Session expired</p>
+              <p className="text-xs text-red-400/80">Your login session has expired.</p>
+              <button
+                onClick={() => { sessionStorage.clear(); window.location.reload() }}
+                className="text-xs font-mono text-white bg-red-500/20 border border-red-500/40 rounded px-3 py-1 hover:bg-red-500/30 transition-colors"
+              >
+                Log out and refresh
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-red-400 font-medium">Cannot reach Ollama</p>
+              <p className="text-xs text-red-400/80 font-mono">{scanError}</p>
+              {ollamaUrl && (
+                <p className="text-xs text-gray-500">
+                  Configured URL: <span className="font-mono text-gray-400">{ollamaUrl}</span>
+                  <br />
+                  Set <span className="font-mono text-gray-400">CC_OLLAMA_URL</span> in{' '}
+                  <span className="font-mono text-gray-400">packages/core/.env.local</span> if Ollama is on a different address.
+                </p>
+              )}
+            </>
           )}
         </div>
       )}

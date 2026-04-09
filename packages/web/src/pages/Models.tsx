@@ -21,6 +21,8 @@ export function Models() {
   const [error, setError] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
 
+  const [sessionExpired, setSessionExpired] = useState(false)
+
   const refresh = useCallback(async () => {
     try {
       const [m, reg, agentList] = await Promise.all([
@@ -31,7 +33,8 @@ export function Models() {
       setModels(m)
       setRegistry(reg as Record<string, Record<string, string>>)
       setAgents(agentList)
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.message === 'SESSION_EXPIRED') { setSessionExpired(true); return }
       console.error('Failed to load models', e)
     }
   }, [])
@@ -97,9 +100,30 @@ export function Models() {
     setRegistry(prev => ({ ...prev, ...update }))
   }
 
+  if (sessionExpired) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0A0F1C' }}>
+        <div className="text-center space-y-4">
+          <p className="text-white font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Session expired</p>
+          <p className="text-sm" style={{ color: '#A0AEC0' }}>Please log out and sign back in.</p>
+          <button
+            onClick={() => { sessionStorage.clear(); window.location.reload() }}
+            className="px-6 py-2 text-black font-bold rounded-lg text-sm"
+            style={{ background: '#00D4FF' }}
+          >
+            Log out & refresh
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gray-950 p-6">
-      <h1 className="text-xl font-bold text-white mb-6">Model Management</h1>
+    <div className="min-h-screen p-6" style={{ background: '#0A0F1C' }}>
+      <div className="flex items-center gap-3 mb-6">
+        <span style={{ color: '#00D4FF', fontSize: '20px' }}>✳</span>
+        <h1 className="text-xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Model Management</h1>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {models.length === 0 && (

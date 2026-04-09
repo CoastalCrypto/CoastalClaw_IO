@@ -522,10 +522,29 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
               setActiveDomain((data.domain as AgentDomain | undefined) ?? 'general')
             } else if (eventType === 'approval') {
               setMessages(m => [...m, { role: 'approval', content: '', approvalId: data.approvalId, agentName: data.agentName, toolName: data.toolName, cmd: data.cmd, resolved: false }])
+            } else if (eventType === 'error') {
+              const errMsg = data.message ?? 'The agent encountered an error.'
+              setMessages(m => {
+                const copy = [...m]
+                copy[copy.length - 1] = { ...copy[copy.length - 1], content: `⚠ ${errMsg}` }
+                return copy
+              })
             }
           } catch { /* skip malformed SSE lines */ }
           eventType = ''
         }
+      }
+
+      // Stream ended with no content — model may have returned nothing
+      if (!fullReply) {
+        setMessages(m => {
+          const copy = [...m]
+          const last = copy[copy.length - 1]
+          if (last?.role === 'assistant' && !last.content) {
+            copy[copy.length - 1] = { ...last, content: '(No response received. Check that Ollama is running and a model is loaded.)' }
+          }
+          return copy
+        })
       }
 
       speakText(fullReply)

@@ -73,17 +73,17 @@ export async function streamRoutes(fastify: FastifyInstance) {
         write('approval', { approvalId, agentName, toolName, cmd })
       }
 
+      let streamed = false
       const onToken = (token: string) => {
+        streamed = true
         write('token', { token })
       }
 
       const loop = new AgenticLoop(router.ollama, toolRegistry, gate, log, onApprovalNeeded, undefined, onToken)
       const result = await loop.run(session, message, sessionId, messages, undefined, undefined, images)
 
-      // If there was no streaming (content came back non-empty without onToken),
-      // send the full reply as a single flush
-      if (result.reply && !result.reply.startsWith('\n\n[')) {
-        // Check if we already streamed (onToken was called); if not, send now
+      // Only send full reply when tokens were NOT streamed (tool-use path, or model returned all at once)
+      if (!streamed) {
         write('reply', { reply: result.reply, domain: result.domain })
       }
 

@@ -72,6 +72,11 @@ export class ModelRegistry {
     return row?.active === 1
   }
 
+  listActiveIds(): Set<string> {
+    const rows = this.db.prepare('SELECT id FROM models WHERE active = 1').all() as Array<{ id: string }>
+    return new Set(rows.map(r => r.id))
+  }
+
   close(): void {
     this.db.close()
   }

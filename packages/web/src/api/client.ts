@@ -1,3 +1,5 @@
+export const SESSION_EXPIRED = 'SESSION_EXPIRED' as const
+
 export interface Persona {
   agentName: string
   agentRole: string
@@ -96,7 +98,7 @@ export class CoreClient {
 
   /** Throw SESSION_EXPIRED if response is 401 so callers can redirect to login */
   private checkAuth(res: Response): void {
-    if (res.status === 401) throw new Error('SESSION_EXPIRED')
+    if (res.status === 401) throw new Error(SESSION_EXPIRED)
   }
 
   private adminHeaders(): Record<string, string> {
@@ -150,7 +152,7 @@ export class CoreClient {
     const res = await fetch(`${this.baseUrl}/api/admin/ollama/models`, {
       headers: this.adminHeaders(),
     })
-    if (res.status === 401) throw new Error('SESSION_EXPIRED')
+    this.checkAuth(res)
     const data = await res.json() as { ollamaUrl: string; models: OllamaModel[]; error?: string }
     return data
   }

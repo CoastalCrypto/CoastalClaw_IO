@@ -15,6 +15,12 @@ interface Props {
   onToggle: (id: string, active: boolean) => void
 }
 
+const BADGE_STYLE = {
+  color: 'rgba(0,212,255,0.70)',
+  border: '1px solid rgba(255,255,255,0.06)',
+  background: 'rgba(0,0,0,0.20)',
+} as const
+
 export function AgentCard({ agent, onEdit, onDelete, onToggle }: Props) {
   return (
     <div className="feature-card group relative overflow-hidden cursor-default"
@@ -47,14 +53,13 @@ export function AgentCard({ agent, onEdit, onDelete, onToggle }: Props) {
 
           {/* Badges row */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded"
-              style={{ color: 'rgba(0,212,255,0.70)', border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.20)' }}>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded" style={BADGE_STYLE}>
               {agent.tools.length} TOOLS
             </span>
 
             {agent.voice && (
               <span className="text-[10px] font-mono px-2 py-0.5 rounded max-w-[110px] truncate"
-                style={{ color: 'rgba(0,212,255,0.70)', border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.20)' }}
+                style={BADGE_STYLE}
                 title={agent.voice}>
                 {agent.voice.startsWith('vv:') ? 'AI VOICE' : '♪ ' + agent.voice.split(' ')[0]}
               </span>

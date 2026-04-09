@@ -112,18 +112,18 @@ export async function adminRoutes(fastify: FastifyInstance) {
   }
 
   function syncOllamaToRegistry(ollamaModels: Array<{ name: string; sizeGb: number }>) {
+    const existing = modelRegistry.listActiveIds()
     for (const m of ollamaModels) {
+      if (existing.has(m.name)) continue
       const baseName = m.name.split(':')[0]
       const tag = m.name.includes(':') ? m.name.split(':')[1] : 'latest'
-      if (!modelRegistry.isActive(m.name)) {
-        modelRegistry.register({
-          id: m.name,
-          hfSource: `ollama://${m.name}`,
-          baseName,
-          quantLevel: tag,
-          sizeGb: m.sizeGb,
-        })
-      }
+      modelRegistry.register({
+        id: m.name,
+        hfSource: `ollama://${m.name}`,
+        baseName,
+        quantLevel: tag,
+        sizeGb: m.sizeGb,
+      })
     }
   }
 
@@ -161,7 +161,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
       const ollamaModels = await fetchOllamaModels()
       // Auto-sync any newly-found models into registry
       syncOllamaToRegistry(ollamaModels)
-      const registered = new Set(modelRegistry.listGrouped().flatMap(g => g.variants.map(v => v.id)))
+      const registered = modelRegistry.listActiveIds()
       return reply.send({
         ollamaUrl: config.ollamaUrl,
         models: ollamaModels.map(m => ({ ...m, imported: registered.has(m.name) })),

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { adminClient, type OllamaModel } from '../api/client'
+import { adminClient, SESSION_EXPIRED, type OllamaModel } from '../api/client'
 
 interface PullProgress {
   status?: string
@@ -170,9 +170,9 @@ export function OllamaSection({ onModelsChanged }: Props) {
       {scanError && (
         <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 space-y-2">
           <p className="text-sm text-red-400 font-medium">
-            {scanError === 'SESSION_EXPIRED' ? 'Session expired — please refresh the page' : 'Cannot reach Ollama'}
+            {scanError === SESSION_EXPIRED ? 'Session expired — please refresh the page' : 'Cannot reach Ollama'}
           </p>
-          {scanError !== 'SESSION_EXPIRED' && (
+          {scanError !== SESSION_EXPIRED && (
             <>
               <p className="text-xs text-red-400/80 font-mono">{scanError}</p>
               {ollamaUrl && (

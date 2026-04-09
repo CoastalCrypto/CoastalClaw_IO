@@ -68,13 +68,13 @@ export function Onboarding({ onComplete }: { onComplete: (sessionId: string) => 
 
   if (step === 2)
     return (
-      <WizardStep title="Your organization" step={2} totalSteps={4}>
-        <label className="block text-sm text-gray-400 mb-2">Organization name</label>
+      <WizardStep title="Name your device" step={2} totalSteps={4}>
+        <label className="block text-sm text-gray-400 mb-2">Device name</label>
         <input
           className={input}
           value={data.orgName}
           onChange={(e) => update({ orgName: e.target.value })}
-          placeholder="Acme Corp"
+          placeholder="Coastal HQ, Home Lab, Studio..."
           autoFocus
         />
         <label className="block text-sm text-gray-400 mb-2 mt-4">What does your org do? <span className="text-gray-600">(optional — helps agents give better answers)</span></label>

@@ -7,6 +7,7 @@ export type { ChatMessage } from '../agents/session.js'
 export interface LocalChatMessage {
   role: 'user' | 'assistant' | 'system' | 'tool'
   content: string
+  images?: string[]
 }
 
 export class OllamaClient {

@@ -14,6 +14,7 @@ export interface OllamaToolSchema {
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant' | 'tool'
   content: string
+  images?: string[]
   tool_calls?: Array<{ id?: string; function: { name: string; arguments: Record<string, unknown> } }>
   tool_call_id?: string
 }

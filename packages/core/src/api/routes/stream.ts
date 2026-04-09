@@ -32,7 +32,7 @@ export async function streamRoutes(fastify: FastifyInstance) {
 
   // POST /api/chat/stream — SSE streaming chat
   fastify.post<{
-    Body: { message: string; sessionId?: string }
+    Body: { message: string; sessionId?: string; images?: string[] }
   }>('/api/chat/stream', {
     schema: {
       body: {
@@ -41,11 +41,12 @@ export async function streamRoutes(fastify: FastifyInstance) {
         properties: {
           message: { type: 'string', minLength: 1, maxLength: 8192 },
           sessionId: { type: 'string' },
+          images: { type: 'array', items: { type: 'string' }, maxItems: 4 },
         },
       },
     },
   }, async (req, reply) => {
-    const { message } = req.body
+    const { message, images } = req.body
     const sessionId = req.body.sessionId ?? randomUUID()
 
     reply.raw.setHeader('Content-Type', 'text/event-stream')
@@ -77,7 +78,7 @@ export async function streamRoutes(fastify: FastifyInstance) {
       }
 
       const loop = new AgenticLoop(router.ollama, toolRegistry, gate, log, onApprovalNeeded, undefined, onToken)
-      const result = await loop.run(session, message, sessionId, messages)
+      const result = await loop.run(session, message, sessionId, messages, undefined, undefined, images)
 
       // If there was no streaming (content came back non-empty without onToken),
       // send the full reply as a single flush

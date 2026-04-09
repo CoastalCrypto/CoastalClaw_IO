@@ -13,6 +13,7 @@ export interface SendMessageOptions {
   message: string
   sessionId?: string
   model?: string
+  images?: string[]
 }
 
 export interface SendMessageResult {
@@ -245,7 +246,7 @@ export class CoreClient {
     return res.json()
   }
 
-  async uploadFile(file: File): Promise<{ filename: string; mimeType: string; size: number; text: string }> {
+  async uploadFile(file: File): Promise<{ filename: string; mimeType: string; size: number; text?: string; dataUrl?: string; isImage?: boolean }> {
     const form = new FormData()
     form.append('file', file)
     const res = await fetch(`${this.baseUrl}/api/upload`, { method: 'POST', body: form })

@@ -8,6 +8,7 @@ type MessageRole = 'user' | 'assistant' | 'approval' | 'team'
 interface Message {
   role: MessageRole
   content: string
+  imageUrl?: string
   domain?: AgentDomain
   // approval fields
   approvalId?: string
@@ -210,6 +211,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
   const [fileNotice, setFileNotice] = useState('')
+  const [pendingImage, setPendingImage] = useState<string | null>(null) // base64 data URL
   const [voiceMuted, setVoiceMuted] = useState(false)
   const [architectToast, setArchitectToast] = useState<{
     proposalId: string; summary: string; vetoDeadline: number
@@ -442,7 +444,9 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
     const text = input.trim()
     if (!text || loading) return
     setInput('')
-    setMessages(m => [...m, { role: 'user', content: text }])
+    const imageForSend = pendingImage
+    setPendingImage(null)
+    setMessages(m => [...m, { role: 'user', content: text, imageUrl: imageForSend ?? undefined }])
     setThinkingDomain(guessDomain(text))
     setLoading(true)
     inputRef2.current?.focus()
@@ -463,7 +467,11 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
       const res = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, sessionId: currentSessionId }),
+        body: JSON.stringify({
+          message: text,
+          sessionId: currentSessionId,
+          ...(imageForSend ? { images: [imageForSend.replace(/^data:[^;]+;base64,/, '')] } : {}),
+        }),
       })
 
       if (!res.ok || !res.body) throw new Error(`Server error ${res.status}`)
@@ -570,9 +578,15 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
     if (!file) return
     setFileNotice(`Reading ${file.name}...`)
     try {
-      const { text, filename } = await coreClient.uploadFile(file)
-      setInput(prev => `${prev ? prev + '\n\n' : ''}[File: ${filename}]\n${text}`.slice(0, 8000))
-      setFileNotice('')
+      const result = await coreClient.uploadFile(file)
+      if (result.isImage && result.dataUrl) {
+        setPendingImage(result.dataUrl)
+        setFileNotice(`Image attached: ${result.filename}`)
+        setTimeout(() => setFileNotice(''), 2000)
+      } else {
+        setInput(prev => `${prev ? prev + '\n\n' : ''}[File: ${result.filename}]\n${result.text ?? ''}`.slice(0, 8000))
+        setFileNotice('')
+      }
       inputRef2.current?.focus()
     } catch (err: any) {
       setFileNotice(`Error: ${err.message}`)
@@ -783,6 +797,11 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
           if (m.role === 'team') return <TeamResult key={i} msg={m} />
           return (
             <div key={i} className="relative group">
+              {m.imageUrl && (
+                <div className="flex justify-end mb-1 pr-3">
+                  <img src={m.imageUrl} alt="attached" className="max-h-48 max-w-xs rounded-lg border border-white/10 object-contain" />
+                </div>
+              )}
               <ChatBubble role={m.role as 'user' | 'assistant'} content={m.content} />
               {m.role === 'assistant' && (
                 <button onClick={() => copyMessage(m.content, i)} className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-600 hover:text-gray-300 px-2 py-0.5 bg-gray-900/80 rounded">
@@ -900,6 +919,13 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
               </div>
             )}
 
+            {pendingImage && (
+              <div className="flex items-center gap-2 mb-2 px-1">
+                <img src={pendingImage} alt="pending" className="h-12 w-12 rounded object-cover border border-cyan-800/50" />
+                <span className="text-xs text-cyan-400 font-mono flex-1">Image ready to send</span>
+                <button onClick={() => setPendingImage(null)} className="text-gray-600 hover:text-red-400 text-xs">✕</button>
+              </div>
+            )}
             <input
               ref={inputRef2}
               className="w-full bg-gray-950/80 border border-gray-700 text-cyan-50 font-mono rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-cyan-500 focus:shadow-[0_0_15px_rgba(0,255,255,0.2)] transition-all placeholder:text-gray-600"

@@ -69,7 +69,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
   })
 
   fastify.post<{
-    Body: { sessionId?: string; message: string; model?: string }
+    Body: { sessionId?: string; message: string; model?: string; images?: string[] }
   }>('/api/chat', {
     schema: {
       body: {
@@ -79,11 +79,12 @@ export async function chatRoutes(fastify: FastifyInstance) {
           sessionId: { type: 'string', maxLength: 128, pattern: '^[a-zA-Z0-9_-]+$' },
           message: { type: 'string', minLength: 1, maxLength: 8192 },
           model: { type: 'string' },
+          images: { type: 'array', items: { type: 'string' }, maxItems: 4 },
         },
       },
     },
   }, async (req, reply) => {
-    const { message, model } = req.body
+    const { message, model, images } = req.body
     const sessionId = req.body.sessionId ?? randomUUID()
 
     const history = await memory.queryHistory({ sessionId, limit: 20 })
@@ -108,7 +109,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     }
 
     const loop = new AgenticLoop(router.ollama, toolRegistry, gate, log, onApprovalNeeded, skillGaps)
-    const result = await loop.run(session, message, sessionId, messages)
+    const result = await loop.run(session, message, sessionId, messages, undefined, undefined, images)
 
     await memory.write({ id: randomUUID(), sessionId, role: 'user', content: message, timestamp: Date.now() }, decision.signals.retention)
     await memory.write({ id: randomUUID(), sessionId, role: 'assistant', content: result.reply, timestamp: Date.now() }, 'useful')

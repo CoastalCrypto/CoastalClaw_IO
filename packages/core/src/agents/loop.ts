@@ -34,8 +34,13 @@ export class AgenticLoop {
     history: ChatMessage[],
     budget?: IterationBudget,
     signal?: AbortSignal,
+    images?: string[],
   ): Promise<LoopResult> {
     const messages: ChatMessage[] = session.buildMessages(userMessage, history)
+    if (images?.length) {
+      const last = messages[messages.length - 1]
+      if (last.role === 'user') last.images = images
+    }
     const iterBudget = budget ?? new IterationBudget(MAX_TURNS())
 
     try {

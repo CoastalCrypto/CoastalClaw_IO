@@ -45,6 +45,8 @@ export function System({ onNav }: { onNav: (page: NavPage) => void }) {
   const [updating, setUpdating] = useState(false)
   const [updateMsg, setUpdateMsg] = useState('')
   const [statsError, setStatsError] = useState('')
+  const [updateAvailable, setUpdateAvailable] = useState(false)
+  const [remoteCommit, setRemoteCommit] = useState<string | null>(null)
 
   const fetchStats = useCallback(() => {
     coreClient.getSystemStats()
@@ -66,12 +68,27 @@ export function System({ onNav }: { onNav: (page: NavPage) => void }) {
     return () => clearInterval(id)
   }, [fetchStats])
 
+  useEffect(() => {
+    const check = () => {
+      coreClient.checkForUpdate()
+        .then(({ updateAvailable: avail, remoteCommit: rc }) => {
+          setUpdateAvailable(avail)
+          setRemoteCommit(rc)
+        })
+        .catch(() => {})
+    }
+    check()
+    const id = setInterval(check, 5 * 60 * 1000) // recheck every 5 min
+    return () => clearInterval(id)
+  }, [])
+
   useEffect(() => { fetchLogs(logService) }, [logService, fetchLogs])
 
   const handleUpdate = async () => {
     if (!confirm('This will pull the latest code, rebuild, and restart the server. Continue?')) return
     setUpdating(true)
     setUpdateMsg('')
+    setUpdateAvailable(false)
     try {
       const { message } = await coreClient.triggerUpdate()
       setUpdateMsg(message)
@@ -95,13 +112,25 @@ export function System({ onNav }: { onNav: (page: NavPage) => void }) {
               onClick={fetchStats}
               className="text-xs text-gray-500 hover:text-cyan-400 font-mono transition-colors"
             >↺ refresh</button>
-            <button
-              onClick={handleUpdate}
-              disabled={updating}
-              className="px-4 py-2 text-sm bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg font-mono transition-colors disabled:opacity-40"
-            >
-              {updating ? 'Updating...' : 'Update CoastalClaw'}
-            </button>
+            <div className="relative">
+              <button
+                onClick={handleUpdate}
+                disabled={updating}
+                className={`px-4 py-2 text-sm border rounded-lg font-mono transition-colors disabled:opacity-40 ${
+                  updateAvailable
+                    ? 'bg-cyan-900/40 hover:bg-cyan-900/60 border-cyan-700 text-cyan-300'
+                    : 'bg-gray-800 hover:bg-gray-700 border-gray-700'
+                }`}
+              >
+                {updating ? 'Updating...' : updateAvailable ? 'Update available ↑' : 'Up to date'}
+              </button>
+              {updateAvailable && (
+                <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-cyan-400 animate-ping" />
+              )}
+            </div>
+            {updateAvailable && remoteCommit && (
+              <span className="text-xs text-cyan-500 font-mono">→ {remoteCommit}</span>
+            )}
           </div>
         </div>
 

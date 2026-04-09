@@ -185,6 +185,24 @@ export async function systemRoutes(fastify: FastifyInstance) {
     return reply.send(wav)
   })
 
+  // GET /api/admin/update-check — compare local HEAD to remote HEAD (no user input)
+  fastify.get('/api/admin/update-check', async (_req, reply) => {
+    try {
+      const localFull  = gitCommit() // already uses execSync safely
+      const remoteLine = execSync('git ls-remote origin HEAD', { timeout: 10_000 }).toString().trim()
+      const remoteFull = remoteLine.split(/\s+/)[0] ?? ''
+      if (!remoteFull) return reply.send({ updateAvailable: false, localCommit: localFull, remoteCommit: null })
+      const localLong = execSync('git rev-parse HEAD', { timeout: 2000 }).toString().trim()
+      return reply.send({
+        updateAvailable: !remoteFull.startsWith(localLong.slice(0, remoteFull.length)),
+        localCommit: localFull,
+        remoteCommit: remoteFull.slice(0, 7),
+      })
+    } catch {
+      return reply.send({ updateAvailable: false, localCommit: gitCommit(), remoteCommit: null })
+    }
+  })
+
   // POST /api/admin/update — pull latest + rebuild + restart
   fastify.post('/api/admin/update', async (_req, reply) => {
     const installDir = process.cwd()

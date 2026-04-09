@@ -230,6 +230,12 @@ export class CoreClient {
     return res.json()
   }
 
+  async checkForUpdate(): Promise<{ updateAvailable: boolean; localCommit: string; remoteCommit: string | null }> {
+    const res = await fetch(`${this.baseUrl}/api/admin/update-check`, { headers: this.adminHeaders() })
+    if (!res.ok) return { updateAvailable: false, localCommit: 'unknown', remoteCommit: null }
+    return res.json()
+  }
+
   async triggerUpdate(): Promise<{ ok: boolean; message: string }> {
     const res = await fetch(`${this.baseUrl}/api/admin/update`, {
       method: 'POST',

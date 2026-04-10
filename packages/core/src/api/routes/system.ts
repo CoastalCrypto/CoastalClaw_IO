@@ -178,10 +178,12 @@ export async function systemRoutes(fastify: FastifyInstance) {
     if (!text || !voice) return reply.status(400).send({ error: 'text and voice required' })
     const vibe = new VibeVoiceClient()
     const chunks: Buffer[] = []
-    for await (const chunk of vibe.speak(text, voice)) {
-      chunks.push(chunk)
+    let sampleRate = 24_000
+    for await (const { pcm, sampleRate: sr } of vibe.speak(text, voice)) {
+      chunks.push(pcm)
+      sampleRate = sr
     }
-    const wav = pcmToWav(Buffer.concat(chunks))
+    const wav = pcmToWav(Buffer.concat(chunks), sampleRate)
     reply.header('Content-Type', 'audio/wav')
     return reply.send(wav)
   })

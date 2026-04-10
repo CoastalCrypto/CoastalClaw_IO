@@ -134,6 +134,7 @@ export async function buildServer() {
   await fastify.register(cronRoutes, { store: cronStore, scheduler: cronScheduler })
 
   const skillStore = new SkillStore(db)
+  skillStore.seedDefaults()
   await fastify.register(skillRoutes, { store: skillStore })
 
   fastify.addHook('onReady', async () => {

@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc && node -e \"const fs=require('fs');if(fs.existsSync('src/agents/souls'))fs.cpSync('src/agents/souls','dist/agents/souls',{recursive:true})\"",
+    "build": "tsc && node -e \"const fs=require('fs');if(fs.existsSync('src/agents/souls'))fs.cpSync('src/agents/souls','dist/agents/souls',{recursive:true});if(fs.existsSync('src/skills/default-skills.json'))fs.copyFileSync('src/skills/default-skills.json','dist/skills/default-skills.json')\"",
     "dev": "node --watch --loader ts-node/esm src/main.ts",
     "test": "vitest run",
     "test:watch": "vitest"

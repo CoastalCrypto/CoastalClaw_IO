@@ -1,5 +1,10 @@
 import Database from 'better-sqlite3'
 import { randomUUID } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export interface Skill {
   id: string
@@ -66,6 +71,14 @@ export class SkillStore {
 
   delete(id: string): void {
     this.db.prepare('DELETE FROM skills WHERE id = ?').run(id)
+  }
+
+  seedDefaults(): void {
+    const { n } = this.db.prepare('SELECT COUNT(*) as n FROM skills').get() as { n: number }
+    if (n > 0) return
+    const raw = readFileSync(join(__dirname, 'default-skills.json'), 'utf-8')
+    const skills = JSON.parse(raw) as Array<Pick<Skill, 'name' | 'description' | 'prompt' | 'agentId'>>
+    for (const s of skills) this.create(s)
   }
 
   private map(row: any): Skill {

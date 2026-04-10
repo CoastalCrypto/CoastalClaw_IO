@@ -138,10 +138,12 @@ export class VoicePipeline extends EventEmitter {
     this.setState(PipelineState.Speaking)
     if (this.vibeVoiceAvailable) {
       const chunks: Buffer[] = []
-      for await (const chunk of this.vibeVoice.speak(reply)) {
-        chunks.push(chunk)
+      let resolvedSampleRate = 24_000
+      for await (const { pcm, sampleRate } of this.vibeVoice.speak(reply)) {
+        chunks.push(pcm)
+        resolvedSampleRate = sampleRate
       }
-      await this.player.play(Buffer.concat(chunks), 24_000)
+      await this.player.play(Buffer.concat(chunks), resolvedSampleRate)
     } else {
       const audio = await synthesize(reply, {
         voiceModel: this.opts.voiceModel,

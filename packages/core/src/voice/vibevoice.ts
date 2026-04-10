@@ -46,8 +46,7 @@ export class VibeVoiceClient {
     return res.json() as Promise<Transcript>
   }
 
-  async *speak(text: string, voice = 'en_us_female_1'): AsyncIterable<Buffer> {
-    // WebSocket streaming — yields 24kHz PCM chunks as they arrive
+  async *speak(text: string, voice = 'en_us_female_1'): AsyncIterable<{ pcm: Buffer; sampleRate: number }> {
     const wsUrl = this.baseUrl.replace(/^http/, 'ws') + '/tts/stream'
     const { WebSocket } = await import('ws')
     const ws = new WebSocket(wsUrl)
@@ -60,17 +59,28 @@ export class VibeVoiceClient {
     ws.send(JSON.stringify({ text, voice }))
 
     const chunks: Buffer[] = []
+    let sampleRate = 24_000       // fallback for servers without metadata frame
+    let metadataSeen = false
     let done = false
     let error: unknown = null
     let notify: (() => void) | null = null
 
-    ws.on('message', (data: Buffer | string) => {
-      if (Buffer.isBuffer(data)) {
+    ws.on('message', (data: Buffer, isBinary: boolean) => {
+      if (isBinary) {
+        if (!metadataSeen) {
+          // Old server — first message is raw PCM, no metadata frame
+          metadataSeen = true
+        }
         chunks.push(data)
       } else {
         try {
-          const msg = JSON.parse(data.toString()) as { done?: boolean }
-          if (msg.done) done = true
+          const msg = JSON.parse(data.toString()) as { sample_rate?: number; done?: boolean }
+          if (!metadataSeen && typeof msg.sample_rate === 'number') {
+            sampleRate = msg.sample_rate
+            metadataSeen = true
+          } else if (msg.done) {
+            done = true
+          }
         } catch { /* ignore non-JSON */ }
       }
       notify?.()
@@ -79,10 +89,16 @@ export class VibeVoiceClient {
     ws.on('error', (err) => { error = err; done = true; notify?.() })
     ws.on('close', () => { done = true; notify?.() })
 
+    // Wait for the metadata frame (or the first PCM chunk in backwards-compat mode)
+    while (!metadataSeen && !done) {
+      await new Promise<void>(resolve => { notify = resolve })
+      notify = null
+    }
+
     try {
       while (!done || chunks.length > 0) {
         if (chunks.length > 0) {
-          yield chunks.shift()!
+          yield { pcm: chunks.shift()!, sampleRate }
         } else if (!done) {
           await new Promise<void>(resolve => { notify = resolve })
           notify = null

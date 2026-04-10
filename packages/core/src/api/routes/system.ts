@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { readFileSync, existsSync } from 'node:fs'
-import { execSync } from 'node:child_process'
+import { execSync, execFileSync } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadConfig } from '../../config.js'
@@ -85,8 +85,9 @@ function memInfo(): { total: number; used: number; free: number; cached: number 
 function diskStats(paths: string[]): DiskStat[] {
   return paths.map((p) => {
     try {
-      const out = execSync(`df -B1 "${p}" 2>/dev/null | tail -1`, { timeout: 2000 }).toString().trim()
-      const [, total, used, free] = out.split(/\s+/).map(Number)
+      const out = execFileSync('df', ['-B1', p], { timeout: 2000 }).toString().trim()
+      const lastLine = out.split('\n').filter(Boolean).at(-1) ?? ''
+      const [, total, used, free] = lastLine.split(/\s+/).map(Number)
       return { path: p, total, used, free }
     } catch { return { path: p, total: 0, used: 0, free: 0 } }
   })

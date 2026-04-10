@@ -71,6 +71,8 @@ async def health():
 
 @app.post("/asr")
 async def transcribe(audio: UploadFile = File(...), sample_rate: int = Form(16000)):
+    if asr_model is None or asr_processor is None:
+        return JSONResponse({"error": "ASR model not yet loaded"}, status_code=503)
     raw = await audio.read()
     audio_array, sr = sf.read(io.BytesIO(raw))
     if sr != 16000:
@@ -87,20 +89,27 @@ async def transcribe(audio: UploadFile = File(...), sample_rate: int = Form(1600
 @app.websocket("/tts/stream")
 async def tts_stream(ws: WebSocket):
     await ws.accept()
-    data = json.loads(await ws.receive_text())
-    text = data.get("text", "")
-    voice = data.get("voice", "en_us_female_1")
-    from vibevoice.modular.streamer import AsyncAudioStreamer
-    streamer = AsyncAudioStreamer(batch_size=1)
-    inputs = tts_processor(text=[text], voice=voice, return_tensors="pt")
-    inputs = {k: v.to(tts_model.device) for k, v in inputs.items()}
-    asyncio.create_task(asyncio.to_thread(tts_model.generate, **inputs, streamer=streamer))
-    await ws.send_text(json.dumps({"sample_rate": TTS_SAMPLE_RATE, "channels": 1}))
-    async for chunk in streamer:
-        pcm = (chunk[0].cpu().numpy() * 32767).astype(np.int16).tobytes()
-        await ws.send_bytes(pcm)
-    await ws.send_text(json.dumps({"done": True}))
-    await ws.close()
+    if tts_model is None or tts_processor is None:
+        await ws.send_text(json.dumps({"error": "TTS model not yet loaded"}))
+        await ws.close(1013)
+        return
+    try:
+        data = json.loads(await ws.receive_text())
+        text = data.get("text", "")
+        voice = data.get("voice", "en_us_female_1")
+        from vibevoice.modular.streamer import AsyncAudioStreamer
+        streamer = AsyncAudioStreamer(batch_size=1)
+        inputs = tts_processor(text=[text], voice=voice, return_tensors="pt")
+        inputs = {k: v.to(tts_model.device) for k, v in inputs.items()}
+        asyncio.create_task(asyncio.to_thread(tts_model.generate, **inputs, streamer=streamer))
+        await ws.send_text(json.dumps({"sample_rate": TTS_SAMPLE_RATE, "channels": 1}))
+        async for chunk in streamer:
+            pcm = (chunk[0].cpu().numpy() * 32767).astype(np.int16).tobytes()
+            await ws.send_bytes(pcm)
+        await ws.send_text(json.dumps({"done": True}))
+        await ws.close()
+    except Exception:
+        log.debug("TTS WebSocket closed by client mid-stream")
 
 if __name__ == "__main__":
     import uvicorn

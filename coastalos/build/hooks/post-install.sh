@@ -25,7 +25,6 @@ pip3 install openwakeword --break-system-packages
 curl -L https://github.com/infiniflow/infinity/releases/latest/download/infinity-linux-x86_64 \
   -o /usr/local/bin/infinity && chmod +x /usr/local/bin/infinity
 mkdir -p /var/lib/coastalclaw/infinity
-chown coastal:coastal /var/lib/coastalclaw/infinity
 systemctl enable coastal-infinity.service
 
 # Install vLLM, VibeVoice, and AirLLM only if GPU present (CUDA or ROCm)

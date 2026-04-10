@@ -29,7 +29,7 @@ export function restartServer(installDir: string): void {
     process.exit(0)
   } else {
     try {
-      execSync('systemctl restart coastalclaw-server', { timeout: 10_000 })
+      execSync('systemctl restart coastal-server', { timeout: 10_000 })
     } catch {
       process.exit(0)
     }

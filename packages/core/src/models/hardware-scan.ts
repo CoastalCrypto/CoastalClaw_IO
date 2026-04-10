@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process'
+import { execSync, execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
 export interface HardwareSummary {
@@ -54,8 +54,9 @@ function readGpuNvidia(): { name: string; vramGb: number } | null {
 
 function readDiskLinux(path: string): number {
   try {
-    const out = execSync(`df -B1 "${path}" 2>/dev/null | tail -1`, { timeout: 2000 }).toString().trim()
-    const [, , , free] = out.split(/\s+/).map(Number)
+    const out = execFileSync('df', ['-B1', path], { timeout: 2000 }).toString().trim()
+    const lastLine = out.split('\n').filter(Boolean).at(-1) ?? ''
+    const [, , , free] = lastLine.split(/\s+/).map(Number)
     return (free ?? 0) / (1024 ** 3)
   } catch { return 0 }
 }

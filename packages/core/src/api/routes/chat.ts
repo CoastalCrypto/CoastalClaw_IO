@@ -12,6 +12,8 @@ import { createBackend } from '../../tools/backends/index.js'
 import { BrowserSessionManager } from '../../tools/browser/session-manager.js'
 import { McpAdapter } from '../../tools/mcp/adapter.js'
 import { PersonaManager } from '../../persona/manager.js'
+import { ContextStore } from '../../context/store.js'
+import { UserModelStore } from '../../persona/user-model.js'
 import { loadConfig } from '../../config.js'
 import Database from 'better-sqlite3'
 import { randomUUID } from 'node:crypto'
@@ -38,9 +40,16 @@ export async function chatRoutes(fastify: FastifyInstance) {
   const log = new ActionLog(db)
   const skillGaps = new SkillGapsLog(config.dataDir)
   const personaMgr = new PersonaManager(pathJoin(config.dataDir, 'persona.db'))
+  const contextStore = new ContextStore(db)
+  const userModelStore = new UserModelStore(db)
 
-  // Pass only PATH to MCP subprocesses — never expose secrets via process.env
-  const mcpEnv: Record<string, string> = { PATH: process.env.PATH ?? '' }
+  // Pass all non-secret env vars to MCP subprocesses. On Windows, PATH alone
+  // is not enough — system vars like USERPROFILE, APPDATA, TEMP are needed for
+  // MCP servers to resolve home/temp directories. Block secret-pattern keys only.
+  const SECRETS_RE = /key|token|secret|password|auth|credential/i
+  const mcpEnv: Record<string, string> = Object.fromEntries(
+    Object.entries(process.env).filter(([k, v]) => v !== undefined && !SECRETS_RE.test(k))
+  ) as Record<string, string>
   const mcpThinking = new McpAdapter(
     process.platform === 'win32' ? 'npx.cmd' : 'npx',
     ['@modelcontextprotocol/server-sequential-thinking@2025.12.18'],
@@ -95,7 +104,8 @@ export async function chatRoutes(fastify: FastifyInstance) {
     const decision = await router.cascade.route(message)
     const agent = agentRegistry.getByDomain(decision.domain) ?? agentRegistry.get('general')!
     const toolDefs = toolRegistry.getDefinitionsFor(agent.tools)
-    const session = new AgentSession(agent, toolDefs, personaMgr.get())
+    const contextDocs = contextStore.listForAgent(agent.id)
+    const session = new AgentSession(agent, toolDefs, personaMgr.get(), contextDocs, userModelStore)
 
     // Pending approval callback — sends WS event to client
     const pendingApprovals = new Map<string, string>()

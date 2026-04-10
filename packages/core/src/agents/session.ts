@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs'
 import type { AgentConfig, ToolDefinition, ActionSummary } from './types.js'
 import { PersonaManager, DEFAULT_PERSONA, type Persona } from '../persona/manager.js'
+import type { ContextDoc } from '../context/store.js'
+import type { UserModelStore } from '../persona/user-model.js'
 
 export interface OllamaToolSchema {
   type: 'function'
@@ -28,6 +30,8 @@ export class AgentSession {
     readonly agent: AgentConfig,
     readonly allowedTools: ToolDefinition[],
     private persona: Persona = DEFAULT_PERSONA,
+    private contextDocs: Pick<ContextDoc, 'title' | 'content'>[] = [],
+    private userModel: UserModelStore | null = null,
   ) {}
 
   get systemPrompt(): string {
@@ -50,7 +54,11 @@ export class AgentSession {
       .map(t => `- ${t.name}(${Object.keys(t.parameters.properties).join(', ')}): ${t.description}`)
       .join('\n')
     const now = new Date().toISOString()
-    this._systemPrompt = `${interpolated}\n\nAvailable tools:\n${toolLines}\n\nCurrent date/time: ${now}`
+    const contextSection = this.contextDocs.length > 0
+      ? '\n\n---\n## Project Context\n' + this.contextDocs.map(d => `### ${d.title}\n${d.content}`).join('\n\n')
+      : ''
+    const userSection = this.userModel?.toPromptSection() ?? ''
+    this._systemPrompt = `${interpolated}${contextSection}${userSection}\n\nAvailable tools:\n${toolLines}\n\nCurrent date/time: ${now}`
     return this._systemPrompt
   }
 

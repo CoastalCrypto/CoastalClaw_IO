@@ -66,6 +66,10 @@ export class UnifiedMemory {
     return this.lossless.query(q)
   }
 
+  search(query: string, limit?: number): MemoryEntry[] {
+    return this.lossless.search(query, limit)
+  }
+
   async searchPersonalized(userId: string, query: string) {
     if (!this.mem0) return []
     return this.mem0.search(userId, query)

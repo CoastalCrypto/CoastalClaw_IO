@@ -26,9 +26,16 @@ import { channelRoutes } from './api/routes/channels.js'
 import { userRoutes } from './api/routes/users.js'
 import { cronRoutes } from './api/routes/crons.js'
 import { skillRoutes } from './api/routes/skills.js'
+import { searchRoutes } from './api/routes/search.js'
+import { contextRoutes } from './api/routes/context.js'
+import { userModelRoutes } from './api/routes/user-model.js'
 import { CronStore } from './cron/store.js'
 import { CronScheduler } from './cron/scheduler.js'
 import { SkillStore } from './skills/store.js'
+import { ContextStore } from './context/store.js'
+import { UserModelStore } from './persona/user-model.js'
+import { SkillGapsLog } from './agents/skill-gaps.js'
+import { UnifiedMemory } from './memory/index.js'
 import { UserStore } from './users/store.js'
 import { AgentRegistry } from './agents/registry.js'
 import { PermissionGate } from './agents/permission-gate.js'
@@ -135,7 +142,15 @@ export async function buildServer() {
 
   const skillStore = new SkillStore(db)
   skillStore.seedDefaults()
-  await fastify.register(skillRoutes, { store: skillStore })
+  const skillGaps = new SkillGapsLog(config.dataDir)
+  const contextStore = new ContextStore(db)
+  const userModelStore = new UserModelStore(db)
+  const searchMemory = new UnifiedMemory({ dataDir: config.dataDir })
+
+  await fastify.register(skillRoutes, { store: skillStore, router: pipelineRouter, gaps: skillGaps })
+  await fastify.register(searchRoutes, { memory: searchMemory })
+  await fastify.register(contextRoutes, { store: contextStore })
+  await fastify.register(userModelRoutes, { store: userModelStore })
 
   fastify.addHook('onReady', async () => {
     cronScheduler.start()

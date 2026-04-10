@@ -19,6 +19,12 @@ export class LosslessAdapter implements MemoryStore {
         metadata TEXT
       );
       CREATE INDEX IF NOT EXISTS idx_session ON messages(session_id);
+      CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
+        id UNINDEXED,
+        session_id UNINDEXED,
+        content,
+        tokenize = 'porter ascii'
+      );
     `)
   }
 
@@ -36,6 +42,9 @@ export class LosslessAdapter implements MemoryStore {
         entry.timestamp,
         entry.metadata ? JSON.stringify(entry.metadata) : null
       )
+    this.db
+      .prepare(`INSERT OR REPLACE INTO messages_fts (id, session_id, content) VALUES (?, ?, ?)`)
+      .run(entry.id, entry.sessionId, entry.content)
   }
 
   async query(q: MemoryQuery): Promise<MemoryEntry[]> {
@@ -55,6 +64,33 @@ export class LosslessAdapter implements MemoryStore {
       }>
 
     return rows.map((r) => ({
+      id: r.id,
+      sessionId: r.session_id,
+      role: r.role as MemoryEntry['role'],
+      content: r.content,
+      timestamp: r.timestamp,
+      metadata: r.metadata ? (() => { try { return JSON.parse(r.metadata as string) } catch { return undefined } })() : undefined,
+    }))
+  }
+
+  search(query: string, limit = 20): MemoryEntry[] {
+    const rows = this.db
+      .prepare(`
+        SELECT m.* FROM messages m
+        JOIN messages_fts fts ON fts.id = m.id
+        WHERE messages_fts MATCH ?
+        ORDER BY rank
+        LIMIT ?
+      `)
+      .all(query, limit) as Array<{
+        id: string
+        session_id: string
+        role: string
+        content: string
+        timestamp: number
+        metadata: string | null
+      }>
+    return rows.map(r => ({
       id: r.id,
       sessionId: r.session_id,
       role: r.role as MemoryEntry['role'],

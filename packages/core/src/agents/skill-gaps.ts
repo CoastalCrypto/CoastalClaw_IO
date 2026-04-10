@@ -65,6 +65,15 @@ export class SkillGapsLog {
     }))
   }
 
+  listByAgent(agentId: string): SkillGap[] {
+    return (this.db
+      .prepare('SELECT * FROM skill_gaps WHERE agent_id = ? AND reviewed = 0 ORDER BY timestamp DESC LIMIT 50')
+      .all(agentId) as any[]).map(r => ({
+        id: r.id, sessionId: r.session_id, agentId: r.agent_id, toolName: r.tool_name,
+        failurePattern: r.failure_pattern, args: JSON.parse(r.args), timestamp: r.timestamp, reviewed: Boolean(r.reviewed),
+      }))
+  }
+
   markReviewed(id: string): void {
     this.db.prepare('UPDATE skill_gaps SET reviewed = 1 WHERE id = ?').run(id)
   }

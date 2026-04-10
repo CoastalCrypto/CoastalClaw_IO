@@ -135,15 +135,62 @@ if (-not (Test-Path $WebEnv)) {
     Write-Ok "Created $WebEnv"
 }
 
-# ── Pull default model ────────────────────────────────────────
-Write-Step "7) Pulling default model (llama3.2)"
-$ollamaList = ollama list 2>$null
-if ($ollamaList -match "llama3\.2") {
-    Write-Ok "llama3.2 already pulled"
+# ── Select and pull Ollama model ──────────────────────────────
+Write-Step "7) Selecting Ollama model"
+
+# Inline hardware scan (server not running yet; no wmic on Windows 11)
+$RamGB = 0; $FreeGB = 0; $VramGB = 0
+try {
+    $cs = Get-CimInstance Win32_ComputerSystem -ErrorAction Stop
+    $RamGB = [int][math]::Round($cs.TotalPhysicalMemory / 1GB)
+    $os = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop
+    $FreeGB = [int][math]::Round($os.FreePhysicalMemory / 1MB)
+} catch {}
+try {
+    $nvsmi = nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2>$null | Select-Object -First 1
+    if ($nvsmi -match '^\d+') { $VramGB = [int][math]::Round([int]$nvsmi / 1024) }
+} catch {}
+if ($VramGB -eq 0) {
+    try {
+        $vc = Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue |
+              Where-Object { $_.AdapterRAM -gt 0 } | Select-Object -First 1
+        if ($vc) { $VramGB = [int][math]::Round($vc.AdapterRAM / 1GB) }
+    } catch {}
+}
+
+$MinModel = if ($RamGB -lt 4) { "tinyllama" } else { "llama3.2:1b" }
+if ($VramGB -ge 4) {
+    $RecModel = if ($VramGB -ge 8) { "llama3.1:8b-instruct-q4_K_M" } else { "llama3.2" }
+    $OptModel = if ($VramGB -ge 12) { "llama3.1:8b-instruct-q8_0" } `
+                elseif ($VramGB -ge 8) { "llama3.1:8b-instruct-q4_K_M" } `
+                else { "llama3.2" }
 } else {
-    Write-Info "Pulling llama3.2 (~2 GB)..."
-    ollama pull llama3.2
-    Write-Ok "llama3.2 ready"
+    $RecModel = if ($RamGB -ge 16) { "llama3.1:8b-instruct-q4_K_M" } `
+                elseif ($RamGB -ge 8) { "llama3.2" } else { "llama3.2:1b" }
+    $OptModel = if ($RamGB -ge 32) { "llama3.1:8b-instruct-q8_0" } `
+                elseif ($RamGB -ge 16) { "llama3.1:8b-instruct-q4_K_M" } `
+                elseif ($RamGB -ge 8) { "llama3.2" } else { $RecModel }
+}
+
+Write-Info "Hardware: $RamGB GB RAM, $FreeGB GB free$(if ($VramGB -gt 0) { ", $VramGB GB VRAM" })"
+Write-Host ""
+Write-Host "  Model recommendations:" -ForegroundColor White
+Write-Host "  minimum     $MinModel" -ForegroundColor DarkGray
+Write-Host "  recommended $RecModel  <-- default" -ForegroundColor Cyan
+Write-Host "  optimal     $OptModel" -ForegroundColor White
+Write-Host ""
+
+$ChosenModel = Read-Host "  Press Enter to install [$RecModel] or type a different model name"
+if (-not $ChosenModel) { $ChosenModel = $RecModel }
+
+$OllamaList = ollama list 2>$null
+if ($OllamaList -match [regex]::Escape($ChosenModel)) {
+    Write-Ok "$ChosenModel already pulled"
+} else {
+    Write-Info "Pulling $ChosenModel..."
+    ollama pull $ChosenModel
+    if ($LASTEXITCODE -ne 0) { Write-Fail "ollama pull $ChosenModel failed (exit $LASTEXITCODE)" }
+    Write-Ok "$ChosenModel ready"
 }
 
 # ── Launch ────────────────────────────────────────────────────

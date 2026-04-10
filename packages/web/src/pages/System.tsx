@@ -35,7 +35,7 @@ function fmtUptime(s: number): string {
   return h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 
-const LOG_SERVICES = ['coastalclaw-server', 'coastalclaw-daemon', 'coastalclaw-architect', 'ollama']
+const LOG_SERVICES = ['coastal-server', 'coastal-daemon', 'coastal-architect', 'ollama']
 
 export function System({ onNav }: { onNav: (page: NavPage) => void }) {
   const [stats, setStats]       = useState<SystemStats | null>(null)
@@ -86,6 +86,7 @@ export function System({ onNav }: { onNav: (page: NavPage) => void }) {
   const [hwScan, setHwScan] = useState<HardwareScan | null>(null)
   const [hwLoading, setHwLoading] = useState(false)
   const [hwError, setHwError] = useState('')
+  const [pullingModels, setPullingModels] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     setHwLoading(true)
@@ -266,10 +267,21 @@ export function System({ onNav }: { onNav: (page: NavPage) => void }) {
                       <div className="text-xs text-gray-500">{rec.reason} · {rec.sizeGb} GB</div>
                     </div>
                     <button
-                      onClick={() => coreClient.pullOllamaModel(rec.model, crypto.randomUUID())}
-                      className="text-xs px-3 py-1.5 bg-cyan-900/30 hover:bg-cyan-900/60 border border-cyan-800 text-cyan-400 rounded font-mono transition-colors flex-shrink-0"
+                      disabled={pullingModels.has(rec.model)}
+                      onClick={async () => {
+                        const model = rec.model
+                        setPullingModels(prev => new Set(prev).add(model))
+                        try {
+                          await coreClient.pullOllamaModel(model, crypto.randomUUID())
+                        } catch (e) {
+                          console.error('[install-model] failed:', e)
+                        } finally {
+                          setPullingModels(prev => { const s = new Set(prev); s.delete(model); return s })
+                        }
+                      }}
+                      className="text-xs px-3 py-1.5 bg-cyan-900/30 hover:bg-cyan-900/60 border border-cyan-800 text-cyan-400 rounded font-mono transition-colors flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      Install
+                      {pullingModels.has(rec.model) ? 'Installing…' : 'Install'}
                     </button>
                   </div>
                 ))}

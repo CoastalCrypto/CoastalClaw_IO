@@ -100,7 +100,7 @@ function readMemInfoWindows(): { totalGb: number; freeGb: number } | null {
 function readGpuWindows(): { name: string; vramGb: number } | null {
   try {
     const out = execSync(
-      'powershell -NoProfile -Command "Get-CimInstance Win32_VideoController | Where-Object { $_.AdapterRAM -gt 0 } | Select-Object -First 1 -ExpandProperty Name,AdapterRAM | ConvertTo-Json"',
+      'powershell -NoProfile -Command "Get-CimInstance Win32_VideoController | Where-Object { $_.AdapterRAM -gt 0 } | Select-Object -First 1 Name,AdapterRAM | ConvertTo-Json"',
       { timeout: 3000 }
     ).toString().trim()
     const obj = JSON.parse(out) as { Name?: string; AdapterRAM?: number }

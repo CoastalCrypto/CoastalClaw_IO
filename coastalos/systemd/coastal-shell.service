@@ -12,6 +12,7 @@ Environment=XDG_RUNTIME_DIR=/run/user/__COASTAL_UID__
 Environment=HOME=/home/coastal
 ExecStart=/usr/bin/labwc
 Restart=always
+RestartSec=3
 
 [Install]
 WantedBy=graphical.target

@@ -88,6 +88,8 @@ export class VoicePipeline extends EventEmitter {
         this.vad.feed(data)
       } else if (this._state === PipelineState.Listening) {
         this.wakeWord.feed(data)
+      } else if (this._state === PipelineState.Transcribing) {
+        this.audioBuffer.push(data)
       }
     })
     this.recorder.start()

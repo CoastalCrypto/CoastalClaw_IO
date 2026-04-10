@@ -8,7 +8,7 @@ Type=simple
 User=coastal
 WorkingDirectory=/opt/coastalclaw
 Environment=CC_AIRLLM_MODEL=meta-llama/Meta-Llama-3-70B-Instruct
-ExecStart=/usr/local/bin/airllm-server --model ${CC_AIRLLM_MODEL} --port 8002
+ExecStart=/bin/sh -c '/usr/local/bin/airllm-server --model "$CC_AIRLLM_MODEL" --port 8002'
 Restart=on-failure
 RestartSec=15
 

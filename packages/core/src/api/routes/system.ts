@@ -22,7 +22,7 @@ const VIBE_VOICES = [
   { id: 'en_au_male_1',   label: 'Australian English — Male' },
 ]
 
-function pcmToWav(pcm: Buffer, sampleRate = 24_000, channels = 1, bitDepth = 16): Buffer {
+function pcmToWav(pcm: Buffer, sampleRate = 22_050, channels = 1, bitDepth = 16): Buffer {
   const byteRate = (sampleRate * channels * bitDepth) / 8
   const blockAlign = (channels * bitDepth) / 8
   const h = Buffer.alloc(44)
@@ -55,13 +55,22 @@ function gitCommit(): string {
 
 interface DiskStat { path: string; total: number; used: number; free: number }
 
+// Module-level state for delta-based CPU measurement
+let _prevCpuTotal = 0
+let _prevCpuBusy  = 0
+
 function cpuPercent(): number {
   try {
     const a = readFileSync('/proc/stat', 'utf8').split('\n')[0].split(/\s+/).slice(1).map(Number)
     const [user, nice, system, idle, iowait = 0, irq = 0, softirq = 0] = a
     const total = user + nice + system + idle + iowait + irq + softirq
     const busy  = total - idle - iowait
-    return Math.round((busy / total) * 100)
+    const deltaTotal = total - _prevCpuTotal
+    const deltaBusy  = busy  - _prevCpuBusy
+    _prevCpuTotal = total
+    _prevCpuBusy  = busy
+    if (deltaTotal === 0) return 0
+    return Math.round((deltaBusy / deltaTotal) * 100)
   } catch { return 0 }
 }
 
@@ -140,13 +149,14 @@ export async function systemRoutes(fastify: FastifyInstance) {
   fastify.get<{ Querystring: { service?: string; lines?: string } }>(
     '/api/admin/logs',
     async (req, reply) => {
-      const service = req.query.service ?? 'coastalclaw-server'
-      const lines   = Math.min(Number(req.query.lines ?? 200), 1000)
+      const rawService = req.query.service ?? 'coastal-server'
+      const service    = rawService.replace(/[^a-z0-9._-]/gi, '')  // sanitise once, use everywhere
+      const lines      = Math.min(Number(req.query.lines ?? 200), 1000)
 
       // Prefer journald if available, fall back to log file
       try {
         const out = execSync(
-          `journalctl -u "${service.replace(/[^a-z0-9._-]/gi, '')}" -n ${lines} --no-pager --output=short-iso 2>/dev/null`,
+          `journalctl -u "${service}" -n ${lines} --no-pager --output=short-iso 2>/dev/null`,
           { timeout: 5000 }
         ).toString()
         return reply.send({ service, lines: out.split('\n').filter(Boolean) })

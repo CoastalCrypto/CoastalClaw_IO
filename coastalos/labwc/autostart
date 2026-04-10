@@ -21,10 +21,19 @@ fi
 
 # ── Wait for coastal-server ───────────────────────────────────
 # Give systemd up to 15s to bring the server up before Chromium opens
+server_ready=false
 for i in $(seq 1 15); do
-  curl -sf --max-time 1 http://localhost:4747/health > /dev/null 2>&1 && break
+  if curl -sf --max-time 1 http://localhost:4747/health > /dev/null 2>&1; then
+    server_ready=true
+    break
+  fi
   sleep 1
 done
+
+if [ "$server_ready" = "false" ]; then
+  alacritty --title "CoastalClaw — Server Error" \
+    -e sh -c 'printf "coastal-server did not start.\n\nCheck logs: journalctl -u coastal-server\n\nPress Enter to retry.\n"; read -r _; systemctl restart coastal-server' &
+fi
 
 # ── Launch Waybar ────────────────────────────────────────────
 mkdir -p "$HOME/.config/waybar"

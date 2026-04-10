@@ -5,6 +5,7 @@
 #           GET  /health
 
 import asyncio, io, json, logging, os
+from contextlib import asynccontextmanager
 from pathlib import Path
 import numpy as np
 import soundfile as sf
@@ -15,8 +16,6 @@ from transformers import AutoProcessor, AutoModelForSpeechSeq2Seq
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("vibevoice")
-
-app = FastAPI(title="coastal-vibevoice")
 
 # ---------- ASR ----------
 ASR_MODEL_ID = os.getenv("VIBEVOICE_ASR_MODEL", "microsoft/VibeVoice-ASR")
@@ -59,11 +58,14 @@ def load_tts():
     )
     log.info("TTS model loaded")
 
-@app.on_event("startup")
-async def startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(None, load_asr)
     await loop.run_in_executor(None, load_tts)
+    yield
+
+app = FastAPI(title="coastal-vibevoice", lifespan=lifespan)
 
 @app.get("/health")
 async def health():

@@ -63,7 +63,9 @@ export class VibeVoiceClient {
     let metadataSeen = false
     let done = false
     let error: unknown = null
-    let notify: (() => void) | null = null
+    const waiters: Array<() => void> = []
+    const wake = () => { const batch = waiters.splice(0); batch.forEach(r => r()) }
+    const wait = () => new Promise<void>(r => waiters.push(r))
 
     ws.on('message', (data: Buffer, isBinary: boolean) => {
       if (isBinary) {
@@ -83,25 +85,21 @@ export class VibeVoiceClient {
           }
         } catch { /* ignore non-JSON */ }
       }
-      notify?.()
+      wake()
     })
 
-    ws.on('error', (err) => { error = err; done = true; notify?.() })
-    ws.on('close', () => { done = true; notify?.() })
+    ws.on('error', (err) => { error = err; done = true; wake() })
+    ws.on('close', () => { done = true; wake() })
 
     // Wait for the metadata frame (or the first PCM chunk in backwards-compat mode)
-    while (!metadataSeen && !done) {
-      await new Promise<void>(resolve => { notify = resolve })
-      notify = null
-    }
+    while (!metadataSeen && !done) { await wait() }
 
     try {
       while (!done || chunks.length > 0) {
         if (chunks.length > 0) {
           yield { pcm: chunks.shift()!, sampleRate }
         } else if (!done) {
-          await new Promise<void>(resolve => { notify = resolve })
-          notify = null
+          await wait()
         }
       }
       if (error) throw error

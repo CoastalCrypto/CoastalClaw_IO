@@ -12,7 +12,6 @@ ExecStart=/usr/bin/node /opt/coastalclaw/node_modules/.bin/vite preview \
   --host 127.0.0.1
 Restart=always
 RestartSec=5
-Environment=VITE_CORE_PORT=4747
 
 [Install]
 WantedBy=multi-user.target

@@ -10,3 +10,6 @@ ExecStart=/usr/bin/node packages/architect/dist/index.js
 Environment=CC_DATA_DIR=/var/lib/coastalclaw/data
 Environment=CC_REPO_ROOT=/opt/coastalclaw
 Environment=CC_OLLAMA_URL=http://127.0.0.1:11434
+
+[Install]
+WantedBy=multi-user.target

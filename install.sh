@@ -194,8 +194,44 @@ else
   info "Web config already exists — skipping."
 fi
 
-# ── Pull default model ───────────────────────────────────────
-step "⑦ Pulling default model (llama3.2)"
+# ── Select and pull Ollama model ─────────────────────────────
+step "⑦ Selecting Ollama model"
+
+# Inline hardware scan (server not running yet)
+_RAM_KB=$(grep MemTotal /proc/meminfo 2>/dev/null | awk '{print $2}')
+_RAM_GB=$(( ${_RAM_KB:-0} / 1024 / 1024 ))
+_FREE_KB=$(grep MemAvailable /proc/meminfo 2>/dev/null | awk '{print $2}')
+_FREE_GB=$(( ${_FREE_KB:-0} / 1024 / 1024 ))
+
+_VRAM_MB=""
+if command -v nvidia-smi &>/dev/null; then
+  _VRAM_MB=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' ')
+fi
+_VRAM_GB=$(( ${_VRAM_MB:-0} / 1024 ))
+
+# Compute recommendation tiers (mirrors recommendModels in hardware-scan.ts)
+_MINIMUM="llama3.2:1b"
+[[ ${_RAM_GB:-0} -lt 4 ]] && _MINIMUM="tinyllama"
+
+if [[ -n "$_VRAM_MB" && $_VRAM_GB -ge 4 ]]; then
+  _RECOMMENDED=$( [[ $_VRAM_GB -ge 8 ]] && echo "llama3.1:8b-instruct-q4_K_M" || echo "llama3.2" )
+  _OPTIMAL=$(     [[ $_VRAM_GB -ge 12 ]] && echo "llama3.1:8b-instruct-q8_0" || \
+                  [[ $_VRAM_GB -ge 8  ]] && echo "llama3.1:8b-instruct-q4_K_M" || echo "llama3.2" )
+else
+  _RECOMMENDED=$( [[ $_RAM_GB -ge 16 ]] && echo "llama3.1:8b-instruct-q4_K_M" || \
+                  [[ $_RAM_GB -ge 8  ]] && echo "llama3.2" || echo "llama3.2:1b" )
+  _OPTIMAL=$(     [[ $_RAM_GB -ge 32 ]] && echo "llama3.1:8b-instruct-q8_0" || \
+                  [[ $_RAM_GB -ge 16 ]] && echo "llama3.1:8b-instruct-q4_K_M" || \
+                  [[ $_RAM_GB -ge 8  ]] && echo "llama3.2" || echo "$_RECOMMENDED" )
+fi
+
+info "Hardware: ${_RAM_GB} GB RAM, ${_FREE_GB} GB free${_VRAM_MB:+, ${_VRAM_GB} GB VRAM}"
+echo ""
+echo "  Model recommendations:"
+printf "  %-12s %s\n"  "minimum"     "$_MINIMUM"
+printf "  %-12s %s  %s\n" "recommended" "$_RECOMMENDED" "<-- default"
+printf "  %-12s %s\n"  "optimal"     "$_OPTIMAL"
+echo ""
 
 # Start Ollama in background if not already running
 if ! ollama list &>/dev/null; then
@@ -203,15 +239,17 @@ if ! ollama list &>/dev/null; then
   ollama serve &>/dev/null &
   OLLAMA_PID=$!
   sleep 3
-  info "Ollama started (PID ${OLLAMA_PID})"
 fi
 
-if ollama list 2>/dev/null | grep -q "llama3.2"; then
-  success "llama3.2 already pulled"
+read -r -p "  Press Enter to install [${_RECOMMENDED}] or type a different model name: " _CHOSEN_MODEL
+_CHOSEN_MODEL="${_CHOSEN_MODEL:-$_RECOMMENDED}"
+
+if ollama list 2>/dev/null | grep -qF "${_CHOSEN_MODEL}"; then
+  success "${_CHOSEN_MODEL} already pulled"
 else
-  info "Pulling llama3.2 (~2 GB)..."
-  ollama pull llama3.2
-  success "llama3.2 ready"
+  info "Pulling ${_CHOSEN_MODEL}..."
+  ollama pull "$_CHOSEN_MODEL"
+  success "${_CHOSEN_MODEL} ready"
 fi
 
 # ── Add to PATH (shell profile) ──────────────────────────────

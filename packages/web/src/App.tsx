@@ -94,8 +94,8 @@ export default function App() {
   const nav = (p: NavPage) => setPage(p)
 
   if (checking) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#050d1a' }}>
-      <div className="text-cyan-500 font-mono text-sm animate-pulse">connecting...</div>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#050a0f' }}>
+      <div className="font-mono text-sm animate-pulse" style={{ color: '#00e5ff' }}>connecting...</div>
     </div>
   )
 
@@ -116,7 +116,7 @@ export default function App() {
 
   if (!sessionId) return (
     <div className="min-h-screen flex items-center justify-center p-6" style={{ position: 'relative' }}>
-      <Suspense fallback={<div style={{ position: 'absolute', inset: 0, background: '#050d1a' }} />}>
+      <Suspense fallback={<div style={{ position: 'absolute', inset: 0, background: '#050a0f' }} />}>
         <OceanScene />
       </Suspense>
       <div style={{ position: 'relative', zIndex: 1 }}>
@@ -139,7 +139,7 @@ export default function App() {
       {page === 'system'    && <System onNav={nav} />}
       {page === 'users'     && <Users onNav={nav} currentUserId={currentUser.id} />}
       {page === 'models'    && (
-        <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)' }}>
+        <div className="min-h-screen" style={{ background: '#050a0f', color: '#e2f4ff' }}>
           <NavBar page="models" onNav={nav} />
           <div className="pt-20 px-4 sm:px-6 max-w-4xl mx-auto pb-12">
             <Models />

@@ -18,9 +18,9 @@ interface Props {
 }
 
 const BADGE_STYLE = {
-  color: 'rgba(0,212,255,0.70)',
-  border: '1px solid rgba(255,255,255,0.06)',
-  background: 'rgba(0,0,0,0.20)',
+  color: '#94adc4',
+  border: '1px solid rgba(26,58,92,0.8)',
+  background: 'rgba(10,22,40,0.6)',
 } as const
 
 export function AgentCard({ agent, onEdit, onDelete, onToggle, onCredentials, onBindings }: Props) {
@@ -29,7 +29,7 @@ export function AgentCard({ agent, onEdit, onDelete, onToggle, onCredentials, on
       style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
       {/* Active indicator strip */}
       <div className="absolute top-0 left-0 w-0.5 h-full transition-all duration-300"
-        style={{ background: agent.active ? '#00D4FF' : 'rgba(255,255,255,0.08)' }} />
+        style={{ background: agent.active ? '#00e5ff' : '#1a3a5c' }} />
 
       <div className="pl-3 flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">

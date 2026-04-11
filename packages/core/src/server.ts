@@ -3,6 +3,7 @@ import cors from '@fastify/cors'
 import websocket from '@fastify/websocket'
 import { healthRoutes } from './api/routes/health.js'
 import { wsRoutes } from './api/routes/ws.js'
+import { agentEventsRoute } from './api/routes/agent-events.js'
 import { chatRoutes } from './api/routes/chat.js'
 import { adminRoutes, getOrCreateAdminToken, validateSessionToken } from './api/routes/admin.js'
 import { agentRoutes } from './api/routes/agents.js'
@@ -92,6 +93,7 @@ export async function buildServer() {
   await fastify.register(websocket)
   await fastify.register(healthRoutes)
   await fastify.register(wsRoutes)
+  await fastify.register(agentEventsRoute)
   await fastify.register(adminRoutes)
 
   const agentRegistry = new AgentRegistry(join(config.dataDir, 'agents.db'))

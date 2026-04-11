@@ -15,6 +15,7 @@ import { Skills } from './pages/Skills'
 import { Channels } from './pages/Channels'
 import { Users } from './pages/Users'
 import { Pipeline } from './pages/Pipeline'
+import { AgentGraph } from './pages/AgentGraph'
 import { NavBar, type NavPage } from './components/NavBar'
 import { TitleBar } from './components/TitleBar'
 import { coreClient } from './api/client'
@@ -135,6 +136,7 @@ export default function App() {
       {page === 'channels'  && <Channels onNav={nav} />}
       {page === 'agents'    && <Agents onNav={nav} />}
       {page === 'pipeline'  && <Pipeline onNav={nav} />}
+      {page === 'agent-graph' && <AgentGraph onNav={nav} />}
       {page === 'settings'  && <Settings onNav={nav} />}
       {page === 'system'    && <System onNav={nav} />}
       {page === 'users'     && <Users onNav={nav} currentUserId={currentUser.id} />}

@@ -26,11 +26,14 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
   const [loading, setLoading] = useState(false)
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
   const [thinkingMs, setThinkingMs] = useState(0)
+  const [voiceMuted, setVoiceMuted] = useState(true)
   const sessionId = useRef(randomUUID())
   const inputRef = useRef<HTMLInputElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const thinkingStart = useRef<number | null>(null)
+  const voiceMutedRef = useRef(true)
+  voiceMutedRef.current = voiceMuted
 
   useEffect(() => {
     if (!loading) { setThinkingMs(0); return }
@@ -39,6 +42,22 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
     }, 500)
     return () => clearInterval(tid)
   }, [loading])
+
+  const speakReply = useCallback((text: string) => {
+    if (voiceMutedRef.current || !('speechSynthesis' in window)) return
+    const clean = text.replace(/[*#`_~>]/g, '').replace(/\s+/g, ' ').trim()
+    if (!clean) return
+    window.speechSynthesis.cancel()
+    const utt = new SpeechSynthesisUtterance(clean)
+    setTimeout(() => {
+      const voices = window.speechSynthesis.getVoices()
+      const voice = voices.find(v => v.name.includes('Google UK English Male'))
+        || voices.find(v => v.lang.startsWith('en-') && !v.name.toLowerCase().includes('zira') && !v.name.toLowerCase().includes('david'))
+        || null
+      if (voice) utt.voice = voice
+      window.speechSynthesis.speak(utt)
+    }, 0)
+  }, [])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -128,7 +147,9 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
 
       clearTimeout(tid)
 
-      if (!fullReply) {
+      if (fullReply) {
+        speakReply(fullReply)
+      } else {
         setMessages(m => {
           const c = [...m]
           const last = c[c.length - 1]
@@ -149,7 +170,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
       thinkingStart.current = null
       setLoading(false)
     }
-  }, [input, loading, selectedAgentId])
+  }, [input, loading, selectedAgentId, speakReply])
 
   const fs = compact ? '11px' : '12px'
   const px = compact ? 8 : 12
@@ -206,9 +227,17 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
           ))}
         </select>
 
+        <button
+          onClick={e => { e.stopPropagation(); if (!voiceMuted) window.speechSynthesis?.cancel(); setVoiceMuted(m => !m) }}
+          title={voiceMuted ? 'Enable voice' : 'Mute voice'}
+          style={{ fontSize: '11px', color: voiceMuted ? '#2d3748' : '#00D4FF', cursor: 'pointer', background: 'none', border: 'none', padding: '2px 3px' }}
+        >
+          {voiceMuted ? '🔇' : '🔊'}
+        </button>
+
         {messages.length > 0 && (
           <button
-            onClick={e => { e.stopPropagation(); abortRef.current?.abort(); setMessages([]); setLoading(false) }}
+            onClick={e => { e.stopPropagation(); abortRef.current?.abort(); window.speechSynthesis?.cancel(); setMessages([]); setLoading(false) }}
             title="Clear pane"
             style={{ fontSize: '10px', color: '#4a5568', cursor: 'pointer', background: 'none', border: 'none', padding: '2px 4px', borderRadius: '4px' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#a0aec0')}

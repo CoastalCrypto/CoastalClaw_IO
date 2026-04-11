@@ -28,32 +28,32 @@ const General = () => (
     <circle cx="40" cy="40" r="38" fill="#051832"/>
     <circle cx="40" cy="55" r="22" fill="#0a2540" opacity="0.8"/>
     {/* body */}
-    <rect x="27" y="50" width="26" height="18" rx="6" fill="#1a3a5c" stroke="#00D4FF" strokeWidth="1.2"/>
+    <rect x="27" y="50" width="26" height="18" rx="6" fill="#1a3a5c" stroke="#00e5ff" strokeWidth="1.2"/>
     {/* neck */}
     <rect x="36" y="46" width="8" height="6" rx="2" fill="#0d2a40"/>
     {/* head */}
-    <rect x="20" y="22" width="40" height="28" rx="12" fill="#1a3a5c" stroke="#00D4FF" strokeWidth="1.5"/>
+    <rect x="20" y="22" width="40" height="28" rx="12" fill="#1a3a5c" stroke="#00e5ff" strokeWidth="1.5"/>
     {/* headphones */}
-    <path d="M20 32 Q16 32 16 38 Q16 44 20 44" stroke="#00D4FF" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-    <path d="M60 32 Q64 32 64 38 Q64 44 60 44" stroke="#00D4FF" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-    <rect x="14" y="35" width="7" height="8" rx="2" fill="#00D4FF" opacity="0.7"/>
-    <rect x="59" y="35" width="7" height="8" rx="2" fill="#00D4FF" opacity="0.7"/>
+    <path d="M20 32 Q16 32 16 38 Q16 44 20 44" stroke="#00e5ff" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+    <path d="M60 32 Q64 32 64 38 Q64 44 60 44" stroke="#00e5ff" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+    <rect x="14" y="35" width="7" height="8" rx="2" fill="#00e5ff" opacity="0.7"/>
+    <rect x="59" y="35" width="7" height="8" rx="2" fill="#00e5ff" opacity="0.7"/>
     {/* antenna */}
-    <line x1="40" y1="22" x2="40" y2="14" stroke="#00D4FF" strokeWidth="1.5"/>
-    <circle cx="40" cy="12" r="3" fill="#00D4FF" opacity="0.9"/>
+    <line x1="40" y1="22" x2="40" y2="14" stroke="#00e5ff" strokeWidth="1.5"/>
+    <circle cx="40" cy="12" r="3" fill="#00e5ff" opacity="0.9"/>
     {/* eyes */}
-    <circle cx="31" cy="34" r="6" fill="#051832" stroke="#00D4FF" strokeWidth="1"/>
-    <circle cx="49" cy="34" r="6" fill="#051832" stroke="#00D4FF" strokeWidth="1"/>
-    <circle cx="31" cy="34" r="3.5" fill="#00D4FF" opacity="0.9"/>
-    <circle cx="49" cy="34" r="3.5" fill="#00D4FF" opacity="0.9"/>
+    <circle cx="31" cy="34" r="6" fill="#051832" stroke="#00e5ff" strokeWidth="1"/>
+    <circle cx="49" cy="34" r="6" fill="#051832" stroke="#00e5ff" strokeWidth="1"/>
+    <circle cx="31" cy="34" r="3.5" fill="#00e5ff" opacity="0.9"/>
+    <circle cx="49" cy="34" r="3.5" fill="#00e5ff" opacity="0.9"/>
     <circle cx="32.5" cy="32.5" r="1.5" fill="white" opacity="0.8"/>
     <circle cx="50.5" cy="32.5" r="1.5" fill="white" opacity="0.8"/>
     {/* smile */}
-    <path d="M32 43 Q40 50 48 43" stroke="#00D4FF" strokeWidth="2" strokeLinecap="round" fill="none"/>
+    <path d="M32 43 Q40 50 48 43" stroke="#00e5ff" strokeWidth="2" strokeLinecap="round" fill="none"/>
     {/* chest panel */}
-    <rect x="32" y="54" width="16" height="8" rx="2" fill="#051832" stroke="#00D4FF" strokeWidth="0.8" opacity="0.7"/>
-    <circle cx="38" cy="58" r="2" fill="#00D4FF" opacity="0.6"/>
-    <circle cx="44" cy="58" r="2" fill="#00D4FF" opacity="0.3"/>
+    <rect x="32" y="54" width="16" height="8" rx="2" fill="#051832" stroke="#00e5ff" strokeWidth="0.8" opacity="0.7"/>
+    <circle cx="38" cy="58" r="2" fill="#00e5ff" opacity="0.6"/>
+    <circle cx="44" cy="58" r="2" fill="#00e5ff" opacity="0.3"/>
   </svg>
 )
 
@@ -402,7 +402,7 @@ const SystemIntegrator = () => (
 // ─── Registry ─────────────────────────────────────────────────────────────────
 
 export const AGENT_META: Record<AgentId, AgentMeta> = {
-  general:           { label: 'General',   color: '#00D4FF', svg: General },
+  general:           { label: 'General',   color: '#00e5ff', svg: General },
   cfo:               { label: 'CFO',       color: '#4ade80', svg: CFO },
   cto:               { label: 'CTO',       color: '#a78bfa', svg: CTO },
   coo:               { label: 'COO',       color: '#f59e0b', svg: COO },
@@ -438,13 +438,13 @@ export function AgentCharacters({ agents, selected, onSelect, vertical = false }
           <div
             className="w-12 h-12 rounded-full border flex items-center justify-center text-[9px] font-mono transition-all"
             style={selected === null
-              ? { borderColor: '#00D4FF', background: 'rgba(0,212,255,0.12)', color: '#00D4FF', boxShadow: '0 0 12px rgba(0,212,255,0.4)' }
+              ? { borderColor: '#00e5ff', background: 'rgba(0,229,255,0.12)', color: '#00e5ff', boxShadow: '0 0 12px rgba(0,229,255,0.4)' }
               : { borderColor: 'rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#6b7280' }
             }
           >
             AUTO
           </div>
-          <span className="text-[8px] font-mono" style={{ color: selected === null ? '#00D4FF' : '#4b5563' }}>
+          <span className="text-[8px] font-mono" style={{ color: selected === null ? '#00e5ff' : '#4b5563' }}>
             auto
           </span>
         </button>
@@ -499,7 +499,7 @@ export function AgentCharacters({ agents, selected, onSelect, vertical = false }
         style={{ opacity: selected === null ? 1 : 0.45 }}>
         <div className="w-12 h-12 rounded-full border flex items-center justify-center text-xs font-mono"
           style={selected === null
-            ? { borderColor: '#00D4FF', background: 'rgba(0,212,255,0.12)', color: '#00D4FF' }
+            ? { borderColor: '#00e5ff', background: 'rgba(0,229,255,0.12)', color: '#00e5ff' }
             : { borderColor: 'rgba(255,255,255,0.1)', background: 'transparent', color: '#6b7280' }}>
           AUTO
         </div>

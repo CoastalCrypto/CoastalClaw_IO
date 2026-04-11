@@ -92,7 +92,7 @@ export function OceanScene({ className }: { className?: string }) {
       className={className}
       style={{
         position: 'absolute', inset: 0,
-        background: 'linear-gradient(180deg, #050d1a 0%, #0a1628 60%, #004e70 100%)',
+        background: 'linear-gradient(180deg, #050a0f 0%, #0a1628 60%, #004e70 100%)',
         zIndex: 0,
       }}
     >

@@ -37,9 +37,9 @@ const BG_PRESETS: BgPreset[] = [
   {
     id: 'coastal',
     label: 'Coastal',
-    css: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)',
+    css: 'linear-gradient(135deg, #050a0f 0%, #0a1628 50%, #050a0f 100%)',
     overlay: 'rgba(0,0,0,0)',
-    thumb: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)',
+    thumb: 'linear-gradient(135deg, #050a0f 0%, #0a1628 50%, #050a0f 100%)',
   },
   {
     id: 'void',
@@ -65,7 +65,7 @@ const BG_PRESETS: BgPreset[] = [
   {
     id: 'ember',
     label: 'Ember',
-    css: 'linear-gradient(135deg, #1a0600 0%, #200010 50%, #050d1a 100%)',
+    css: 'linear-gradient(135deg, #1a0600 0%, #200010 50%, #050a0f 100%)',
     overlay: 'rgba(0,0,0,0)',
     thumb: 'linear-gradient(135deg, #1a0600, #200010)',
   },
@@ -73,7 +73,7 @@ const BG_PRESETS: BgPreset[] = [
     id: 'ocean-photo',
     label: 'Ocean',
     css: "url('https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=1920&q=80') center/cover fixed",
-    overlay: 'rgba(5,13,26,0.82)',
+    overlay: 'rgba(5,10,15,0.82)',
     thumb: "url('https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=400&q=60') center/cover",
     isImage: true,
   },
@@ -137,7 +137,7 @@ function LayoutIcon({ count, size }: { count: number; size: number }): React.Rea
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       {rects.map((rect, i) => (
         <rect key={i} x={rect.x} y={rect.y} width={w} height={h} rx="1"
-          fill="rgba(0,212,255,0.55)" />
+          fill="rgba(0,229,255,0.55)" />
       ))}
     </svg>
   )
@@ -267,7 +267,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   const [bgCustomDraft, setBgCustomDraft] = useState(savedBg.customUrl)
 
   const activeBg = bgCustomUrl
-    ? { css: `url('${bgCustomUrl}') center/cover fixed`, overlay: 'rgba(5,13,26,0.80)' }
+    ? { css: `url('${bgCustomUrl}') center/cover fixed`, overlay: 'rgba(5,10,15,0.80)' }
     : (BG_PRESETS.find(p => p.id === bgPresetId) ?? BG_PRESETS[0])
 
   const applyBg = (presetId: string, customUrl = '') => {
@@ -685,7 +685,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
         <div className="fixed inset-0 z-30" onClick={() => setBgPickerOpen(false)}>
           <div
             className="absolute top-16 right-4 w-72 rounded-xl border border-white/10 shadow-2xl p-4"
-            style={{ background: 'rgba(5,13,26,0.97)', backdropFilter: 'blur(20px)' }}
+            style={{ background: 'rgba(5,10,15,0.97)', backdropFilter: 'blur(20px)' }}
             onClick={e => e.stopPropagation()}
           >
             <p className="text-xs font-mono text-gray-500 tracking-widest mb-3">CHAT BACKGROUND</p>
@@ -766,18 +766,18 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
       )}
 
       <header className="glass-panel border-b-0 rounded-none px-6 py-3 flex items-center gap-4 z-10 shadow-md"
-        style={{ borderBottom: '1px solid rgba(0,212,255,0.10)' }}>
-        <button onClick={() => setSidebarOpen(o => !o)} className="transition-colors text-lg" style={{ color: '#A0AEC0' }} title="Sessions">☰</button>
+        style={{ borderBottom: '1px solid rgba(0,229,255,0.10)' }}>
+        <button onClick={() => setSidebarOpen(o => !o)} className="transition-colors text-lg" style={{ color: '#94adc4' }} title="Sessions">☰</button>
         {/* Brand mark */}
         <div className="shrink-0 w-8 h-8 rounded-md flex items-center justify-center"
-          style={{ background: 'rgba(0,212,255,0.12)', border: '1px solid rgba(0,212,255,0.30)' }}>
-          <span style={{ color: '#00D4FF', fontSize: '16px', fontWeight: 700, lineHeight: 1 }}>✳</span>
+          style={{ background: 'rgba(0,229,255,0.12)', border: '1px solid rgba(0,229,255,0.30)' }}>
+          <span style={{ color: '#00e5ff', fontSize: '16px', fontWeight: 700, lineHeight: 1 }}>✳</span>
         </div>
         <div>
-          <div className="text-xs font-bold tracking-wider" style={{ color: '#00D4FF', fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className="text-xs font-bold tracking-wider" style={{ color: '#00e5ff', fontFamily: 'Space Grotesk, sans-serif' }}>
             {teamMode ? '⚡ TEAM MODE' : activeDomain.toUpperCase()}
           </div>
-          <div className="text-xs font-mono" style={{ color: 'rgba(0,212,255,0.40)' }}>SESSION {currentSessionId.slice(-8).toUpperCase()}</div>
+          <div className="text-xs font-mono" style={{ color: 'rgba(0,229,255,0.40)' }}>SESSION {currentSessionId.slice(-8).toUpperCase()}</div>
         </div>
         <div className="ml-auto flex gap-4 items-center">
           {/* Layout picker */}
@@ -791,27 +791,27 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
                 gap: '5px',
                 padding: '4px 10px',
                 borderRadius: '6px',
-                background: paneCount > 1 ? 'rgba(0,212,255,0.20)' : 'rgba(0,212,255,0.08)',
-                border: paneCount > 1 ? '1px solid rgba(0,212,255,0.55)' : '1px solid rgba(0,212,255,0.25)',
+                background: paneCount > 1 ? 'rgba(0,229,255,0.20)' : 'rgba(0,229,255,0.08)',
+                border: paneCount > 1 ? '1px solid rgba(0,229,255,0.55)' : '1px solid rgba(0,229,255,0.25)',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
               }}
               onMouseEnter={e => {
                 if (paneCount === 1) {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(0,212,255,0.14)'
-                  ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,212,255,0.40)'
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.14)'
+                  ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.40)'
                 }
               }}
               onMouseLeave={e => {
                 if (paneCount === 1) {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(0,212,255,0.08)'
-                  ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,212,255,0.25)'
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.08)'
+                  ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.25)'
                 }
               }}
             >
               <LayoutIcon count={paneCount} size={16} />
               {paneCount > 1 && (
-                <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#00D4FF', lineHeight: 1 }}>
+                <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#00e5ff', lineHeight: 1 }}>
                   {paneCount}×
                 </span>
               )}
@@ -820,7 +820,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
               <div
                 style={{
                   position: 'absolute', top: '28px', right: 0, zIndex: 60,
-                  background: 'rgba(5,13,26,0.97)', border: '1px solid rgba(0,212,255,0.20)',
+                  background: 'rgba(5,10,15,0.97)', border: '1px solid rgba(0,229,255,0.20)',
                   borderRadius: '10px', padding: '10px', display: 'grid',
                   gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px',
                 }}
@@ -833,8 +833,8 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
                     title={`${n} pane${n > 1 ? 's' : ''}`}
                     style={{
                       width: '36px', height: '36px', borderRadius: '6px',
-                      background: paneCount === n ? 'rgba(0,212,255,0.18)' : 'rgba(255,255,255,0.04)',
-                      border: paneCount === n ? '1px solid rgba(0,212,255,0.45)' : '1px solid rgba(255,255,255,0.06)',
+                      background: paneCount === n ? 'rgba(0,229,255,0.18)' : 'rgba(255,255,255,0.04)',
+                      border: paneCount === n ? '1px solid rgba(0,229,255,0.45)' : '1px solid rgba(255,255,255,0.06)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       cursor: 'pointer', transition: 'all 0.12s',
                     }}
@@ -865,7 +865,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
       {/* History sidebar */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-20 flex">
-          <div className="w-72 bg-[#050d1a]/98 border-r border-gray-800 flex flex-col h-full">
+          <div className="w-72 bg-[#050a0f]/98 border-r border-gray-800 flex flex-col h-full">
             <div className="px-4 py-3 border-b border-gray-800 flex justify-between items-center">
               <span className="text-sm font-semibold">Conversations</span>
               <button onClick={newSession} className="text-xs text-cyan-400 hover:text-cyan-300 font-mono">+ new</button>
@@ -951,7 +951,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
           style={{
             width: '72px',
             borderRight: '1px solid rgba(255,255,255,0.05)',
-            background: 'rgba(5,13,26,0.6)',
+            background: 'rgba(5,10,15,0.6)',
             backdropFilter: 'blur(12px)',
           }}
         >
@@ -1031,9 +1031,9 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
             onClick={() => setAgentDrawerOpen(o => !o)}
             style={{
               position: 'fixed', bottom: '84px', left: '12px', zIndex: 30,
-              background: 'rgba(5,13,26,0.92)', border: '1px solid rgba(0,212,255,0.30)',
+              background: 'rgba(5,10,15,0.92)', border: '1px solid rgba(0,229,255,0.30)',
               borderRadius: '50%', width: '40px', height: '40px',
-              color: '#00D4FF', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#00e5ff', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
             aria-label="Toggle agent selector"
           >
@@ -1047,12 +1047,12 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
               <div
                 style={{
                   position: 'absolute', bottom: 0, left: 0, right: 0,
-                  background: 'rgba(5,13,26,0.97)', borderTop: '1px solid rgba(0,212,255,0.20)',
+                  background: 'rgba(5,10,15,0.97)', borderTop: '1px solid rgba(0,229,255,0.20)',
                   borderRadius: '16px 16px 0 0', padding: '20px 16px 32px',
                 }}
                 onClick={e => e.stopPropagation()}
               >
-                <p className="text-xs font-mono text-center mb-4" style={{ color: '#A0AEC0' }}>Select Agent</p>
+                <p className="text-xs font-mono text-center mb-4" style={{ color: '#94adc4' }}>Select Agent</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
                   <AgentCharacters
                     agents={agentList}

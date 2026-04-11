@@ -11,7 +11,7 @@ export function ModelCard({ group, onRemove, removingId }: ModelCardProps) {
     <div className="feature-card" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
       <div className="mb-3">
         <div className="flex items-center gap-2 mb-1">
-          <span style={{ color: '#00D4FF', fontSize: '14px', lineHeight: 1 }}>✳</span>
+          <span style={{ color: '#00e5ff', fontSize: '14px', lineHeight: 1 }}>✳</span>
           <span className="font-bold text-white text-sm">{group.baseName}</span>
         </div>
         <div className="text-xs font-mono ml-5" style={{ color: '#A0AEC0' }}>{group.hfSource}</div>
@@ -26,7 +26,7 @@ export function ModelCard({ group, onRemove, removingId }: ModelCardProps) {
               <div key={v.id} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-mono px-2 py-0.5 rounded"
-                    style={{ color: '#00D4FF', background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.20)' }}>
+                    style={{ color: '#00e5ff', background: 'rgba(0,229,255,0.08)', border: '1px solid rgba(0,229,255,0.20)' }}>
                     {v.quantLevel}
                   </span>
                   <span className="text-xs font-mono" style={{ color: '#A0AEC0' }}>{v.sizeGb.toFixed(1)} GB</span>

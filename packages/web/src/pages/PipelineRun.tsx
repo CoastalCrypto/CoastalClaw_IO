@@ -72,7 +72,7 @@ export function PipelineRun({ runId, pipelineName, stageCount, onBack, onNav }: 
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ ...MONO, fontSize: '10px', color: statusColor, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            {state.status === 'running' && <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#00D4FF', marginRight: 6, animation: 'pulse 1.5s infinite' }} />}
+            {state.status === 'running' && <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#00e5ff', marginRight: 6, animation: 'pulse 1.5s infinite' }} />}
             {statusLabel}
           </span>
           {state.status === 'running' && (
@@ -89,14 +89,14 @@ export function PipelineRun({ runId, pipelineName, stageCount, onBack, onNav }: 
               <div style={{
                 width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '9px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace',
-                background: s.status === 'done' ? 'rgba(0,230,118,0.15)' : s.status === 'running' ? 'rgba(0,212,255,0.15)' : 'rgba(255,255,255,0.04)',
-                border: s.status === 'done' ? '1px solid #00e676' : s.status === 'running' ? '1px solid #00D4FF' : '1px solid rgba(255,255,255,0.10)',
-                color: s.status === 'done' ? '#00e676' : s.status === 'running' ? '#00D4FF' : 'rgba(255,255,255,0.25)',
-                boxShadow: s.status === 'running' ? '0 0 8px rgba(0,212,255,0.3)' : 'none',
+                background: s.status === 'done' ? 'rgba(0,230,118,0.15)' : s.status === 'running' ? 'rgba(0,229,255,0.15)' : 'rgba(255,255,255,0.04)',
+                border: s.status === 'done' ? '1px solid #00e676' : s.status === 'running' ? '1px solid #00e5ff' : '1px solid rgba(255,255,255,0.10)',
+                color: s.status === 'done' ? '#00e676' : s.status === 'running' ? '#00e5ff' : 'rgba(255,255,255,0.25)',
+                boxShadow: s.status === 'running' ? '0 0 8px rgba(0,229,255,0.3)' : 'none',
               }}>
                 {s.status === 'done' ? '✓' : i + 1}
               </div>
-              <span style={{ ...MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em', color: s.status === 'done' ? '#00e676' : s.status === 'running' ? '#00D4FF' : 'rgba(255,255,255,0.25)' }}>
+              <span style={{ ...MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em', color: s.status === 'done' ? '#00e676' : s.status === 'running' ? '#00e5ff' : 'rgba(255,255,255,0.25)' }}>
                 {s.agentName.length > 10 ? s.agentName.slice(0, 10) + '…' : s.agentName}
               </span>
             </div>
@@ -139,7 +139,7 @@ export function PipelineRun({ runId, pipelineName, stageCount, onBack, onNav }: 
       {/* Steer bar */}
       {state.status === 'running' && (
         <div style={{ position: 'sticky', bottom: 16, ...PANEL, display: 'flex', gap: 10, alignItems: 'center' }}>
-          <span style={{ ...MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#00D4FF', whiteSpace: 'nowrap' }}>
+          <span style={{ ...MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#00e5ff', whiteSpace: 'nowrap' }}>
             → Stage {state.activeStageIdx + 1}
           </span>
           <input
@@ -147,7 +147,7 @@ export function PipelineRun({ runId, pipelineName, stageCount, onBack, onNav }: 
             onChange={e => setSteerMsg(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && send()}
             placeholder="Steer the active agent — e.g. 'focus on DeFi trends only'"
-            style={{ flex: 1, background: 'rgba(5,13,26,0.80)', border: '1px solid rgba(0,212,255,0.20)', borderRadius: 8, padding: '8px 14px', color: '#FFFFFF', fontSize: '12px', outline: 'none' }}
+            style={{ flex: 1, background: 'rgba(5,13,26,0.80)', border: '1px solid rgba(0,229,255,0.20)', borderRadius: 8, padding: '8px 14px', color: '#FFFFFF', fontSize: '12px', outline: 'none' }}
           />
           <button onClick={send} style={BTN}>Send</button>
         </div>
@@ -160,15 +160,15 @@ export function PipelineRun({ runId, pipelineName, stageCount, onBack, onNav }: 
 function StageThread({ stage, isExpanded, onToggle }: { stage: LiveStage; isExpanded: boolean; onToggle: () => void }) {
   const isActive = stage.status === 'running'
   const isDone = stage.status === 'done'
-  const nameColor = isDone ? '#00e676' : isActive ? '#00D4FF' : 'rgba(255,255,255,0.30)'
+  const nameColor = isDone ? '#00e676' : isActive ? '#00e5ff' : 'rgba(255,255,255,0.30)'
   const badgeStyle: React.CSSProperties = {
     fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', letterSpacing: '0.06em',
     textTransform: 'uppercase', padding: '2px 8px', borderRadius: 10,
-    background: isDone ? 'rgba(0,230,118,0.10)' : isActive ? 'rgba(0,212,255,0.10)' : 'rgba(255,255,255,0.04)',
-    color: isDone ? '#00e676' : isActive ? '#00D4FF' : 'rgba(255,255,255,0.25)',
-    border: isDone ? '1px solid rgba(0,230,118,0.20)' : isActive ? '1px solid rgba(0,212,255,0.25)' : '1px solid rgba(255,255,255,0.08)',
+    background: isDone ? 'rgba(0,230,118,0.10)' : isActive ? 'rgba(0,229,255,0.10)' : 'rgba(255,255,255,0.04)',
+    color: isDone ? '#00e676' : isActive ? '#00e5ff' : 'rgba(255,255,255,0.25)',
+    border: isDone ? '1px solid rgba(0,230,118,0.20)' : isActive ? '1px solid rgba(0,229,255,0.25)' : '1px solid rgba(255,255,255,0.08)',
   }
-  const panel = isActive ? { background: 'rgba(26,39,68,0.80)', border: '1px solid rgba(0,212,255,0.30)', borderRadius: 12, overflow: 'hidden' } : { background: 'rgba(26,39,68,0.80)', border: '1px solid rgba(0,212,255,0.10)', borderRadius: 12, overflow: 'hidden' }
+  const panel = isActive ? { background: 'rgba(26,39,68,0.80)', border: '1px solid rgba(0,229,255,0.30)', borderRadius: 12, overflow: 'hidden' } : { background: 'rgba(26,39,68,0.80)', border: '1px solid rgba(0,229,255,0.10)', borderRadius: 12, overflow: 'hidden' }
 
   return (
     <div style={panel}>
@@ -199,7 +199,7 @@ function StageThread({ stage, isExpanded, onToggle }: { stage: LiveStage; isExpa
             </div>
           ))}
           {stage.status === 'running' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', color: 'rgba(0,212,255,0.50)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', color: 'rgba(0,229,255,0.50)' }}>
               <span style={{ display: 'flex', gap: 3 }}>
                 {[0, 0.3, 0.6].map((delay, i) => (
                   <span key={i} style={{ animation: `blink 1.2s ${delay}s infinite step-end` }}>●</span>

@@ -35,14 +35,14 @@ export function AgentCard({ agent, onEdit, onDelete, onToggle, onCredentials, on
         <div className="flex-1 min-w-0">
           {/* Header row: ✳ icon + name */}
           <div className="flex items-center gap-2.5 mb-2">
-            <span className="text-lg shrink-0" style={{ color: '#00D4FF', lineHeight: 1 }}>✳</span>
+            <span className="text-lg shrink-0" style={{ color: '#00e5ff', lineHeight: 1 }}>✳</span>
             <span className="font-bold text-white text-sm tracking-wide truncate"
               style={{ letterSpacing: '0.04em' }}>
               {agent.name.toUpperCase()}
             </span>
             {agent.builtIn && (
               <span className="text-[10px] font-mono shrink-0 px-1.5 py-0.5 rounded"
-                style={{ color: '#00D4FF', border: '1px solid rgba(0,212,255,0.30)', background: 'rgba(0,212,255,0.06)', letterSpacing: '0.08em' }}>
+                style={{ color: '#00e5ff', border: '1px solid rgba(0,229,255,0.30)', background: 'rgba(0,229,255,0.06)', letterSpacing: '0.08em' }}>
                 CORE
               </span>
             )}
@@ -92,7 +92,7 @@ export function AgentCard({ agent, onEdit, onDelete, onToggle, onCredentials, on
           <button
             onClick={() => onEdit(agent)}
             className="text-[11px] font-mono transition-colors hover:underline"
-            style={{ color: '#00D4FF' }}
+            style={{ color: '#00e5ff' }}
           >
             [EDIT]
           </button>

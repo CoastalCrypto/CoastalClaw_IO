@@ -33,7 +33,7 @@ export function ChangePassword({ onDone }: Props) {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)' }}>
+      style={{ background: '#050a0f' }}>
 
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
@@ -49,7 +49,7 @@ export function ChangePassword({ onDone }: Props) {
 
         <form onSubmit={handleSubmit}
           className="rounded-2xl border border-white/8 p-8"
-          style={{ background: 'rgba(10,22,40,0.8)', backdropFilter: 'blur(16px)' }}>
+          style={{ background: 'rgba(10,22,40,0.8)', backdropFilter: 'blur(12px)' }}>
 
           <div className="space-y-4">
             <div>

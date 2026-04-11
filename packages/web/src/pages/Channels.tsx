@@ -172,7 +172,7 @@ export function Channels({ onNav }: { onNav: (page: NavPage) => void }) {
   const fields = CHANNEL_META[formType].fields
 
   return (
-    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)' }}>
+    <div className="min-h-screen text-white" style={{ background: '#050a0f' }}>
       <NavBar page={'channels' as NavPage} onNav={onNav} />
 
       <div className="pt-20 pb-12 px-4 sm:px-6 max-w-3xl mx-auto">

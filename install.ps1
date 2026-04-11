@@ -1,9 +1,9 @@
 # ============================================================
-#  Coastal Claw - Windows installer
+#  Coastal.AI - Windows installer
 #  Download and run:
-#    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/install.ps1" -OutFile "$env:USERPROFILE\Downloads\coastalclaw-install.ps1"
-#    Unblock-File "$env:USERPROFILE\Downloads\coastalclaw-install.ps1"
-#    & "$env:USERPROFILE\Downloads\coastalclaw-install.ps1"
+#    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/CoastalCrypto/Coastal.AI/master/install.ps1" -OutFile "$env:USERPROFILE\Downloads\coastal-ai-install.ps1"
+#    Unblock-File "$env:USERPROFILE\Downloads\coastal-ai-install.ps1"
+#    & "$env:USERPROFILE\Downloads\coastal-ai-install.ps1"
 # ============================================================
 #Requires -Version 5.1
 Set-StrictMode -Version Latest
@@ -16,7 +16,7 @@ function Write-Warn  { param($msg) Write-Host "  [!] $msg" -ForegroundColor Yell
 function Write-Fail  { param($msg) Write-Host "  [X] $msg" -ForegroundColor Red; exit 1 }
 
 Write-Host ""
-Write-Host "  COASTAL CLAW" -ForegroundColor Cyan
+Write-Host "  COASTAL.AI" -ForegroundColor Cyan
 Write-Host "  Your private AI executive team - running on your hardware." -ForegroundColor DarkCyan
 Write-Host ""
 
@@ -29,7 +29,7 @@ if (-not $isAdmin) {
 
 # ── Install location ──────────────────────────────────────────
 Write-Step "1) Choosing install location"
-$InstallDir = if ($env:CC_INSTALL_DIR) { $env:CC_INSTALL_DIR } else { "$env:USERPROFILE\coastal-claw" }
+$InstallDir = if ($env:CC_INSTALL_DIR) { $env:CC_INSTALL_DIR } else { "$env:USERPROFILE\coastal-ai" }
 Write-Info "Installing to: $InstallDir"
 
 # ── Helper: test if a command exists ─────────────────────────
@@ -87,8 +87,8 @@ if (-not (Has-Command ollama)) {
 Write-Ok "Ollama $(ollama --version 2>$null | Select-Object -First 1)"
 
 # ── Clone or update repo ──────────────────────────────────────
-Write-Step "3) Fetching Coastal Claw"
-$RepoUrl    = "https://github.com/CoastalCrypto/CoastalClaw_IO.git"
+Write-Step "3) Fetching Coastal.AI"
+$RepoUrl    = "https://github.com/CoastalCrypto/Coastal.AI.git"
 $RepoBranch = "master"
 
 if (Test-Path "$InstallDir\.git") {
@@ -152,10 +152,10 @@ Write-Info "Starting core service on :4747..."
 $coreJob = Start-Process -FilePath "node" `
     -ArgumentList "packages\core\dist\main.js" `
     -WorkingDirectory $InstallDir `
-    -RedirectStandardOutput "$env:TEMP\coastal-claw-core.log" `
-    -RedirectStandardError  "$env:TEMP\coastal-claw-core-err.log" `
+    -RedirectStandardOutput "$env:TEMP\coastal-ai-core.log" `
+    -RedirectStandardError  "$env:TEMP\coastal-ai-core-err.log" `
     -PassThru -WindowStyle Minimized
-$coreJob.Id | Set-Content "$env:TEMP\coastal-claw-core.pid"
+$coreJob.Id | Set-Content "$env:TEMP\coastal-ai-core.pid"
 Write-Ok "Core service started (PID $($coreJob.Id))"
 
 Write-Info "Waiting for core API to be ready..."
@@ -170,7 +170,7 @@ for ($i = 0; $i -lt 20; $i++) {
 if ($ready) {
     Write-Ok "Core API ready"
 } else {
-    Write-Warn "Core API did not respond in 15s - check $env:TEMP\coastal-claw-core-err.log"
+    Write-Warn "Core API did not respond in 15s - check $env:TEMP\coastal-ai-core-err.log"
 }
 
 Write-Info "Starting web portal on :5173..."
@@ -178,10 +178,10 @@ Write-Info "Starting web portal on :5173..."
 $webJob = Start-Process -FilePath "cmd.exe" `
     -ArgumentList "/c", "pnpm", "preview", "--port", "5173", "--host", "127.0.0.1" `
     -WorkingDirectory "$InstallDir\packages\web" `
-    -RedirectStandardOutput "$env:TEMP\coastal-claw-web.log" `
-    -RedirectStandardError  "$env:TEMP\coastal-claw-web-err.log" `
+    -RedirectStandardOutput "$env:TEMP\coastal-ai-web.log" `
+    -RedirectStandardError  "$env:TEMP\coastal-ai-web-err.log" `
     -PassThru -WindowStyle Minimized
-$webJob.Id | Set-Content "$env:TEMP\coastal-claw-web.pid"
+$webJob.Id | Set-Content "$env:TEMP\coastal-ai-web.pid"
 Write-Ok "Web portal started (PID $($webJob.Id))"
 Start-Sleep 2
 
@@ -189,7 +189,7 @@ Start-Process "http://127.0.0.1:5173"
 
 Write-Host ""
 Write-Host "=================================================" -ForegroundColor Cyan
-Write-Host "  Coastal Claw is running!" -ForegroundColor White
+Write-Host "  Coastal.AI is running!" -ForegroundColor White
 Write-Host ""
 Write-Host "  Web portal:  http://127.0.0.1:5173"
 Write-Host "  Core API:    http://127.0.0.1:4747"
@@ -197,9 +197,9 @@ Write-Host ""
 Write-Host "  Default login:  admin / admin"
 Write-Host "  (you will be prompted to set a new password)"
 Write-Host ""
-Write-Host "  Logs:  $env:TEMP\coastal-claw-core.log"
-Write-Host "         $env:TEMP\coastal-claw-web.log"
+Write-Host "  Logs:  $env:TEMP\coastal-ai-core.log"
+Write-Host "         $env:TEMP\coastal-ai-web.log"
 Write-Host ""
 Write-Host "  To stop the servers, run:" -ForegroundColor DarkGray
-Write-Host "  Stop-Process -Id (Get-Content $env:TEMP\coastal-claw-core.pid)" -ForegroundColor DarkGray
+Write-Host "  Stop-Process -Id (Get-Content $env:TEMP\coastal-ai-core.pid)" -ForegroundColor DarkGray
 Write-Host "=================================================" -ForegroundColor Cyan

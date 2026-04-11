@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
-#  Coastal Claw — one-line installer
-#  curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/install.sh | bash
+#  Coastal.AI — one-line installer
+#  curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/Coastal.AI/master/install.sh | bash
 # ============================================================
 set -euo pipefail
 
@@ -10,7 +10,7 @@ CYAN='\033[0;36m'; BOLD='\033[1m'; DIM='\033[2m'
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'
 RESET='\033[0m'
 
-info()    { echo -e "${CYAN}${BOLD}[coastal-claw]${RESET} $*"; }
+info()    { echo -e "${CYAN}${BOLD}[coastal-ai]${RESET} $*"; }
 success() { echo -e "${GREEN}${BOLD}  ✔${RESET}  $*"; }
 warn()    { echo -e "${YELLOW}${BOLD}  ⚠${RESET}  $*"; }
 error()   { echo -e "${RED}${BOLD}  ✖${RESET}  $*" >&2; exit 1; }
@@ -45,7 +45,7 @@ esac
 info "Platform detected: ${BOLD}${OS} / ${ARCH}${RESET}"
 
 # ── Install directory ────────────────────────────────────────
-DEFAULT_INSTALL_DIR="${HOME}/coastal-claw"
+DEFAULT_INSTALL_DIR="${HOME}/coastal-ai"
 INSTALL_DIR="${CC_INSTALL_DIR:-$DEFAULT_INSTALL_DIR}"
 
 step "① Choosing install location"
@@ -82,7 +82,7 @@ if has node; then
   NODE_VER="$(node --version | sed 's/v//')"
   NODE_MAJOR="$(echo "$NODE_VER" | cut -d. -f1)"
   if (( NODE_MAJOR < 22 )); then
-    warn "Node.js ${NODE_VER} found but Coastal Claw requires v22+."
+    warn "Node.js ${NODE_VER} found but Coastal.AI requires v22+."
     if has nvm; then
       info "Upgrading via nvm..."
       nvm install 22 && nvm use 22 && nvm alias default 22
@@ -132,9 +132,9 @@ fi
 success "Ollama $(ollama --version 2>/dev/null | head -1 || echo 'installed')"
 
 # ── Clone or update repo ─────────────────────────────────────
-step "③ Fetching Coastal Claw"
+step "③ Fetching Coastal.AI"
 
-REPO_URL="https://github.com/CoastalCrypto/CoastalClaw_IO.git"
+REPO_URL="https://github.com/CoastalCrypto/Coastal.AI.git"
 REPO_BRANCH="master"
 
 if [[ -d "${INSTALL_DIR}/.git" ]]; then
@@ -220,11 +220,11 @@ step "⑧ Setting up CLI shortcut"
 CC_BIN_DIR="${HOME}/.local/bin"
 mkdir -p "$CC_BIN_DIR"
 
-cat > "${CC_BIN_DIR}/coastal-claw" <<SCRIPT
+cat > "${CC_BIN_DIR}/coastal-ai" <<SCRIPT
 #!/usr/bin/env bash
 cd "${INSTALL_DIR}" && node packages/core/dist/main.js "\$@"
 SCRIPT
-chmod +x "${CC_BIN_DIR}/coastal-claw"
+chmod +x "${CC_BIN_DIR}/coastal-ai"
 
 # Add to PATH if not already there
 SHELL_RC=""
@@ -239,17 +239,17 @@ if [[ -n "$SHELL_RC" ]]; then
   fi
 fi
 
-success "CLI shortcut created at ${CC_BIN_DIR}/coastal-claw"
+success "CLI shortcut created at ${CC_BIN_DIR}/coastal-ai"
 
 # ── Launch ───────────────────────────────────────────────────
-step "⑨ Launching Coastal Claw"
+step "⑨ Launching Coastal.AI"
 
 # Start core in background
 info "Starting core service on :4747..."
 cd "$INSTALL_DIR"
-nohup node packages/core/dist/main.js > /tmp/coastal-claw-core.log 2>&1 &
+nohup node packages/core/dist/main.js > /tmp/coastal-ai-core.log 2>&1 &
 CORE_PID=$!
-echo $CORE_PID > /tmp/coastal-claw-core.pid
+echo $CORE_PID > /tmp/coastal-ai-core.pid
 
 # Wait for core to be ready
 MAX_WAIT=15
@@ -259,7 +259,7 @@ for i in $(seq 1 $MAX_WAIT); do
     break
   fi
   if (( i == MAX_WAIT )); then
-    warn "Core didn't respond within ${MAX_WAIT}s. Check /tmp/coastal-claw-core.log"
+    warn "Core didn't respond within ${MAX_WAIT}s. Check /tmp/coastal-ai-core.log"
   fi
   sleep 1
 done
@@ -267,9 +267,9 @@ done
 # Start web portal in background
 info "Starting web portal on :5173..."
 cd "${INSTALL_DIR}/packages/web"
-nohup pnpm preview --port 5173 --host 127.0.0.1 > /tmp/coastal-claw-web.log 2>&1 &
+nohup pnpm preview --port 5173 --host 127.0.0.1 > /tmp/coastal-ai-web.log 2>&1 &
 WEB_PID=$!
-echo $WEB_PID > /tmp/coastal-claw-web.pid
+echo $WEB_PID > /tmp/coastal-ai-web.pid
 sleep 2
 success "Web portal ready (PID ${WEB_PID})"
 
@@ -291,7 +291,7 @@ sleep 2  # give core a moment to write the token
 
 echo ""
 echo -e "${CYAN}${BOLD}════════════════════════════════════════════════════${RESET}"
-echo -e "${BOLD}  Coastal Claw is running!${RESET}"
+echo -e "${BOLD}  Coastal.AI is running!${RESET}"
 echo ""
 echo -e "  ${BOLD}Web portal:${RESET}   http://127.0.0.1:5173"
 echo -e "  ${BOLD}Core API:${RESET}     http://127.0.0.1:4747"
@@ -301,10 +301,10 @@ if [[ -f "$ADMIN_TOKEN_FILE" ]]; then
   echo -e "  ${DIM}(saved to ${ADMIN_TOKEN_FILE})${RESET}"
 fi
 echo ""
-echo -e "  ${DIM}Logs:  /tmp/coastal-claw-core.log${RESET}"
-echo -e "  ${DIM}       /tmp/coastal-claw-web.log${RESET}"
+echo -e "  ${DIM}Logs:  /tmp/coastal-ai-core.log${RESET}"
+echo -e "  ${DIM}       /tmp/coastal-ai-web.log${RESET}"
 echo ""
-echo -e "  ${DIM}To stop: kill \$(cat /tmp/coastal-claw-core.pid /tmp/coastal-claw-web.pid)${RESET}"
+echo -e "  ${DIM}To stop: kill \$(cat /tmp/coastal-ai-core.pid /tmp/coastal-ai-web.pid)${RESET}"
 echo -e "${CYAN}${BOLD}════════════════════════════════════════════════════${RESET}"
 echo ""
 echo -e "  ${BOLD}Next steps:${RESET}"

@@ -10,8 +10,8 @@ Use this guide if the one-line installer isn't suitable for your environment (ai
 ## 1. Clone the repository
 
 ```bash
-git clone --depth=1 https://github.com/CoastalCrypto/CoastalClaw_IO.git ~/coastal-claw
-cd ~/coastal-claw
+git clone --depth=1 https://github.com/CoastalCrypto/Coastal.AI_IO.git ~/coastal-ai
+cd ~/coastal-ai
 ```
 
 ## 2. Install Node.js 22+
@@ -38,7 +38,7 @@ Verify: `pnpm --version`
 ## 4. Install dependencies and build
 
 ```bash
-cd ~/coastal-claw
+cd ~/coastal-ai
 pnpm install --frozen-lockfile
 pnpm build
 ```
@@ -85,18 +85,18 @@ ollama pull llama3.2
 
 ```bash
 # Core API
-cd ~/coastal-claw
+cd ~/coastal-ai
 nohup node packages/core/dist/index.js > /tmp/cc-core.log 2>&1 &
 
 # Web portal
-cd ~/coastal-claw/packages/web
+cd ~/coastal-ai/packages/web
 nohup pnpm preview --port 5173 --host 127.0.0.1 > /tmp/cc-web.log 2>&1 &
 ```
 
 ## 8. Get your admin token
 
 ```bash
-cat ~/coastal-claw/packages/core/data/.admin-token
+cat ~/coastal-ai/packages/core/data/.admin-token
 ```
 
 Open `http://127.0.0.1:5173` and enter the token in the Models page.

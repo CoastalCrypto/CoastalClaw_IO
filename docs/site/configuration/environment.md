@@ -1,6 +1,6 @@
 ---
 title: Environment Variables
-description: Full reference for all Coastal Claw environment variables.
+description: Full reference for all Coastal.AI environment variables.
 ---
 
 # Environment Variables
@@ -23,7 +23,7 @@ Configuration lives in two `.env.local` files — one per package. These files a
 
 ### Security notes
 
-- **`CC_OLLAMA_URL`** — Coastal Claw warns at startup if this points to a non-localhost host. Allowing external Ollama endpoints creates an SSRF risk; only use trusted, firewalled hosts.
+- **`CC_OLLAMA_URL`** — Coastal.AI warns at startup if this points to a non-localhost host. Allowing external Ollama endpoints creates an SSRF risk; only use trusted, firewalled hosts.
 - **`CC_CORS_ORIGINS`** — Always restrict to the exact origins your web portal uses. Wildcards (`*`) are not supported.
 - **`CC_ADMIN_TOKEN`** — Only set this in development/testing. In production, let it auto-generate and read from `CC_DATA_DIR/.admin-token`.
 
@@ -41,7 +41,7 @@ Configuration lives in two `.env.local` files — one per package. These files a
 # packages/core/.env.local
 CC_PORT=4747
 CC_HOST=127.0.0.1
-CC_DATA_DIR=/var/lib/coastal-claw/data
+CC_DATA_DIR=/var/lib/coastal-ai/data
 CC_OLLAMA_URL=http://127.0.0.1:11434
 CC_DEFAULT_MODEL=llama3.1:8b
 CC_VRAM_BUDGET_GB=80

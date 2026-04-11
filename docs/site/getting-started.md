@@ -8,7 +8,7 @@ description: From zero to running AI executive team in under 20 minutes.
 ## One-line install (Linux / macOS)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/Coastal.AI_IO/master/install.sh | bash
 ```
 
 The installer automatically:
@@ -16,7 +16,7 @@ The installer automatically:
 1. Detects your platform and architecture
 2. Installs Node.js 22+ via nvm (if missing)
 3. Installs pnpm and Ollama (if missing)
-4. Clones the repo to `~/coastal-claw`
+4. Clones the repo to `~/coastal-ai`
 5. Installs dependencies and builds the project
 6. Creates configuration files
 7. Pulls the default model (`llama3.2`)
@@ -31,7 +31,7 @@ Once the installer completes you'll see:
 
 ```
 ════════════════════════════════════════════════════
-  Coastal Claw is running!
+  Coastal.AI is running!
 
   Web portal:   http://127.0.0.1:5173
   Core API:     http://127.0.0.1:4747
@@ -52,10 +52,10 @@ Once the installer completes you'll see:
 
 ```bash
 # Stop
-kill $(cat /tmp/coastal-claw-core.pid /tmp/coastal-claw-web.pid)
+kill $(cat /tmp/coastal-ai-core.pid /tmp/coastal-ai-web.pid)
 
 # Restart
-cd ~/coastal-claw
+cd ~/coastal-ai
 node packages/core/dist/index.js &
 cd packages/web && pnpm preview --port 5173 --host 127.0.0.1 &
 ```
@@ -63,13 +63,13 @@ cd packages/web && pnpm preview --port 5173 --host 127.0.0.1 &
 Or use the CLI shortcut installed to `~/.local/bin`:
 
 ```bash
-coastal-claw
+coastal-ai
 ```
 
 ## Updating
 
 ```bash
-cd ~/coastal-claw
+cd ~/coastal-ai
 git pull --ff-only
 pnpm install --frozen-lockfile
 pnpm build

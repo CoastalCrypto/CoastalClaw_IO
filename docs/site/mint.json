@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/schema.json",
-  "name": "Coastal Claw",
+  "name": "Coastal.AI",
   "logo": {
     "dark": "/logo.svg",
     "light": "/logo.svg"
@@ -14,7 +14,7 @@
   "topbarLinks": [
     {
       "name": "GitHub",
-      "url": "https://github.com/CoastalCrypto/CoastalClaw_IO"
+      "url": "https://github.com/CoastalCrypto/Coastal.AI_IO"
     },
     {
       "name": "coastalcryptomining.com",
@@ -72,6 +72,6 @@
     }
   ],
   "footerSocials": {
-    "github": "https://github.com/CoastalCrypto/CoastalClaw_IO"
+    "github": "https://github.com/CoastalCrypto/Coastal.AI_IO"
   }
 }

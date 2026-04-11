@@ -1,6 +1,6 @@
 ---
 title: Admin Overview
-description: How the Coastal Claw admin system works.
+description: How the Coastal.AI admin system works.
 ---
 
 # Admin Overview
@@ -9,7 +9,7 @@ The admin system controls model installation, domain assignment, and system conf
 
 ## Admin token
 
-On first startup, Coastal Claw generates a random admin token and writes it to:
+On first startup, Coastal.AI generates a random admin token and writes it to:
 
 ```
 CC_DATA_DIR/.admin-token
@@ -18,7 +18,7 @@ CC_DATA_DIR/.admin-token
 The file is created with permissions `0o600` (owner read/write only). Read it with:
 
 ```bash
-cat ~/coastal-claw/packages/core/data/.admin-token
+cat ~/coastal-ai/packages/core/data/.admin-token
 ```
 
 > Keep this token secret. It grants full control over model management.

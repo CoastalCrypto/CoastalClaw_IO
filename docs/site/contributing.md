@@ -1,17 +1,17 @@
 ---
 title: Contributing
-description: How to contribute to Coastal Claw.
+description: How to contribute to Coastal.AI.
 ---
 
 # Contributing
 
-Coastal Claw is open source and welcomes contributions. Whether you're fixing a bug, adding a feature, or improving documentation — we appreciate it.
+Coastal.AI is open source and welcomes contributions. Whether you're fixing a bug, adding a feature, or improving documentation — we appreciate it.
 
 ## Development setup
 
 ```bash
-git clone https://github.com/CoastalCrypto/CoastalClaw_IO.git
-cd CoastalClaw_IO
+git clone https://github.com/CoastalCrypto/Coastal.AI_IO.git
+cd Coastal.AI_IO
 pnpm install
 pnpm build
 pnpm test
@@ -63,17 +63,17 @@ pnpm test -- --watch
 
 ## Reporting issues
 
-Use [GitHub Issues](https://github.com/CoastalCrypto/CoastalClaw_IO/issues). Include:
+Use [GitHub Issues](https://github.com/CoastalCrypto/Coastal.AI_IO/issues). Include:
 
 - Your OS and Node.js version
 - The command you ran
 - The full error output
-- Contents of `/tmp/coastal-claw-core.log` if relevant
+- Contents of `/tmp/coastal-ai-core.log` if relevant
 
 ## Roadmap contributions
 
-Check the [roadmap section in the README](https://github.com/CoastalCrypto/CoastalClaw_IO#-roadmap) for planned features. Items marked **Phase 2** or **Phase 3** are great starting points for larger contributions.
+Check the [roadmap section in the README](https://github.com/CoastalCrypto/Coastal.AI_IO#-roadmap) for planned features. Items marked **Phase 2** or **Phase 3** are great starting points for larger contributions.
 
 ## Acknowledgements
 
-Thank you to the open-source projects that made Coastal Claw possible — see [Introduction → Open-source foundations](/introduction#open-source-foundations) for the full list.
+Thank you to the open-source projects that made Coastal.AI possible — see [Introduction → Open-source foundations](/introduction#open-source-foundations) for the full list.

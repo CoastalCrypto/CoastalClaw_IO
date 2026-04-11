@@ -1,14 +1,14 @@
 ---
 title: Architecture Overview
-description: How the Coastal Claw system is structured.
+description: How the Coastal.AI system is structured.
 ---
 
 # Architecture Overview
 
-Coastal Claw is a TypeScript/Node.js monorepo with two packages:
+Coastal.AI is a TypeScript/Node.js monorepo with two packages:
 
 ```
-CoastalClaw_IO/
+Coastal.AI_IO/
 ├── packages/
 │   ├── core/          # Fastify API, routing, memory, model management
 │   └── web/           # React + Vite + Tailwind v4 web portal

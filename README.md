@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.png" alt="CoastalClaw" width="100%"/>
+  <img src="assets/banner.png" alt="Coastal.AI" width="100%"/>
 </p>
 
 <p align="center">
@@ -19,9 +19,9 @@
 
 ---
 
-## What is CoastalClaw?
+## What is Coastal.AI?
 
-CoastalClaw is an open-source **AI Agent Operating System** that runs entirely on your own hardware. No cloud subscription, no API keys, no data leaving your machine.
+Coastal.AI is an open-source **AI Agent Operating System** that runs entirely on your own hardware. No cloud subscription, no API keys, no data leaving your machine.
 
 It gives you a private command center for AI: chat with intelligent agents that know your organisation, schedule them to run automatically, build custom tools they can call, and push results to Telegram, Discord, or Slack — all through a clean web interface.
 
@@ -35,7 +35,7 @@ It gives you a private command center for AI: chat with intelligent agents that 
 
 ## 🗺 Choose Your Path
 
-CoastalClaw runs three different ways. Pick the one that fits your situation:
+Coastal.AI runs three different ways. Pick the one that fits your situation:
 
 ---
 
@@ -61,7 +61,7 @@ Installs as a `systemd` service that starts automatically on boot. Ideal for a d
 
 ### Path 3 — Boot from USB as a standalone OS (CoastalOS)
 
-Flash a bootable USB drive. Plug it into any UEFI machine and boot — no installation, nothing written to the host disk. CoastalOS is a minimal Linux environment built entirely around CoastalClaw.
+Flash a bootable USB drive. Plug it into any UEFI machine and boot — no installation, nothing written to the host disk. CoastalOS is a minimal Linux environment built entirely around Coastal.AI.
 
 **Best for:** dedicated AI appliances, air-gapped setups, taking your AI anywhere
 
@@ -78,7 +78,7 @@ Flash a bootable USB drive. Plug it into any UEFI machine and boot — no instal
 | **Chat** | Talk to AI agents that know your organisation, remember past conversations, and can use tools |
 | **Persistent Sessions** | Chat history survives page navigation — your conversation stays intact as you move around the UI |
 | **Agent Voice** | Each agent speaks responses aloud — choose from browser voices or the built-in VibeVoice engine |
-| **Ollama Auto-Scan** | On startup, CoastalClaw scans your local Ollama install, imports every model it finds, and auto-assigns them to routing domains — no manual configuration needed |
+| **Ollama Auto-Scan** | On startup, Coastal.AI scans your local Ollama install, imports every model it finds, and auto-assigns them to routing domains — no manual configuration needed |
 | **Model Routing** | Messages are automatically routed to the right model (high / medium / low priority) based on domain (COO, CFO, CTO, general) — hot-reloads if you change the registry |
 | **Ollama Pull** | Pull any model from the Ollama library directly from the Models page with live progress |
 | **HuggingFace Install** | Download and quantize HuggingFace models (Q4, Q5, Q8) directly from the web UI |
@@ -121,33 +121,33 @@ Flash a bootable USB drive. Plug it into any UEFI machine and boot — no instal
 
 > **⚠️ Antivirus & Firewall notice**
 >
-> CoastalClaw downloads Node.js, Ollama, and an AI model (~2 GB) during setup. Your antivirus or firewall may flag or block these downloads — this is a false positive. The installer only pulls software from official sources (nodejs.org, ollama.com, HuggingFace).
+> Coastal.AI downloads Node.js, Ollama, and an AI model (~2 GB) during setup. Your antivirus or firewall may flag or block these downloads — this is a false positive. The installer only pulls software from official sources (nodejs.org, ollama.com, HuggingFace).
 >
 > **Windows users:** Windows Defender SmartScreen may show a warning when you run the script. Click **"More info" → "Run anyway"** to proceed. If your antivirus quarantines the installer, add your Downloads folder as a temporary exception, then re-run.
 >
 > **Mac users:** Gatekeeper may block Ollama on first launch with *"cannot be opened because the developer cannot be verified"*. Go to **System Settings → Privacy & Security** and click **"Open Anyway"** next to the blocked item.
 >
-> **Firewall:** If your firewall blocks outbound connections, you'll need to allow `nodejs.org`, `ollama.com`, and `huggingface.co` during the initial setup. Once installed, CoastalClaw runs entirely offline — no ongoing internet access is required.
+> **Firewall:** If your firewall blocks outbound connections, you'll need to allow `nodejs.org`, `ollama.com`, and `huggingface.co` during the initial setup. Once installed, Coastal.AI runs entirely offline — no ongoing internet access is required.
 
 ---
 
 **Mac / Linux** — open Terminal and paste:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/Coastal.AI/master/install.sh | bash
 ```
 
 **Windows** — open **PowerShell as Administrator** (`Right-click Start → Windows PowerShell (Admin)`) and run these three commands one at a time:
 
 ```powershell
 # 1. Download the installer
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/install.ps1" -OutFile "$env:USERPROFILE\Downloads\coastalclaw-install.ps1"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/CoastalCrypto/Coastal.AI/master/install.ps1" -OutFile "$env:USERPROFILE\Downloads\Coastal.AI-install.ps1"
 
 # 2. Unblock it (Windows flags downloaded scripts by default)
-Unblock-File "$env:USERPROFILE\Downloads\coastalclaw-install.ps1"
+Unblock-File "$env:USERPROFILE\Downloads\Coastal.AI-install.ps1"
 
 # 3. Run it
-& "$env:USERPROFILE\Downloads\coastalclaw-install.ps1"
+& "$env:USERPROFILE\Downloads\Coastal.AI-install.ps1"
 ```
 
 > **Why not `curl` or `irm | iex`?** PowerShell's `curl` is a different tool that doesn't understand Unix flags. The `irm | iex` one-liner gets blocked by antivirus. Downloading first and running separately lets your AV scan the file before it runs.
@@ -157,13 +157,13 @@ The installer will automatically:
 - Install Node.js (if needed)
 - Install Ollama (the local AI engine)
 - Download the AI model (~2 GB — this takes a few minutes on first run)
-- Install CoastalClaw and its dependencies
+- Install Coastal.AI and its dependencies
 - Start the app
 
 When it finishes you'll see:
 
 ```
-  ✔  Coastal Claw is running!
+  ✔  Coastal.AI is running!
 
   Web portal:  http://127.0.0.1:5173
   Core API:    http://127.0.0.1:4747
@@ -175,7 +175,7 @@ Your browser will open automatically. If it doesn't, go to **http://127.0.0.1:51
 
 ### Step 2 — Create your admin account
 
-The first time you open CoastalClaw you'll see a setup screen. Choose a username and password — this creates your admin account.
+The first time you open Coastal.AI you'll see a setup screen. Choose a username and password — this creates your admin account.
 
 > Write down your password somewhere safe. There is no "forgot password" recovery built in yet.
 
@@ -251,10 +251,10 @@ Click **Preview** next to any voice to hear a sample before saving.
 ### Meet the Agents
 
 <p align="center">
-  <img src="docs/screenshots/agent-characters.png" alt="CoastalClaw built-in agent characters" width="90%"/>
+  <img src="docs/screenshots/agent-characters.png" alt="Coastal.AI built-in agent characters" width="90%"/>
 </p>
 
-CoastalClaw ships with **9 built-in specialist agents**, each with its own domain, personality, and illustrated character. Click any character in the left sidebar of the Chat page to switch into a conversation with that agent.
+Coastal.AI ships with **9 built-in specialist agents**, each with its own domain, personality, and illustrated character. Click any character in the left sidebar of the Chat page to switch into a conversation with that agent.
 
 | Character | Role | Domain |
 |-----------|------|--------|
@@ -348,7 +348,7 @@ Click **Abort** at any time to cancel the run, or **← Back** when it completes
 
 > **This is Path 3.** CoastalOS boots from a USB drive as a complete, self-contained operating system — no existing OS required on the host machine.
 
-CoastalOS is a dedicated Linux image that runs CoastalClaw as a complete operating system. Boot from a USB drive — no installation required, nothing written to your machine's disk.
+CoastalOS is a dedicated Linux image that runs Coastal.AI as a complete operating system. Boot from a USB drive — no installation required, nothing written to your machine's disk.
 
 <p align="center">
   <img src="docs/screenshots/coastalos-desktop.png" alt="CoastalOS desktop" width="80%"/>
@@ -357,7 +357,7 @@ CoastalOS is a dedicated Linux image that runs CoastalClaw as a complete operati
 ### What you need
 
 - USB drive **8 GB or larger** (all data on it will be erased)
-- Latest ISO from the [Releases page](https://github.com/CoastalCrypto/CoastalClaw_IO/releases)
+- Latest ISO from the [Releases page](https://github.com/CoastalCrypto/Coastal.AI/releases)
 
 ---
 
@@ -435,7 +435,7 @@ sudo dd if=~/Downloads/coastalos-1.0.0.iso of=/dev/sdb bs=4M status=progress ofl
 **Mac / Linux:**
 ```bash
 # Stop
-kill $(cat /tmp/coastal-claw-core.pid /tmp/coastal-claw-web.pid) 2>/dev/null
+kill $(cat /tmp/coastal-ai-core.pid /tmp/coastal-ai-web.pid) 2>/dev/null
 
 # Start again
 bash install.sh
@@ -444,19 +444,19 @@ bash install.sh
 **Windows (PowerShell):**
 ```powershell
 # Stop
-Stop-Process -Id (Get-Content $env:TEMP\coastal-claw-core.pid) -ErrorAction SilentlyContinue
-Stop-Process -Id (Get-Content $env:TEMP\coastal-claw-web.pid)  -ErrorAction SilentlyContinue
+Stop-Process -Id (Get-Content $env:TEMP\coastal-ai-core.pid) -ErrorAction SilentlyContinue
+Stop-Process -Id (Get-Content $env:TEMP\coastal-ai-web.pid)  -ErrorAction SilentlyContinue
 
 # Start again (re-run the installer you downloaded)
-& "$env:USERPROFILE\Downloads\coastalclaw-install.ps1"
+& "$env:USERPROFILE\Downloads\Coastal.AI-install.ps1"
 ```
 
 ### If you installed via APT (Ubuntu/Debian)
 
 ```bash
-sudo systemctl stop coastalclaw
-sudo systemctl start coastalclaw
-sudo systemctl status coastalclaw   # check it's running
+sudo systemctl stop Coastal.AI
+sudo systemctl start Coastal.AI
+sudo systemctl status Coastal.AI   # check it's running
 ```
 
 ---
@@ -466,9 +466,9 @@ sudo systemctl status coastalclaw   # check it's running
 | Problem | What to try |
 |---------|-------------|
 | Browser didn't open | Go to `http://127.0.0.1:5173` manually |
-| "Port already in use" | Run `kill $(cat /tmp/coastal-claw-core.pid)` then restart |
+| "Port already in use" | Run `kill $(cat /tmp/coastal-ai-core.pid)` then restart |
 | First response is very slow | Normal — the AI model loads into memory on first use (~30s) |
-| Agent not responding | Check logs: `tail -f /tmp/coastal-claw-core.log` |
+| Agent not responding | Check logs: `tail -f /tmp/coastal-ai-core.log` |
 | Forgot your password | Delete `./data/users.db` and re-run setup (this resets all users) |
 | Install script failed | Make sure you have `curl` installed: `which curl` |
 
@@ -479,10 +479,10 @@ sudo systemctl status coastalclaw   # check it's running
 For servers and production setups, install as a system service:
 
 ```bash
-curl -fsSL https://CoastalCrypto.github.io/CoastalClaw_IO/setup.sh | sudo bash
+curl -fsSL https://CoastalCrypto.github.io/Coastal.AI/setup.sh | sudo bash
 ```
 
-This adds the signed APT repository and installs `coastalclaw` as a systemd service that starts automatically on boot.
+This adds the signed APT repository and installs `Coastal.AI` as a systemd service that starts automatically on boot.
 
 ---
 
@@ -520,7 +520,7 @@ Agents can run automatically on a schedule without any user input. Configure the
 
 ## 🐝 Multi-Agent Swarm
 
-For complex tasks, CoastalClaw can coordinate multiple specialist agents in parallel. Send a task to the team and get a synthesized result from the COO, CFO, and CTO agents working together.
+For complex tasks, Coastal.AI can coordinate multiple specialist agents in parallel. Send a task to the team and get a synthesized result from the COO, CFO, and CTO agents working together.
 
 ```bash
 curl -X POST http://localhost:4747/api/team/run \
@@ -547,7 +547,7 @@ All config is stored encrypted. You can test each channel individually or broadc
 
 ## 🏗 Architecture
 
-CoastalClaw runs as three cooperating processes:
+Coastal.AI runs as three cooperating processes:
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
@@ -630,7 +630,7 @@ You can customize behavior by setting these before starting the app (or in a `.e
 
 ### Protecting a production install
 
-If you're running CoastalClaw on a server (not just locally), follow these steps:
+If you're running Coastal.AI on a server (not just locally), follow these steps:
 
 - [ ] Put it behind a reverse proxy (nginx or Caddy) with HTTPS/TLS
 - [ ] Set `CC_CORS_ORIGINS` to your actual domain
@@ -823,7 +823,7 @@ MOCK_NAMESPACE=1 pnpm test         # skip Linux namespace tests on Mac/CI
 ## 📂 Project Structure
 
 ```
-CoastalClaw_IO/
+Coastal.AI/
 ├── packages/
 │   ├── core/                      # Fastify API server (:4747)
 │   │   └── src/

@@ -1,11 +1,11 @@
 ---
 title: Memory System
-description: How Coastal Claw remembers context across sessions.
+description: How Coastal.AI remembers context across sessions.
 ---
 
 # Memory System
 
-Coastal Claw uses a two-tier memory architecture: a lossless short-term store and a compressed long-term store.
+Coastal.AI uses a two-tier memory architecture: a lossless short-term store and a compressed long-term store.
 
 ## Tier 1: LosslessDB (SQLite)
 

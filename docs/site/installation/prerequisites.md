@@ -1,6 +1,6 @@
 ---
 title: Prerequisites
-description: What you need before installing Coastal Claw.
+description: What you need before installing Coastal.AI.
 ---
 
 # Prerequisites
@@ -14,7 +14,7 @@ description: What you need before installing Coastal Claw.
 | Storage | 20 GB free | 100 GB+ (models are large) |
 | OS | Ubuntu 22.04 / macOS 13+ | Ubuntu 24.04 / macOS 14+ |
 
-> **No GPU?** Coastal Claw runs on CPU-only hardware via llama.cpp. Expect 5-10× slower inference.
+> **No GPU?** Coastal.AI runs on CPU-only hardware via llama.cpp. Expect 5-10× slower inference.
 
 ## Software
 

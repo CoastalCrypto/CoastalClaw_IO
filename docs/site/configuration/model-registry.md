@@ -1,6 +1,6 @@
 ---
 title: Model Registry
-description: How Coastal Claw tracks and assigns models to agent domains.
+description: How Coastal.AI tracks and assigns models to agent domains.
 ---
 
 # Model Registry
@@ -9,7 +9,7 @@ The model registry is a SQLite-backed store (`CC_DATA_DIR/registry.db`) that tra
 
 ## How models get registered
 
-When you install a model via the Admin API or web portal, Coastal Claw:
+When you install a model via the Admin API or web portal, Coastal.AI:
 
 1. Starts a `QuantizationPipeline` job (downloads from Hugging Face, quantizes via llama.cpp)
 2. Writes the resulting GGUF file to `CC_DATA_DIR/models/`

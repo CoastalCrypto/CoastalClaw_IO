@@ -1,11 +1,11 @@
 ---
 title: Intelligent Routing
-description: How Coastal Claw classifies messages and selects models.
+description: How Coastal.AI classifies messages and selects models.
 ---
 
 # Intelligent Routing
 
-The routing layer is the brain of Coastal Claw. Every incoming message passes through a two-stage pipeline before reaching Ollama.
+The routing layer is the brain of Coastal.AI. Every incoming message passes through a two-stage pipeline before reaching Ollama.
 
 ## Stage 1: Domain classification
 

@@ -1,11 +1,11 @@
 ---
 title: Security
-description: Security architecture and hardening guide for Coastal Claw.
+description: Security architecture and hardening guide for Coastal.AI.
 ---
 
 # Security
 
-Coastal Claw is designed for on-premise deployment with a privacy-first architecture. This page documents the security controls in place and recommendations for hardening your deployment.
+Coastal.AI is designed for on-premise deployment with a privacy-first architecture. This page documents the security controls in place and recommendations for hardening your deployment.
 
 ## Built-in controls
 
@@ -58,13 +58,13 @@ To rotate the admin token:
 
 ```bash
 # Stop core service
-kill $(cat /tmp/coastal-claw-core.pid)
+kill $(cat /tmp/coastal-ai-core.pid)
 
 # Delete the token file (a new one will be generated on next start)
-rm ~/coastal-claw/packages/core/data/.admin-token
+rm ~/coastal-ai/packages/core/data/.admin-token
 
 # Restart
-cd ~/coastal-claw && node packages/core/dist/index.js &
+cd ~/coastal-ai && node packages/core/dist/index.js &
 cat packages/core/data/.admin-token
 ```
 

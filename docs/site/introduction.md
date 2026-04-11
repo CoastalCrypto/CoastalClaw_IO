@@ -1,13 +1,13 @@
 ---
 title: Introduction
-description: What is Coastal Claw and why does it exist?
+description: What is Coastal.AI and why does it exist?
 ---
 
-# Coastal Claw
+# Coastal.AI
 
 **Your private AI executive team — running on your hardware. Data never leaves the facility.**
 
-Coastal Claw is an AI agent operating system built by [Coastal Crypto](https://github.com/CoastalCrypto). It turns commodity GPU hardware into a JARVIS-grade AI infrastructure in under 20 minutes, with zero cloud dependency and zero per-token cost.
+Coastal.AI is an AI agent operating system built by [Coastal Crypto](https://github.com/CoastalCrypto). It turns commodity GPU hardware into a JARVIS-grade AI infrastructure in under 20 minutes, with zero cloud dependency and zero per-token cost.
 
 ## What it does
 
@@ -51,7 +51,7 @@ Response
 
 ## Open-source foundations
 
-Coastal Claw stands on the shoulders of these projects:
+Coastal.AI stands on the shoulders of these projects:
 
 - [**Ollama**](https://ollama.com) — local LLM serving
 - [**OpenClaw**](https://openclaw.ai) — inspiration for the one-line installer pattern

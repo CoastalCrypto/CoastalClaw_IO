@@ -5,7 +5,7 @@ description: Real-time progress streaming for model installation.
 
 # WebSocket
 
-Coastal Claw uses a WebSocket connection to stream real-time progress updates during model installation.
+Coastal.AI uses a WebSocket connection to stream real-time progress updates during model installation.
 
 ## Connecting
 

@@ -10,7 +10,7 @@ description: Common issues and how to resolve them.
 **Check the log:**
 
 ```bash
-cat /tmp/coastal-claw-core.log
+cat /tmp/coastal-ai-core.log
 ```
 
 **Common causes:**
@@ -52,7 +52,7 @@ If the response is `{ "ok": true }`, the service is up. If the web portal still 
 Verify your token:
 
 ```bash
-cat ~/coastal-claw/packages/core/data/.admin-token
+cat ~/coastal-ai/packages/core/data/.admin-token
 ```
 
 Copy it exactly — no trailing newline or spaces.
@@ -66,7 +66,7 @@ Check Ollama and the quantization pipeline:
 ollama list
 
 # Core log for pipeline errors
-tail -f /tmp/coastal-claw-core.log
+tail -f /tmp/coastal-ai-core.log
 ```
 
 Hugging Face gated models require a token:
@@ -89,7 +89,7 @@ lsof -ti :5173 | xargs kill -9
 ## Tests failing
 
 ```bash
-cd ~/coastal-claw
+cd ~/coastal-ai
 pnpm test
 ```
 
@@ -101,13 +101,13 @@ To start completely fresh:
 
 ```bash
 # Stop services
-kill $(cat /tmp/coastal-claw-core.pid /tmp/coastal-claw-web.pid) 2>/dev/null
+kill $(cat /tmp/coastal-ai-core.pid /tmp/coastal-ai-web.pid) 2>/dev/null
 
 # Remove runtime data (models, sessions, token)
-rm -rf ~/coastal-claw/packages/core/data
+rm -rf ~/coastal-ai/packages/core/data
 
 # Rebuild
-cd ~/coastal-claw
+cd ~/coastal-ai
 pnpm install --frozen-lockfile
 pnpm build
 

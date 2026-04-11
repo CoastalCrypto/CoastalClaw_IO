@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react'
 import { usePipelineRun, type LiveStage } from '../hooks/usePipelineRun.js'
 
 const PANEL = { background: 'rgba(26,39,68,0.80)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: '12px', padding: '16px' }
-const PANEL_ACTIVE = { ...PANEL, border: '1px solid rgba(0,212,255,0.30)' }
 const BTN = { background: 'rgba(0,212,255,0.12)', border: '1px solid rgba(0,212,255,0.30)', color: '#00D4FF', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600, cursor: 'pointer' } as React.CSSProperties
 const BTN_RED = { ...BTN, background: 'rgba(255,82,82,0.10)', border: '1px solid rgba(255,82,82,0.25)', color: '#ff5252' } as React.CSSProperties
 const MONO = { fontFamily: 'JetBrains Mono, monospace' }

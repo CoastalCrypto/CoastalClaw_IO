@@ -1,12 +1,12 @@
 [Unit]
-Description=CoastalClaw VibeVoice ASR + TTS Service
+Description=Coastal.AI VibeVoice ASR + TTS Service
 After=network.target
-ConditionPathExists=/opt/coastalclaw/coastalos/vibevoice/server.py
+ConditionPathExists=/opt/coastal-ai/coastalos/vibevoice/server.py
 
 [Service]
 Type=simple
 User=coastal
-WorkingDirectory=/opt/coastalclaw
+WorkingDirectory=/opt/coastal-ai
 Environment=VIBEVOICE_PORT=8001
 Environment=VIBEVOICE_ASR_MODEL=microsoft/VibeVoice-ASR
 Environment=VIBEVOICE_TTS_MODEL=microsoft/VibeVoice-Realtime-0.5B

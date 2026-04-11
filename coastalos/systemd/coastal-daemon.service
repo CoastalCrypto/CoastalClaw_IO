@@ -1,17 +1,17 @@
 [Unit]
-Description=CoastalClaw Daemon (Scheduler + Voice)
+Description=Coastal.AI Daemon (Scheduler + Voice)
 After=coastal-server.service
 Requires=coastal-server.service
 
 [Service]
 Type=simple
 User=coastal
-WorkingDirectory=/opt/coastalclaw
+WorkingDirectory=/opt/coastal-ai
 ExecStart=/usr/bin/node packages/daemon/dist/index.js
 Restart=always
 RestartSec=10
 Environment=CC_SERVER_URL=http://localhost:4747
-Environment=CC_DATA_DIR=/var/lib/coastalclaw/data
+Environment=CC_DATA_DIR=/var/lib/coastal-ai/data
 
 [Install]
 WantedBy=multi-user.target

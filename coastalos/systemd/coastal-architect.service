@@ -1,12 +1,12 @@
 [Unit]
-Description=CoastalClaw Self-Build Architect
+Description=Coastal.AI Self-Build Architect
 After=coastal-server.service
 
 [Service]
 Type=oneshot
 User=coastal
-WorkingDirectory=/opt/coastalclaw
+WorkingDirectory=/opt/coastal-ai
 ExecStart=/usr/bin/node packages/architect/dist/index.js
-Environment=CC_DATA_DIR=/var/lib/coastalclaw/data
-Environment=CC_REPO_ROOT=/opt/coastalclaw
+Environment=CC_DATA_DIR=/var/lib/coastal-ai/data
+Environment=CC_REPO_ROOT=/opt/coastal-ai
 Environment=CC_OLLAMA_URL=http://127.0.0.1:11434

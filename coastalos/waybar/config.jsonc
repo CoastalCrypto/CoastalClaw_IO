@@ -8,7 +8,7 @@
   "modules-right": ["custom/model", "cpu", "memory", "custom/gpu", "network", "pulseaudio", "custom/power"],
 
   "custom/logo": {
-    "format": " CoastalClaw",
+    "format": " Coastal.AI",
     "tooltip": false
   },
 

@@ -1,5 +1,5 @@
 #!/bin/sh
-# CoastalClaw labwc autostart
+# Coastal.AI labwc autostart
 
 # ── First-boot network setup ──────────────────────────────────
 # If we can't reach the loopback server yet, check for internet.
@@ -28,8 +28,8 @@ done
 
 # ── Launch Waybar ────────────────────────────────────────────
 mkdir -p "$HOME/.config/waybar"
-cp /opt/coastalclaw/coastalos/waybar/config.jsonc "$HOME/.config/waybar/config"
-cp /opt/coastalclaw/coastalos/waybar/style.css    "$HOME/.config/waybar/style.css"
+cp /opt/coastal-ai/coastalos/waybar/config.jsonc "$HOME/.config/waybar/config"
+cp /opt/coastal-ai/coastalos/waybar/style.css    "$HOME/.config/waybar/style.css"
 waybar &
 
 # ── Launch Chromium kiosk ─────────────────────────────────────

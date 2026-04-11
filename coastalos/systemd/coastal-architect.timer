@@ -1,5 +1,5 @@
 [Unit]
-Description=Run CoastalClaw Architect nightly at 02:00
+Description=Run Coastal.AI Architect nightly at 02:00
 
 [Timer]
 OnCalendar=*-*-* 02:00:00

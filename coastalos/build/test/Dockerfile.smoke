@@ -5,8 +5,8 @@ FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV CC_PORT=4747
 ENV CC_HOST=0.0.0.0
-ENV CC_DATA_DIR=/var/lib/coastalclaw/data
-ENV CC_AGENT_WORKDIR=/var/lib/coastalclaw/workspace
+ENV CC_DATA_DIR=/var/lib/coastal-ai/data
+ENV CC_AGENT_WORKDIR=/var/lib/coastal-ai/workspace
 ENV CC_OLLAMA_URL=http://127.0.0.1:11434
 ENV CC_DEFAULT_MODEL=llama3.2
 
@@ -23,15 +23,15 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 
 # Create data directories
 RUN useradd -m -s /bin/bash coastal || true \
-  && mkdir -p /var/lib/coastalclaw/data /var/lib/coastalclaw/workspace \
-  && chown -R coastal:coastal /var/lib/coastalclaw
+  && mkdir -p /var/lib/coastal-ai/data /var/lib/coastal-ai/workspace \
+  && chown -R coastal:coastal /var/lib/coastal-ai
 
 # Copy repo and build (build context = repo root)
-WORKDIR /opt/coastalclaw
+WORKDIR /opt/coastal-ai
 COPY . .
 RUN pnpm install --frozen-lockfile && pnpm build
 
-RUN chown -R coastal:coastal /opt/coastalclaw
+RUN chown -R coastal:coastal /opt/coastal-ai
 
 USER coastal
 EXPOSE 4747

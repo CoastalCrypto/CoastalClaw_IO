@@ -1,12 +1,12 @@
 [Unit]
-Description=CoastalClaw Infinity Vector Database
+Description=Coastal.AI Infinity Vector Database
 After=network.target
 
 [Service]
 Type=simple
 User=coastal
-WorkingDirectory=/var/lib/coastalclaw/data
-ExecStart=/usr/local/bin/infinity --port 23817 --data-dir /var/lib/coastalclaw/infinity
+WorkingDirectory=/var/lib/coastal-ai/data
+ExecStart=/usr/local/bin/infinity --port 23817 --data-dir /var/lib/coastal-ai/infinity
 Restart=always
 RestartSec=5
 

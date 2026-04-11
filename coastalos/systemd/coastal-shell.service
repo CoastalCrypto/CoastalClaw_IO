@@ -1,5 +1,5 @@
 [Unit]
-Description=CoastalClaw Shell (labwc Wayland kiosk)
+Description=Coastal.AI Shell (labwc Wayland kiosk)
 After=graphical.target coastal-server.service
 Requires=coastal-server.service
 

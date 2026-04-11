@@ -1,13 +1,13 @@
 [Unit]
-Description=CoastalClaw Web Portal (Vite static preview)
-After=coastalclaw-server.service
-Wants=coastalclaw-server.service
+Description=Coastal.AI Web Portal (Vite static preview)
+After=coastal-server.service
+Wants=coastal-server.service
 
 [Service]
 Type=simple
 User=coastal
-WorkingDirectory=/opt/coastalclaw/packages/web
-ExecStart=/usr/bin/node /opt/coastalclaw/node_modules/.bin/vite preview \
+WorkingDirectory=/opt/coastal-ai/packages/web
+ExecStart=/usr/bin/node /opt/coastal-ai/node_modules/.bin/vite preview \
   --port 5173 \
   --host 127.0.0.1
 Restart=always

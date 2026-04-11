@@ -27,6 +27,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
   const [thinkingMs, setThinkingMs] = useState(0)
   const [voiceMuted, setVoiceMuted] = useState(true)
+  const [hoveredLastMsg, setHoveredLastMsg] = useState(false)
   const sessionId = useRef(randomUUID())
   const inputRef = useRef<HTMLInputElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -66,11 +67,8 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
   const selectedAgent = agents.find(a => a.id === selectedAgentId)
   const agentLabel = selectedAgent?.name ?? 'Auto'
 
-  const send = useCallback(async () => {
-    const text = input.trim()
+  const doSend = useCallback(async (text: string) => {
     if (!text || loading) return
-    setInput('')
-    setMessages(m => [...m, { role: 'user', content: text }])
     setLoading(true)
 
     abortRef.current?.abort()
@@ -170,7 +168,24 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
       thinkingStart.current = null
       setLoading(false)
     }
-  }, [input, loading, selectedAgentId, speakReply])
+  }, [loading, selectedAgentId, speakReply])
+
+  const send = useCallback(async () => {
+    const text = input.trim()
+    if (!text) return
+    setInput('')
+    setMessages(m => [...m, { role: 'user', content: text }])
+    await doSend(text)
+  }, [input, doSend])
+
+  const retry = useCallback(() => {
+    if (loading || messages.length < 2) return
+    const last = messages[messages.length - 1]
+    const prevUser = [...messages].slice(0, -1).reverse().find(m => m.role === 'user')
+    if (last.role !== 'assistant' || !prevUser) return
+    setMessages(m => m.slice(0, -1))
+    doSend(prevUser.content)
+  }, [loading, messages, doSend])
 
   const fs = compact ? '11px' : '12px'
   const px = compact ? 8 : 12
@@ -259,51 +274,66 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
           </div>
         )}
 
-        {messages.map((m, i) => (
-          <div key={i} style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: m.role === 'user' ? 'flex-end' : 'flex-start',
-          }}>
-            <div style={{
-              maxWidth: '88%',
-              padding: `${compact ? 5 : 7}px ${compact ? 9 : 12}px`,
-              borderRadius: m.role === 'user' ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
-              background: m.role === 'user'
-                ? 'rgba(0,212,255,0.15)'
-                : m.content.startsWith('⚠')
-                  ? 'rgba(255,82,82,0.10)'
-                  : 'rgba(26,39,68,0.90)',
-              border: m.role === 'user'
-                ? '1px solid rgba(0,212,255,0.25)'
-                : m.content.startsWith('⚠')
-                  ? '1px solid rgba(255,82,82,0.20)'
-                  : '1px solid rgba(255,255,255,0.06)',
-              color: m.role === 'user' ? '#e2e8f0' : '#cbd5e0',
-              fontSize: fs,
-              lineHeight: '1.55',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-            }}>
-              {m.content || (loading && i === messages.length - 1
-                ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ display: 'flex', gap: 3 }}>
-                      {[0, 0.3, 0.6].map((d, k) => (
-                        <span key={k} style={{ animation: `blink 1.2s ${d}s infinite step-end`, color: '#00D4FF', fontSize: fs }}>●</span>
-                      ))}
-                    </span>
-                    {thinkingMs > 3000 && (
-                      <span style={{ fontSize: '9px', color: 'rgba(0,212,255,0.45)', fontFamily: 'JetBrains Mono, monospace' }}>
-                        {(thinkingMs / 1000).toFixed(0)}s
+        {messages.map((m, i) => {
+          const isLastAssistant = i === messages.length - 1 && m.role === 'assistant'
+          return (
+            <div
+              key={i}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' }}
+              onMouseEnter={() => isLastAssistant && setHoveredLastMsg(true)}
+              onMouseLeave={() => isLastAssistant && setHoveredLastMsg(false)}
+            >
+              <div style={{
+                maxWidth: '88%',
+                padding: `${compact ? 5 : 7}px ${compact ? 9 : 12}px`,
+                borderRadius: m.role === 'user' ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
+                background: m.role === 'user'
+                  ? 'rgba(0,212,255,0.15)'
+                  : m.content.startsWith('⚠')
+                    ? 'rgba(255,82,82,0.10)'
+                    : 'rgba(26,39,68,0.90)',
+                border: m.role === 'user'
+                  ? '1px solid rgba(0,212,255,0.25)'
+                  : m.content.startsWith('⚠')
+                    ? '1px solid rgba(255,82,82,0.20)'
+                    : '1px solid rgba(255,255,255,0.06)',
+                color: m.role === 'user' ? '#e2e8f0' : '#cbd5e0',
+                fontSize: fs,
+                lineHeight: '1.55',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}>
+                {m.content || (loading && i === messages.length - 1
+                  ? (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ display: 'flex', gap: 3 }}>
+                        {[0, 0.3, 0.6].map((d, k) => (
+                          <span key={k} style={{ animation: `blink 1.2s ${d}s infinite step-end`, color: '#00D4FF', fontSize: fs }}>●</span>
+                        ))}
                       </span>
-                    )}
-                  </span>
-                )
-                : '')}
+                      {thinkingMs > 3000 && (
+                        <span style={{ fontSize: '9px', color: 'rgba(0,212,255,0.45)', fontFamily: 'JetBrains Mono, monospace' }}>
+                          {(thinkingMs / 1000).toFixed(0)}s
+                        </span>
+                      )}
+                    </span>
+                  )
+                  : '')}
+              </div>
+              {isLastAssistant && !loading && m.content && hoveredLastMsg && (
+                <button
+                  onClick={e => { e.stopPropagation(); retry() }}
+                  title="Retry"
+                  style={{ fontSize: '9px', color: '#4a5568', cursor: 'pointer', background: 'none', border: 'none', padding: '2px 4px', marginTop: '2px', fontFamily: 'monospace' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#a0aec0')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#4a5568')}
+                >
+                  ↺ retry
+                </button>
+              )}
             </div>
-          </div>
-        ))}
+          )
+        })}
         <div ref={bottomRef} />
       </div>
 

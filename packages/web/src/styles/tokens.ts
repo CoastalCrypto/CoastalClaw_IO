@@ -26,7 +26,7 @@ export const PANEL_ACTIVE: CSSProperties = {
 
 export const PANEL_SUCCESS: CSSProperties = {
   ...PANEL,
-  borderColor: 'rgba(0,230,118,0.20)',
+  borderColor: 'rgba(16,185,129,0.20)',
 }
 
 export const PANEL_ERROR: CSSProperties = {
@@ -83,7 +83,7 @@ export const SECTION_LABEL: CSSProperties = {
 // Status colours (use as `color:` values)
 export const COLOR = {
   cyan:    '#00e5ff',
-  green:   '#00e676',
+  green:   '#10b981',
   amber:   '#ffb300',
   red:     '#ff5252',
   muted:   '#94adc4',

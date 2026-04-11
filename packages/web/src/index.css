@@ -85,6 +85,19 @@
   --gradient-ocean:      linear-gradient(180deg, #0a1628 0%, #050a0f 100%);
   --gradient-surge-glow: radial-gradient(ellipse at center, rgba(0,229,255,0.15) 0%, transparent 70%);
 
+  /* ── Tailwind Cyan Scale Override → align with #00e5ff design token ── */
+  --color-cyan-50:  #ecfeff;
+  --color-cyan-100: #cffafe;
+  --color-cyan-200: rgba(0,229,255,0.20);
+  --color-cyan-300: rgba(0,229,255,0.50);
+  --color-cyan-400: #00e5ff;
+  --color-cyan-500: #00bfea;
+  --color-cyan-600: #0099cc;
+  --color-cyan-700: #007799;
+  --color-cyan-800: #005566;
+  --color-cyan-900: #003344;
+  --color-cyan-950: #001a22;
+
   /* ── Border Radius Scale ─────────────────────────────── */
   --radius-sm:   4px;
   --radius-md:   8px;

@@ -208,7 +208,7 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
               <p style={{ fontSize: '12px', color: '#475569' }}>No runs yet. Start a pipeline to see history here.</p>
             )}
             {recentRuns.map((r: any) => {
-              const statusColor = r.status === 'done' ? '#00e676' : r.status === 'error' ? '#ff5252' : r.status === 'aborted' ? '#ffb300' : '#00e5ff'
+              const statusColor = r.status === 'done' ? '#10b981' : r.status === 'error' ? '#ff5252' : r.status === 'aborted' ? '#ffb300' : '#00e5ff'
               const durationLabel = r.totalDurationMs != null ? `${(r.totalDurationMs / 1000).toFixed(1)}s` : null
               const timeLabel = new Date(r.startedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
               return (

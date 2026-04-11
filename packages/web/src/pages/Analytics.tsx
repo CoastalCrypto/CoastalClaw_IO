@@ -119,7 +119,7 @@ export function Analytics({ onNav }: { onNav: (page: NavPage) => void }) {
               <StatCard label="SESSIONS"           value={data.totalSessions.toLocaleString()} />
               <StatCard label="AVG DURATION"       value={data.avgDurationMs ? `${data.avgDurationMs}ms` : '—'} />
               <StatCard label="SUCCESS RATE"       value={`${data.overallSuccessRate}%`}
-                accent={data.overallSuccessRate >= 80 ? '#00e676' : data.overallSuccessRate >= 50 ? '#ffb300' : '#ff5252'} />
+                accent={data.overallSuccessRate >= 80 ? '#10b981' : data.overallSuccessRate >= 50 ? '#ffb300' : '#ff5252'} />
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4 mb-4">
@@ -137,7 +137,7 @@ export function Analytics({ onNav }: { onNav: (page: NavPage) => void }) {
                     const total = data.totalToolCalls || 1
                     const pct = Math.round((count / total) * 100)
                     const colors: Record<string, string> = {
-                      approved: '#00e676', autonomous: '#00c8b4',
+                      approved: '#10b981', autonomous: '#00c8b4',
                       block: '#ff5252', denied: '#ff5252', timeout: '#ffb300',
                     }
                     return (

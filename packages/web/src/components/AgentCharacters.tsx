@@ -459,7 +459,7 @@ export function AgentCharacters({ agents, selected, onSelect, vertical = false }
 
           const style: CSSProperties = {
             borderColor: isSelected ? glowColor : 'rgba(255,255,255,0.07)',
-            background: 'rgba(5,13,26,0.9)',
+            background: 'rgba(5,10,15,0.9)',
             boxShadow: isSelected ? `0 0 0 2px ${glowColor}, 0 0 20px ${glowColor}55` : 'none',
           }
 
@@ -515,7 +515,7 @@ export function AgentCharacters({ agents, selected, onSelect, vertical = false }
             title={agent.name} className="shrink-0 flex flex-col items-center gap-1 transition-all duration-200"
             style={{ opacity: isSelected ? 1 : 0.55, transform: isSelected ? 'scale(1.1)' : 'scale(1)' }}>
             <div className="w-14 h-14 rounded-full overflow-hidden border-2 transition-all duration-200"
-              style={{ borderColor: isSelected ? meta.color : 'rgba(255,255,255,0.07)', background: 'rgba(5,13,26,0.9)',
+              style={{ borderColor: isSelected ? meta.color : 'rgba(255,255,255,0.07)', background: 'rgba(5,10,15,0.9)',
                 boxShadow: isSelected ? `0 0 0 2px ${meta.color}, 0 0 16px ${meta.color}55` : 'none' }}>
               <meta.svg />
             </div>

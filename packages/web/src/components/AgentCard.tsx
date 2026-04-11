@@ -73,9 +73,9 @@ export function AgentCard({ agent, onEdit, onDelete, onToggle, onCredentials, on
               title={agent.active ? 'Click to take offline' : 'Click to bring online'}
               className="text-[10px] font-mono px-2 py-0.5 rounded transition-all cursor-pointer"
               style={agent.active ? {
-                color: '#00e676',
-                border: '1px solid rgba(0,230,118,0.30)',
-                background: 'rgba(0,230,118,0.08)',
+                color: '#10b981',
+                border: '1px solid rgba(16,185,129,0.30)',
+                background: 'rgba(16,185,129,0.08)',
               } : {
                 color: '#ff5252',
                 border: '1px solid rgba(255,82,82,0.30)',

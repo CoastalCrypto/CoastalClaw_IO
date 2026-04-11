@@ -19,7 +19,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     return (
       <div className="min-h-screen flex items-center justify-center px-4"
-        style={{ background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)' }}>
+        style={{ background: '#050a0f' }}>
         <div className="w-full max-w-md text-center">
           <div className="text-5xl mb-6 opacity-40">⚠</div>
           <h1 className="text-lg font-bold text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>

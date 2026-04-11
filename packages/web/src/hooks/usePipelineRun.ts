@@ -58,7 +58,8 @@ export function usePipelineRun(runId: string | null, stageCount: number) {
       })
     }
     es.onerror = () => {
-      setState(prev => prev ? { ...prev, status: 'error' } : prev)
+      // Don't overwrite 'done' — stream closes normally after pipeline completes
+      setState(prev => prev && prev.status !== 'done' ? { ...prev, status: 'error' } : prev)
       es.close()
     }
 

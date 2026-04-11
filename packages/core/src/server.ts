@@ -119,7 +119,7 @@ export async function buildServer() {
   const pipelineStore = new PipelineStore(db)
   const steerQueue = new SteerQueue()
   const asyncRunner = new AsyncPipelineRunner(
-    agentRegistry, pipelineRouter, pipelineToolRegistry, gate, pipelineLog, pipelinePersonaMgr, steerQueue,
+    agentRegistry, pipelineRouter, pipelineToolRegistry, gate, pipelineLog, pipelinePersonaMgr, steerQueue, pipelineStore,
   )
   await fastify.register(pipelineRoutes, {
     registry: agentRegistry,

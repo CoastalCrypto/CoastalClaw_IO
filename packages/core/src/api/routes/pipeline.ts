@@ -61,16 +61,16 @@ export async function pipelineRoutes(
 
   // ── Async run ─────────────────────────────────────────────────────────────
   fastify.post<{
-    Body: { stages: Array<{ agentId: string; modelPref?: string; type?: 'agent' | 'ralph-loop'; loopBack?: { toStageIdx: number; condition: string; maxIterations: number } }>; input: string; pipelineId?: string }
+    Body: { stages: Array<{ agentId: string; modelPref?: string; type?: 'agent' | 'ralph-loop'; loopBack?: { toStageIdx: number; condition: string; maxIterations: number } }>; input: string; pipelineId?: string; pipelineName?: string }
   }>('/api/pipeline/run/async', async (req, reply) => {
-    const { stages, input, pipelineId } = req.body
+    const { stages, input, pipelineId, pipelineName } = req.body
     for (const stage of stages) {
       if (stage.type === 'ralph-loop') continue
       const agent = registry.get(stage.agentId)
       if (!agent) return reply.status(400).send({ error: `Agent not found: ${stage.agentId}` })
       if (!agent.active) return reply.status(400).send({ error: `Agent is offline: ${stage.agentId}` })
     }
-    const { runId } = runner.start(stages, input, pipelineId)
+    const { runId } = runner.start(stages, input, pipelineId, pipelineName)
     return reply.status(202).send({ runId })
   })
 
@@ -165,5 +165,10 @@ export async function pipelineRoutes(
   fastify.delete<{ Params: { id: string } }>('/api/admin/pipelines/:id', async (req, reply) => {
     pipelineStore.delete(req.params.id)
     return reply.status(204).send()
+  })
+
+  // ── Run history ────────────────────────────────────────────────────────────
+  fastify.get('/api/admin/pipeline-runs', async (_req, reply) => {
+    return reply.send(pipelineStore.listRuns(20))
   })
 }

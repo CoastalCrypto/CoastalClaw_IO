@@ -34,9 +34,12 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'builder' | 'run'>('builder')
   const [activeRunId, setActiveRunId] = useState<string | null>(null)
+  const [activeStageCount, setActiveStageCount] = useState(0)
   const [pipelineName, setPipelineName] = useState('')
   const [savedPipelines, setSavedPipelines] = useState<any[]>([])
   const [showLibrary, setShowLibrary] = useState(false)
+  const [recentRuns, setRecentRuns] = useState<any[]>([])
+  const [showRuns, setShowRuns] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/agents', { headers: adminHeaders() })
@@ -48,6 +51,8 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
   useEffect(() => {
     fetch('/api/admin/pipelines', { headers: adminHeaders() })
       .then(r => r.json()).then(setSavedPipelines).catch(() => {})
+    fetch('/api/admin/pipeline-runs', { headers: adminHeaders() })
+      .then(r => r.json()).then(setRecentRuns).catch(() => {})
   }, [])
 
   const addStage = () => setStages(s => [...s, { id: uid(), agentId: '' }])
@@ -79,11 +84,13 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
         body: JSON.stringify({
           stages: filled.map(s => ({ agentId: s.agentId, loopBack: s.loopBack })),
           input: input.trim(),
+          pipelineName: pipelineName.trim() || 'Ad-hoc run',
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
       if (data.runId) {
+        setActiveStageCount(filled.length)
         setActiveRunId(data.runId)
         setView('run')
       }
@@ -125,8 +132,12 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
       <PipelineRun
         runId={activeRunId}
         pipelineName={pipelineName || 'Pipeline Run'}
-        stageCount={stages.filter(s => s.agentId).length}
-        onBack={() => { setView('builder'); setActiveRunId(null) }}
+        stageCount={activeStageCount}
+        onBack={() => {
+          setView('builder'); setActiveRunId(null)
+          fetch('/api/admin/pipeline-runs', { headers: adminHeaders() })
+            .then(r => r.json()).then(setRecentRuns).catch(() => {})
+        }}
         onNav={onNav}
       />
     )
@@ -157,6 +168,10 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
             onClick={() => setShowLibrary(v => !v)}
             style={{ ...BTN_CYAN, opacity: showLibrary ? 1 : 0.7 }}
           >📂 Library</button>
+          <button
+            onClick={() => setShowRuns(v => !v)}
+            style={{ ...BTN_CYAN, opacity: showRuns ? 1 : 0.7 }}
+          >🕐 Runs</button>
         </div>
 
         {/* Library panel */}
@@ -180,6 +195,39 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
                 </span>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Recent runs panel */}
+        {showRuns && (
+          <div style={{ ...PANEL, marginBottom: 16 }}>
+            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', color: '#00D4FF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+              Recent Runs
+            </div>
+            {recentRuns.length === 0 && (
+              <p style={{ fontSize: '12px', color: '#475569' }}>No runs yet. Start a pipeline to see history here.</p>
+            )}
+            {recentRuns.map((r: any) => {
+              const statusColor = r.status === 'done' ? '#00e676' : r.status === 'error' ? '#ff5252' : r.status === 'aborted' ? '#ffb300' : '#00D4FF'
+              const durationLabel = r.totalDurationMs != null ? `${(r.totalDurationMs / 1000).toFixed(1)}s` : null
+              const timeLabel = new Date(r.startedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+              return (
+                <div
+                  key={r.runId}
+                  onClick={() => { setActiveRunId(r.runId); setActiveStageCount(r.stageCount); setPipelineName(r.pipelineName); setView('run') }}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 6, background: 'rgba(5,13,26,0.50)', marginBottom: 4, cursor: 'pointer' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', color: statusColor, background: `${statusColor}18`, border: `1px solid ${statusColor}40`, borderRadius: 10, padding: '1px 6px', flexShrink: 0 }}>{r.status}</span>
+                    <span style={{ fontSize: '12px', color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.pipelineName}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexShrink: 0, fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: '#475569' }}>
+                    {durationLabel && <span>{durationLabel}</span>}
+                    <span>{timeLabel}</span>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
 

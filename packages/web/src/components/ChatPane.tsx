@@ -198,8 +198,8 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        background: 'rgba(5,13,26,0.80)',
-        border: focused ? '1px solid rgba(0,212,255,0.45)' : '1px solid rgba(255,255,255,0.06)',
+        background: 'rgba(5,10,15,0.80)',
+        border: focused ? '1px solid rgba(0,229,255,0.45)' : '1px solid rgba(255,255,255,0.06)',
         borderRadius: '8px',
         overflow: 'hidden',
         fontFamily: 'Space Grotesk, sans-serif',
@@ -217,7 +217,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
         background: 'rgba(0,0,0,0.30)',
         flexShrink: 0,
       }}>
-        <span style={{ fontSize: '10px', color: '#A0AEC0', fontFamily: 'monospace', minWidth: '16px' }}>
+        <span style={{ fontSize: '10px', color: '#94adc4', fontFamily: 'monospace', minWidth: '16px' }}>
           {paneIndex + 1}
         </span>
 
@@ -229,7 +229,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
             flex: 1,
             background: 'transparent',
             border: 'none',
-            color: selectedAgentId ? '#00D4FF' : '#718096',
+            color: selectedAgentId ? '#00e5ff' : '#718096',
             fontSize: '11px',
             fontFamily: 'Space Grotesk, sans-serif',
             cursor: 'pointer',
@@ -245,7 +245,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
         <button
           onClick={e => { e.stopPropagation(); if (!voiceMuted) window.speechSynthesis?.cancel(); setVoiceMuted(m => !m) }}
           title={voiceMuted ? 'Enable voice' : 'Mute voice'}
-          style={{ fontSize: '11px', color: voiceMuted ? '#2d3748' : '#00D4FF', cursor: 'pointer', background: 'none', border: 'none', padding: '2px 3px' }}
+          style={{ fontSize: '11px', color: voiceMuted ? '#2d3748' : '#00e5ff', cursor: 'pointer', background: 'none', border: 'none', padding: '2px 3px' }}
         >
           {voiceMuted ? '🔇' : '🔊'}
         </button>
@@ -262,13 +262,13 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
           </button>
         )}
 
-        {focused && <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#00D4FF', flexShrink: 0 }} />}
+        {focused && <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#00e5ff', flexShrink: 0 }} />}
       </div>
 
       {/* Messages */}
       <div style={{ flex: 1, overflowY: 'auto', padding: `${px}px`, display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {messages.length === 0 && (
-          <div style={{ margin: 'auto', textAlign: 'center', color: '#2d3748', fontSize: fs }}>
+          <div style={{ margin: 'auto', textAlign: 'center', color: '#1a3a5c', fontSize: fs }}>
             <div style={{ fontSize: compact ? '20px' : '28px', marginBottom: '6px' }}>✳</div>
             <div>{agentLabel}</div>
           </div>
@@ -288,12 +288,12 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
                 padding: `${compact ? 5 : 7}px ${compact ? 9 : 12}px`,
                 borderRadius: m.role === 'user' ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
                 background: m.role === 'user'
-                  ? 'rgba(0,212,255,0.15)'
+                  ? 'rgba(0,229,255,0.10)'
                   : m.content.startsWith('⚠')
                     ? 'rgba(255,82,82,0.10)'
-                    : 'rgba(26,39,68,0.90)',
+                    : '#0d1f33',
                 border: m.role === 'user'
-                  ? '1px solid rgba(0,212,255,0.25)'
+                  ? '1px solid rgba(0,229,255,0.20)'
                   : m.content.startsWith('⚠')
                     ? '1px solid rgba(255,82,82,0.20)'
                     : '1px solid rgba(255,255,255,0.06)',
@@ -308,11 +308,11 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
                     <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ display: 'flex', gap: 3 }}>
                         {[0, 0.3, 0.6].map((d, k) => (
-                          <span key={k} style={{ animation: `blink 1.2s ${d}s infinite step-end`, color: '#00D4FF', fontSize: fs }}>●</span>
+                          <span key={k} style={{ animation: `blink 1.2s ${d}s infinite step-end`, color: '#00e5ff', fontSize: fs }}>●</span>
                         ))}
                       </span>
                       {thinkingMs > 3000 && (
-                        <span style={{ fontSize: '9px', color: 'rgba(0,212,255,0.45)', fontFamily: 'JetBrains Mono, monospace' }}>
+                        <span style={{ fontSize: '9px', color: 'rgba(0,229,255,0.45)', fontFamily: 'JetBrains Mono, monospace' }}>
                           {(thinkingMs / 1000).toFixed(0)}s
                         </span>
                       )}
@@ -356,7 +356,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
           disabled={loading}
           style={{
             flex: 1,
-            background: 'rgba(5,13,26,0.90)',
+            background: 'rgba(10,22,40,0.90)',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '8px',
             padding: `${inputPy}px 10px`,
@@ -366,7 +366,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
             outline: 'none',
             minWidth: 0,
           }}
-          onFocus={e => { e.target.style.borderColor = 'rgba(0,212,255,0.40)'; onFocus() }}
+          onFocus={e => { e.target.style.borderColor = 'rgba(0,229,255,0.40)'; onFocus() }}
           onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.08)' }}
         />
         <button
@@ -374,10 +374,10 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
           disabled={!input.trim() || loading}
           style={{
             padding: `${inputPy}px ${compact ? 10 : 14}px`,
-            background: input.trim() && !loading ? '#00D4FF' : 'rgba(0,212,255,0.08)',
-            border: '1px solid rgba(0,212,255,0.20)',
+            background: input.trim() && !loading ? '#00e5ff' : 'rgba(0,229,255,0.08)',
+            border: '1px solid rgba(0,229,255,0.20)',
             borderRadius: '8px',
-            color: input.trim() && !loading ? '#050d1a' : '#4a5568',
+            color: input.trim() && !loading ? '#050a0f' : '#4a5568',
             fontSize: fs,
             fontWeight: 'bold',
             cursor: input.trim() && !loading ? 'pointer' : 'default',

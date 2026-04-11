@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { usePipelineRun, type LiveStage } from '../hooks/usePipelineRun.js'
+import { NavBar } from '../components/NavBar.js'
+import type { NavPage } from '../components/NavBar.js'
 
 const PANEL = { background: 'rgba(26,39,68,0.80)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: '12px', padding: '16px' }
 const BTN = { background: 'rgba(0,212,255,0.12)', border: '1px solid rgba(0,212,255,0.30)', color: '#00D4FF', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600, cursor: 'pointer' } as React.CSSProperties
@@ -11,9 +13,10 @@ interface Props {
   pipelineName: string
   stageCount: number
   onBack: () => void
+  onNav: (p: NavPage) => void
 }
 
-export function PipelineRun({ runId, pipelineName, stageCount, onBack }: Props) {
+export function PipelineRun({ runId, pipelineName, stageCount, onBack, onNav }: Props) {
   const { state, steer, abort } = usePipelineRun(runId, stageCount)
   const [steerMsg, setSteerMsg] = useState('')
   const [expanded, setExpanded] = useState<Set<number>>(new Set([0]))
@@ -32,8 +35,11 @@ export function PipelineRun({ runId, pipelineName, stageCount, onBack }: Props) 
   }, [state?.stages])
 
   if (!state) return (
-    <div className="pt-20 px-4 max-w-3xl mx-auto" style={{ color: '#A0AEC0' }}>
-      <p style={MONO}>Connecting to run {runId}...</p>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)' }}>
+      <NavBar page="pipeline" onNav={onNav} />
+      <div className="pt-20 px-4 max-w-3xl mx-auto" style={{ color: '#A0AEC0' }}>
+        <p style={MONO}>Connecting to run {runId}...</p>
+      </div>
     </div>
   )
 
@@ -47,6 +53,8 @@ export function PipelineRun({ runId, pipelineName, stageCount, onBack }: Props) 
   const statusLabel = state.status === 'running' ? `Stage ${state.activeStageIdx + 1} of ${state.stageCount} · running` : state.status
 
   return (
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)' }}>
+    <NavBar page="pipeline" onNav={onNav} />
     <div className="pt-20 px-4 max-w-3xl mx-auto pb-8" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
       {/* Header */}
@@ -139,6 +147,7 @@ export function PipelineRun({ runId, pipelineName, stageCount, onBack }: Props) 
           <button onClick={send} style={BTN}>Send</button>
         </div>
       )}
+    </div>
     </div>
   )
 }

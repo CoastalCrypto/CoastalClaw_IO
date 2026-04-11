@@ -155,6 +155,7 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
         pipelineName={pipelineName || 'Pipeline Run'}
         stageCount={stages.filter(s => s.agentId).length}
         onBack={() => { setView('builder'); setActiveRunId(null) }}
+        onNav={onNav}
       />
     )
   }

@@ -7,21 +7,21 @@
 import type { CSSProperties } from 'react'
 
 export const PAGE_BG: CSSProperties = {
-  background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)',
+  background: '#050a0f',
   minHeight: '100vh',
   fontFamily: 'Space Grotesk, sans-serif',
 }
 
 export const PANEL: CSSProperties = {
   background: 'rgba(26,39,68,0.80)',
-  border: '1px solid rgba(0,212,255,0.15)',
+  border: '1px solid rgba(0,229,255,0.15)',
   borderRadius: '12px',
   padding: '20px',
 }
 
 export const PANEL_ACTIVE: CSSProperties = {
   ...PANEL,
-  border: '1px solid rgba(0,212,255,0.30)',
+  border: '1px solid rgba(0,229,255,0.30)',
 }
 
 export const PANEL_SUCCESS: CSSProperties = {
@@ -36,8 +36,8 @@ export const PANEL_ERROR: CSSProperties = {
 }
 
 export const INPUT_STYLE: CSSProperties = {
-  background: 'rgba(5,13,26,0.8)',
-  border: '1px solid rgba(0,212,255,0.20)',
+  background: 'rgba(5,10,15,0.8)',
+  border: '1px solid rgba(0,229,255,0.20)',
   borderRadius: '8px',
   padding: '8px 12px',
   color: '#e2e8f0',
@@ -47,9 +47,9 @@ export const INPUT_STYLE: CSSProperties = {
 }
 
 export const BTN_CYAN: CSSProperties = {
-  background: 'rgba(0,212,255,0.12)',
-  border: '1px solid rgba(0,212,255,0.30)',
-  color: '#00D4FF',
+  background: 'rgba(0,229,255,0.12)',
+  border: '1px solid rgba(0,229,255,0.30)',
+  color: '#00e5ff',
   borderRadius: '8px',
   padding: '6px 14px',
   fontSize: '12px',
@@ -75,18 +75,18 @@ export const MONO: CSSProperties = {
 export const SECTION_LABEL: CSSProperties = {
   fontFamily: 'JetBrains Mono, monospace',
   fontSize: '10px',
-  color: '#00D4FF',
+  color: '#00e5ff',
   textTransform: 'uppercase',
   letterSpacing: '0.08em',
 }
 
 // Status colours (use as `color:` values)
 export const COLOR = {
-  cyan:    '#00D4FF',
+  cyan:    '#00e5ff',
   green:   '#00e676',
   amber:   '#ffb300',
   red:     '#ff5252',
-  muted:   '#A0AEC0',
+  muted:   '#94adc4',
   dim:     'rgba(255,255,255,0.25)',
   dimPlus: 'rgba(255,255,255,0.45)',
 } as const

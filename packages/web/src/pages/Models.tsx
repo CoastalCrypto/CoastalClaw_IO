@@ -97,9 +97,9 @@ export function Models() {
   }
 
   return (
-    <div className="min-h-screen p-6" style={{ background: '#0A0F1C' }}>
+    <div className="min-h-screen p-6" style={{ background: '#050a0f' }}>
       <div className="flex items-center gap-3 mb-6">
-        <span style={{ color: '#00D4FF', fontSize: '20px' }}>✳</span>
+        <span style={{ color: '#00e5ff', fontSize: '20px' }}>✳</span>
         <h1 className="text-xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Model Management</h1>
       </div>
 

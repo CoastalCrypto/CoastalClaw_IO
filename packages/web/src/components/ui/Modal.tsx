@@ -23,13 +23,13 @@ export function Modal({ onClose, title, subtitle, width = 480, children }: Props
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div
-        style={{ width: '100%', maxWidth: width, background: 'rgba(26,39,68,0.95)', border: '1px solid rgba(0,212,255,0.20)', borderRadius: '12px', padding: '24px', fontFamily: 'Space Grotesk, sans-serif' }}
+        style={{ width: '100%', maxWidth: width, background: 'rgba(26,39,68,0.95)', border: '1px solid rgba(0,229,255,0.20)', borderRadius: '12px', padding: '24px', fontFamily: 'Space Grotesk, sans-serif' }}
         role="dialog" aria-modal="true"
       >
         {(title || subtitle) && (
           <div className="flex items-center justify-between mb-5">
             <div>
-              {title && <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', color: '#00D4FF', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{title}</p>}
+              {title && <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', color: '#00e5ff', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{title}</p>}
               {subtitle && <p className="text-sm font-bold text-white mt-0.5">{subtitle}</p>}
             </div>
             <button onClick={onClose} aria-label="Close" className="text-gray-600 hover:text-gray-400 text-lg leading-none">✕</button>

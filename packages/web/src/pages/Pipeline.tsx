@@ -150,7 +150,7 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
 
         <div className="mb-8">
           <h1 className="text-2xl font-bold tracking-tight text-white">Pipeline Builder</h1>
-          <p className="text-sm mt-1" style={{ color: '#A0AEC0' }}>
+          <p className="text-sm mt-1" style={{ color: '#94adc4' }}>
             Chain agents in sequence — each agent's output becomes the next agent's input.
           </p>
         </div>
@@ -177,7 +177,7 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
         {/* Library panel */}
         {showLibrary && (
           <div style={{ ...PANEL, marginBottom: 16 }}>
-            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', color: '#00D4FF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', color: '#00e5ff', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
               Saved Pipelines
             </div>
             {savedPipelines.length === 0 && (
@@ -187,7 +187,7 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
               <div
                 key={p.id}
                 onClick={() => loadPipeline(p)}
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 6, background: 'rgba(5,13,26,0.50)', marginBottom: 4, cursor: 'pointer' }}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 6, background: 'rgba(5,10,15,0.50)', marginBottom: 4, cursor: 'pointer' }}
               >
                 <span style={{ fontSize: '12px', color: '#e2e8f0' }}>{p.name}</span>
                 <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: '#475569' }}>
@@ -201,21 +201,21 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
         {/* Recent runs panel */}
         {showRuns && (
           <div style={{ ...PANEL, marginBottom: 16 }}>
-            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', color: '#00D4FF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', color: '#00e5ff', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
               Recent Runs
             </div>
             {recentRuns.length === 0 && (
               <p style={{ fontSize: '12px', color: '#475569' }}>No runs yet. Start a pipeline to see history here.</p>
             )}
             {recentRuns.map((r: any) => {
-              const statusColor = r.status === 'done' ? '#00e676' : r.status === 'error' ? '#ff5252' : r.status === 'aborted' ? '#ffb300' : '#00D4FF'
+              const statusColor = r.status === 'done' ? '#00e676' : r.status === 'error' ? '#ff5252' : r.status === 'aborted' ? '#ffb300' : '#00e5ff'
               const durationLabel = r.totalDurationMs != null ? `${(r.totalDurationMs / 1000).toFixed(1)}s` : null
               const timeLabel = new Date(r.startedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
               return (
                 <div
                   key={r.runId}
                   onClick={() => { setActiveRunId(r.runId); setActiveStageCount(r.stageCount); setPipelineName(r.pipelineName); setView('run') }}
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 6, background: 'rgba(5,13,26,0.50)', marginBottom: 4, cursor: 'pointer' }}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 6, background: 'rgba(5,10,15,0.50)', marginBottom: 4, cursor: 'pointer' }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                     <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', color: statusColor, background: `${statusColor}18`, border: `1px solid ${statusColor}40`, borderRadius: 10, padding: '1px 6px', flexShrink: 0 }}>{r.status}</span>
@@ -238,7 +238,7 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
           {stages.map((stage, idx) => (
             <div key={stage.id} className="mb-4">
               <div className="flex items-center gap-3">
-                <div className="text-xs font-mono w-5 text-center shrink-0" style={{ color: '#A0AEC0' }}>
+                <div className="text-xs font-mono w-5 text-center shrink-0" style={{ color: '#94adc4' }}>
                   {idx + 1}
                 </div>
 
@@ -246,7 +246,7 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
                   value={stage.agentId}
                   onChange={e => updateStage(stage.id, { agentId: e.target.value })}
                   className="flex-1 rounded-lg px-3 py-2 text-sm font-mono"
-                  style={{ background: 'rgba(5,13,26,0.8)', border: '1px solid rgba(0,212,255,0.20)', color: stage.agentId ? '#e2e8f0' : '#A0AEC0' }}
+                  style={{ background: 'rgba(5,10,15,0.8)', border: '1px solid rgba(0,229,255,0.20)', color: stage.agentId ? '#e2e8f0' : '#94adc4' }}
                 >
                   <option value="">— select agent —</option>
                   {agents.map(a => (
@@ -277,14 +277,14 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
                     onChange={e => updateStage(stage.id, { loopBack: { ...stage.loopBack!, condition: e.target.value } })}
                     style={{ width: 80, ...INPUT_STYLE, padding: '2px 6px', fontSize: '10px' }}
                   />
-                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: '#A0AEC0' }}>→ stage</span>
+                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: '#94adc4' }}>→ stage</span>
                   <input
                     type="number" min={1} max={idx + 1}
                     value={stage.loopBack.toStageIdx + 1}
                     onChange={e => updateStage(stage.id, { loopBack: { ...stage.loopBack!, toStageIdx: Number(e.target.value) - 1 } })}
                     style={{ width: 40, ...INPUT_STYLE, padding: '2px 6px', fontSize: '10px' }}
                   />
-                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: '#A0AEC0' }}>max</span>
+                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: '#94adc4' }}>max</span>
                   <input
                     type="number" min={1} max={10}
                     value={stage.loopBack.maxIterations}
@@ -308,7 +308,7 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
             rows={4}
             placeholder="The prompt that kicks off the pipeline..."
             className="w-full rounded-lg px-4 py-3 text-sm font-mono resize-none focus:outline-none"
-            style={{ background: 'rgba(5,13,26,0.8)', border: '1px solid rgba(0,212,255,0.20)', color: '#e2e8f0', fontSize: '14px' }}
+            style={{ background: 'rgba(5,10,15,0.8)', border: '1px solid rgba(0,229,255,0.20)', color: '#e2e8f0', fontSize: '14px' }}
           />
         </div>
 
@@ -323,8 +323,8 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
           disabled={running}
           className="w-full py-3 font-bold font-mono tracking-widest rounded-xl transition-all text-sm"
           style={running
-            ? { background: 'rgba(0,212,255,0.06)', border: '1px solid rgba(0,212,255,0.15)', color: '#A0AEC0' }
-            : { background: '#00D4FF', color: '#050d1a' }}
+            ? { background: 'rgba(0,229,255,0.06)', border: '1px solid rgba(0,229,255,0.15)', color: '#94adc4' }
+            : { background: '#00e5ff', color: '#050a0f' }}
         >
           {running ? 'Starting pipeline…' : '▶ Run Pipeline'}
         </button>

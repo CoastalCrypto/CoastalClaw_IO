@@ -29,18 +29,18 @@ export function Login({ onLogin }: Props) {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)' }}>
+      style={{ background: '#050a0f' }}>
 
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-10">
-          <div className="font-mono text-2xl text-cyan-400 tracking-widest mb-2">{'>'} COASTAL_OS</div>
+          <div className="font-mono text-2xl tracking-widest mb-2" style={{ color: '#00e5ff' }}>{'>'} COASTAL_OS</div>
           <div className="text-xs font-mono text-gray-500 tracking-wider">SIGN IN TO CONTINUE</div>
         </div>
 
         <form onSubmit={handleSubmit}
           className="rounded-2xl border border-white/8 p-8"
-          style={{ background: 'rgba(10,22,40,0.8)', backdropFilter: 'blur(16px)' }}>
+          style={{ background: 'rgba(10,22,40,0.8)', backdropFilter: 'blur(12px)' }}>
 
           <div className="space-y-4">
             <div>

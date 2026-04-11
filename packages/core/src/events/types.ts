@@ -6,6 +6,13 @@ export type AgentEventType =
   | 'token_counted'
   | 'job_run'
   | 'pr_open'
+  | 'pipeline_start'
+  | 'stage_start'
+  | 'stage_steer'
+  | 'loop_iteration'
+  | 'stage_end'
+  | 'pipeline_done'
+  | 'pipeline_error'
 
 export interface ToolCallStartEvent {
   type: 'tool_call_start'
@@ -67,6 +74,69 @@ export interface PrOpenEvent {
   url?: string
 }
 
+export interface PipelineStartEvent {
+  type: 'pipeline_start'
+  ts: number
+  runId: string
+  pipelineId?: string
+  stageCount: number
+}
+
+export interface StageStartEvent {
+  type: 'stage_start'
+  ts: number
+  runId: string
+  stageIdx: number
+  agentId: string
+  agentName: string
+  iteration: number
+}
+
+export interface StageSteerEvent {
+  type: 'stage_steer'
+  ts: number
+  runId: string
+  stageIdx: number
+  message: string
+}
+
+export interface LoopIterationEvent {
+  type: 'loop_iteration'
+  ts: number
+  runId: string
+  fromStageIdx: number
+  toStageIdx: number
+  iteration: number
+  condition: string
+}
+
+export interface StageEndEvent {
+  type: 'stage_end'
+  ts: number
+  runId: string
+  stageIdx: number
+  agentId: string
+  output: string
+  durationMs: number
+  iteration: number
+}
+
+export interface PipelineDoneEvent {
+  type: 'pipeline_done'
+  ts: number
+  runId: string
+  finalOutput: string
+  totalDurationMs: number
+}
+
+export interface PipelineErrorEvent {
+  type: 'pipeline_error'
+  ts: number
+  runId: string
+  stageIdx: number
+  error: string
+}
+
 export type AgentEvent =
   | ToolCallStartEvent
   | ToolCallEndEvent
@@ -75,3 +145,10 @@ export type AgentEvent =
   | TokenCountedEvent
   | JobRunEvent
   | PrOpenEvent
+  | PipelineStartEvent
+  | StageStartEvent
+  | StageSteerEvent
+  | LoopIterationEvent
+  | StageEndEvent
+  | PipelineDoneEvent
+  | PipelineErrorEvent

@@ -1,9 +1,9 @@
 [
   {
     "name": "create-skill",
-    "description": "Design and generate a new CoastalClaw skill definition with prompt template and variables.",
+    "description": "Design and generate a new Coastal.AI skill definition with prompt template and variables.",
     "agentId": "cto",
-    "prompt": "Design a new CoastalClaw skill with the following specification:\n\nSkill name: {{skill_name}}\nDescription: {{description}}\nPurpose: {{purpose}}\n\nReturn a complete skill definition:\n1. Slug (lowercase, hyphens only)\n2. One-sentence description\n3. Prompt template using {{variable}} placeholders for any user inputs\n4. Best agent to run it (general / cto / cfo / coo / product_manager / frontend_wizard / qa_lead / system_integrator / ux_architect)\n5. Example usage with placeholders filled in\n\nKeep the prompt template concise, actionable, and scoped to a single task."
+    "prompt": "Design a new Coastal.AI skill with the following specification:\n\nSkill name: {{skill_name}}\nDescription: {{description}}\nPurpose: {{purpose}}\n\nReturn a complete skill definition:\n1. Slug (lowercase, hyphens only)\n2. One-sentence description\n3. Prompt template using {{variable}} placeholders for any user inputs\n4. Best agent to run it (general / cto / cfo / coo / product_manager / frontend_wizard / qa_lead / system_integrator / ux_architect)\n5. Example usage with placeholders filled in\n\nKeep the prompt template concise, actionable, and scoped to a single task."
   },
   {
     "name": "crypto-price",
@@ -49,7 +49,7 @@
   },
   {
     "name": "team-task",
-    "description": "Delegate a complex task to the CoastalClaw multi-agent team — BossAgent fans it out to specialist agents.",
+    "description": "Delegate a complex task to the Coastal.AI multi-agent team — BossAgent fans it out to specialist agents.",
     "agentId": "general",
     "prompt": "Orchestrate the multi-agent team to complete: {{task}}\n\nContext / constraints: {{context}}\n\nUse BossAgent to fan out work to the appropriate specialists (CTO, COO, CFO, Product Manager, QA Lead, Frontend Wizard, System Integrator, UX Architect). Coordinate their outputs into a unified result.\n\nReport:\n- Which agents were involved and what each contributed\n- Consolidated outcome\n- Unresolved items or handoff recommendations"
   },

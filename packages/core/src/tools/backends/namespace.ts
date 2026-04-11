@@ -10,7 +10,7 @@ import type { ShellBackend, ShellResult } from './types.js'
  * Each session gets an isolated workdir under CC_SANDBOX_DIR.
  *
  * Set MOCK_NAMESPACE=1 to run on non-Linux (dev/CI on Windows/Mac).
- * Set CC_SANDBOX_DIR to override workspace root (defaults to /var/lib/coastalclaw/workspace).
+ * Set CC_SANDBOX_DIR to override workspace root (defaults to /var/lib/coastal-ai/workspace).
  */
 export class NamespaceBackend implements ShellBackend {
   readonly name = 'namespace'
@@ -43,7 +43,7 @@ export class NamespaceBackend implements ShellBackend {
       return new NativeBackend().execute(cmd, workdir, sessionId, timeoutMs)
     }
 
-    const sandboxBase = process.env.CC_SANDBOX_DIR ?? '/var/lib/coastalclaw/workspace'
+    const sandboxBase = process.env.CC_SANDBOX_DIR ?? '/var/lib/coastal-ai/workspace'
     const sessionDir = join(sandboxBase, `ns-${sessionId.slice(0, 12)}-${Date.now()}`)
     mkdirSync(sessionDir, { recursive: true })
 

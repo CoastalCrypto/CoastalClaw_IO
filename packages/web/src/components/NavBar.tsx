@@ -74,7 +74,7 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50"
-        style={{ background: 'rgba(10,15,28,0.94)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(0,212,255,0.10)' }}>
+        style={{ background: 'rgba(5,10,15,0.96)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(0,229,255,0.12)' }}>
         <div className="px-4 sm:px-6 h-14 flex items-center justify-between max-w-7xl mx-auto">
 
           {/* Brand */}
@@ -91,16 +91,16 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
               <path stroke="currentColor" strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.35"
                 d="M8 76 C22 68 38 70 50 78 C62 86 78 84 90 76"/>
             </svg>
-            <span className="font-bold tracking-tight text-white text-sm shrink-0 hidden sm:block"
-              style={{ fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.01em' }}>
+            <span className="font-bold tracking-tight text-sm shrink-0 hidden sm:block"
+              style={{ fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.5px', color: '#e2f4ff' }}>
               Coastal.AI
             </span>
-            <span className="font-bold tracking-tight text-white text-sm shrink-0 sm:hidden"
-              style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <span className="font-bold tracking-tight text-sm shrink-0 sm:hidden"
+              style={{ fontFamily: 'Space Grotesk, sans-serif', color: '#e2f4ff' }}>
               CC
             </span>
             {title && (
-              <span className="text-xs font-mono truncate hidden md:block" style={{ color: '#A0AEC0' }}>
+              <span className="text-xs font-mono truncate hidden md:block" style={{ color: '#4a6a8a' }}>
                 / {title}
               </span>
             )}
@@ -118,8 +118,8 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
                     : 'hover:text-white hover:bg-white/5'
                 }`}
                 style={page === item.id
-                  ? { background: '#00D4FF', fontFamily: 'Space Grotesk, sans-serif' }
-                  : { color: '#A0AEC0', fontFamily: 'Space Grotesk, sans-serif' }
+                  ? { background: '#00e5ff', color: '#050a0f', fontFamily: 'Space Grotesk, sans-serif', boxShadow: '0 0 10px rgba(0,229,255,0.35)' }
+                  : { color: '#94adc4', fontFamily: 'Space Grotesk, sans-serif' }
                 }
               >
                 {item.label}
@@ -131,10 +131,10 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
           <div className="flex items-center gap-3">
             {currentUser && (
               <div className="hidden sm:flex items-center gap-2">
-                <span className="text-xs" style={{ color: '#A0AEC0', fontFamily: 'Space Grotesk, sans-serif' }}>
+                <span className="text-xs" style={{ color: '#94adc4', fontFamily: 'Space Grotesk, sans-serif' }}>
                   {currentUser.username}
                   <span className={`ml-1.5 text-[10px] font-mono ${currentUser.role === 'admin' ? '' : 'text-gray-600'}`}
-                    style={currentUser.role === 'admin' ? { color: '#00D4FF' } : {}}>
+                    style={currentUser.role === 'admin' ? { color: '#00e5ff' } : {}}>
                     [{currentUser.role}]
                   </span>
                 </span>
@@ -153,9 +153,9 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
               onClick={() => setOpen(o => !o)}
               aria-label="Toggle menu"
             >
-              <span className={`block h-0.5 w-5 transition-transform origin-center ${open ? 'rotate-45 translate-y-2' : ''}`} style={{ background: '#A0AEC0' }} />
-              <span className={`block h-0.5 w-5 transition-opacity ${open ? 'opacity-0' : ''}`} style={{ background: '#A0AEC0' }} />
-              <span className={`block h-0.5 w-5 transition-transform origin-center ${open ? '-rotate-45 -translate-y-2' : ''}`} style={{ background: '#A0AEC0' }} />
+              <span className={`block h-0.5 w-5 transition-transform origin-center ${open ? 'rotate-45 translate-y-2' : ''}`} style={{ background: '#94adc4' }} />
+              <span className={`block h-0.5 w-5 transition-opacity ${open ? 'opacity-0' : ''}`} style={{ background: '#94adc4' }} />
+              <span className={`block h-0.5 w-5 transition-transform origin-center ${open ? '-rotate-45 -translate-y-2' : ''}`} style={{ background: '#94adc4' }} />
             </button>
           </div>
         </div>
@@ -181,7 +181,7 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
         {/* Mobile dropdown */}
         {open && (
           <div className="sm:hidden border-t px-4 py-3 flex flex-col gap-1"
-            style={{ background: 'rgba(10,15,28,0.99)', borderColor: 'rgba(0,212,255,0.10)' }}>
+            style={{ background: 'rgba(5,10,15,0.99)', borderColor: 'rgba(0,229,255,0.12)' }}>
             {visibleItems.map(item => (
               <button
                 key={item.id}
@@ -190,20 +190,20 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
                   page === item.id ? '' : 'hover:bg-white/5'
                 }`}
                 style={page === item.id
-                  ? { color: '#00D4FF', background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.20)', fontFamily: 'Space Grotesk, sans-serif' }
-                  : { color: '#A0AEC0', fontFamily: 'Space Grotesk, sans-serif' }
+                  ? { color: '#00e5ff', background: 'rgba(0,229,255,0.08)', borderLeft: '2px solid #00e5ff', fontFamily: 'Space Grotesk, sans-serif' }
+                  : { color: '#94adc4', fontFamily: 'Space Grotesk, sans-serif' }
                 }
               >
                 <span>{item.icon}</span>
                 <span>{item.label}</span>
-                {page === item.id && <span className="ml-auto" style={{ color: '#00D4FF' }}>●</span>}
+                {page === item.id && <span className="ml-auto" style={{ color: '#00e5ff', fontSize: '8px' }}>●</span>}
               </button>
             ))}
 
             {currentUser && (
               <div className="mt-3 pt-3 flex items-center justify-between px-4" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                <span className="text-xs" style={{ color: '#A0AEC0' }}>
-                  {currentUser.username} <span className="text-gray-600">[{currentUser.role}]</span>
+                <span className="text-xs" style={{ color: '#94adc4' }}>
+                  {currentUser.username} <span style={{ color: '#4a6a8a' }}>[{currentUser.role}]</span>
                 </span>
                 {onLogout && (
                   <button onClick={() => { onLogout(); setOpen(false) }}

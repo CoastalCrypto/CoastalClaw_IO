@@ -9,7 +9,7 @@ export class ZapierChannel implements Channel {
     const res = await fetch(this.cfg.webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, timestamp: new Date().toISOString(), source: 'coastalclaw' }),
+      body: JSON.stringify({ message, timestamp: new Date().toISOString(), source: 'coastal-ai' }),
     })
     if (!res.ok) throw new Error(`Zapier error ${res.status}: ${await res.text()}`)
   }

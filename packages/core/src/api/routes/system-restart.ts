@@ -13,7 +13,7 @@ import { join } from 'node:path'
  */
 export function restartServer(installDir: string): void {
   if (process.platform === 'win32') {
-    const script = join(tmpdir(), 'coastalclaw-restart.cmd')
+    const script = join(tmpdir(), 'coastal-ai-restart.cmd')
     writeFileSync(script, [
       '@echo off',
       'timeout /t 2 /nobreak > nul',
@@ -29,7 +29,7 @@ export function restartServer(installDir: string): void {
     process.exit(0)
   } else {
     try {
-      execSync('systemctl restart coastalclaw-server', { timeout: 10_000 })
+      execSync('systemctl restart coastal-ai-server', { timeout: 10_000 })
     } catch {
       process.exit(0)
     }

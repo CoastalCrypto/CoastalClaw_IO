@@ -6,7 +6,7 @@ let _db: Database.Database | null = null
 function getDb(): Database.Database {
   if (!_db) {
     const dataDir = process.env.CC_DATA_DIR ?? './data'
-    _db = new Database(`${dataDir}/coastal-claw.db`, { readonly: false })
+    _db = new Database(`${dataDir}/coastal-ai.db`, { readonly: false })
   }
   return _db
 }
@@ -15,7 +15,7 @@ export const sqliteTools: CoreTool[] = [
   {
     definition: {
       name: 'query_db',
-      description: 'Run a SQL query against the CoastalClaw database. Use mode="read" for SELECT, mode="write" for INSERT/UPDATE/DELETE.',
+      description: 'Run a SQL query against the Coastal.AI database. Use mode="read" for SELECT, mode="write" for INSERT/UPDATE/DELETE.',
       parameters: {
         type: 'object',
         properties: {

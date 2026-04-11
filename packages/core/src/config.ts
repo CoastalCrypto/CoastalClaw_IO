@@ -45,7 +45,7 @@ export function loadConfig(): Config {
       try {
         const { hostname } = new URL(url)
         if (!['localhost', '127.0.0.1', '::1'].includes(hostname)) {
-          console.warn(`[coastal-claw] Warning: CC_OLLAMA_URL points to ${hostname} — ensure this host is trusted (SSRF risk)`)
+          console.warn(`[coastal-ai] Warning: CC_OLLAMA_URL points to ${hostname} — ensure this host is trusted (SSRF risk)`)
         }
       } catch {
         throw new Error(`CC_OLLAMA_URL is not a valid URL: "${url}"`)

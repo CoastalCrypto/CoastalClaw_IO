@@ -57,7 +57,7 @@ export async function buildServer() {
   const adminToken = getOrCreateAdminToken(config.dataDir)
   // UserStore is created here so the auth hook can reference it for user session tokens.
   // It is also passed to userRoutes below.
-  const db = new Database(join(config.dataDir, 'coastal-claw.db'))
+  const db = new Database(join(config.dataDir, 'coastal-ai.db'))
   const userStore = new UserStore(db, adminToken)
 
   fastify.addHook('onRequest', async (req, reply) => {

@@ -18,7 +18,7 @@ export function getOrCreateAdminToken(dataDir: string): string {
   const token = randomBytes(32).toString('hex')
   mkdirSync(dataDir, { recursive: true })
   writeFileSync(tokenFile, token, { mode: 0o600 })
-  console.log(`[coastal-claw] Admin token written to ${tokenFile}`)
+  console.log(`[coastal-ai] Admin token written to ${tokenFile}`)
   return token
 }
 
@@ -131,13 +131,13 @@ export async function adminRoutes(fastify: FastifyInstance) {
     }
     mkdirSync(config.dataDir, { recursive: true })
     writeFileSync(registryPath, JSON.stringify(reg, null, 2))
-    console.log(`[coastal-claw] Auto-bootstrapped domain registry with ${ollamaModels.length} Ollama model(s). High-priority: ${high}`)
+    console.log(`[coastal-ai] Auto-bootstrapped domain registry with ${ollamaModels.length} Ollama model(s). High-priority: ${high}`)
   }
 
   // Auto-sync Ollama models into registry on startup (best-effort)
   fetchOllamaModels()
     .then(models => { syncOllamaToRegistry(models); bootstrapDomainRegistry(models) })
-    .catch((err: Error) => console.warn(`[coastal-claw] Ollama auto-sync skipped: ${err.message}`))
+    .catch((err: Error) => console.warn(`[coastal-ai] Ollama auto-sync skipped: ${err.message}`))
 
   // GET /api/admin/ollama/models — list models currently pulled in Ollama
   fastify.get('/api/admin/ollama/models', async (_req, reply) => {

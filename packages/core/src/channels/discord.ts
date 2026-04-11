@@ -11,7 +11,7 @@ export class DiscordChannel implements Channel {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         content: message,
-        username: this.cfg.username ?? 'CoastalClaw',
+        username: this.cfg.username ?? 'Coastal.AI',
         avatar_url: this.cfg.avatarUrl,
       }),
     })

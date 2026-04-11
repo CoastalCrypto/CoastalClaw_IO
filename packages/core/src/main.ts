@@ -17,4 +17,4 @@ const config = loadConfig()
 const server = await buildServer()
 
 await server.listen({ port: config.port, host: config.host })
-console.log(`[coastal-claw] core running on ${config.host}:${config.port}`)
+console.log(`[coastal-ai] core running on ${config.host}:${config.port}`)

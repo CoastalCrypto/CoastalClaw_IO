@@ -45,7 +45,7 @@ export async function channelRoutes(fastify: FastifyInstance, opts: { manager: C
     Body: { message?: string }
   }>('/api/admin/channels/:id/test', async (req, reply) => {
     const results = await manager.broadcast(
-      req.body?.message ?? '👋 Test message from CoastalClaw',
+      req.body?.message ?? '👋 Test message from Coastal.AI',
       req.params.id,
     )
     return reply.send(results[0] ?? { error: 'Channel not found' })

@@ -14,7 +14,7 @@ export class McpAdapter {
     this.namespace = namespace
     this.transport = new StdioClientTransport({ command, args, env })
     this.client = new Client(
-      { name: 'coastal-claw', version: '1.0.0' },
+      { name: 'coastal-ai', version: '1.0.0' },
       { capabilities: {} }
     )
   }

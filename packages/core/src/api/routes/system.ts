@@ -138,7 +138,7 @@ export async function systemRoutes(fastify: FastifyInstance) {
   fastify.get<{ Querystring: { service?: string; lines?: string } }>(
     '/api/admin/logs',
     async (req, reply) => {
-      const service = req.query.service ?? 'coastalclaw-server'
+      const service = req.query.service ?? 'coastal-ai-server'
       const lines   = Math.min(Number(req.query.lines ?? 200), 1000)
 
       // Prefer journald if available, fall back to log file

@@ -20,7 +20,7 @@ export async function streamRoutes(fastify: FastifyInstance) {
   mkdirSync(config.dataDir, { recursive: true })
   mkdirSync(config.agentWorkdir, { recursive: true })
 
-  const db = new Database(join(config.dataDir, 'coastal-claw.db'))
+  const db = new Database(join(config.dataDir, 'coastal-ai.db'))
   const router = new ModelRouter({ ollamaUrl: config.ollamaUrl, vllmUrl: config.vllmUrl, airllmUrl: config.airllmUrl, defaultModel: config.defaultModel })
   const memory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey })
   const agentRegistry = new AgentRegistry(join(config.dataDir, 'agents.db'))

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { AgentCard } from '../components/AgentCard'
 import { AgentEditor } from '../components/AgentEditor'
 import { NavBar, type NavPage } from '../components/NavBar'
+import { EmptyState } from '../components/ui/EmptyState.js'
 
 interface Agent {
   id: string; name: string; role: string; tools: string[]; builtIn: boolean; active: boolean; voice?: string
@@ -323,11 +324,12 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
         )}
 
         {agents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <span style={{ fontSize: '48px', color: '#00D4FF', opacity: 0.3 }}>✳</span>
-            <p className="mt-4 text-white font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>No agents configured</p>
-            <p className="mt-1 text-sm" style={{ color: '#A0AEC0' }}>Create your first agent to get started.</p>
-          </div>
+          <EmptyState
+            icon="✳"
+            title="No agents configured"
+            description="Agents are AI assistants with specific roles, tools, and personalities. Create your first agent to get started."
+            action={{ label: '+ Create your first agent', onClick: () => setAdding(true) }}
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {agents.map(agent => (

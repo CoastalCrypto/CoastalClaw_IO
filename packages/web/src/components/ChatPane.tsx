@@ -25,10 +25,20 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
+  const [thinkingMs, setThinkingMs] = useState(0)
   const sessionId = useRef(randomUUID())
   const inputRef = useRef<HTMLInputElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const thinkingStart = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (!loading) { setThinkingMs(0); return }
+    const tid = setInterval(() => {
+      if (thinkingStart.current !== null) setThinkingMs(Date.now() - thinkingStart.current)
+    }, 500)
+    return () => clearInterval(tid)
+  }, [loading])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -47,6 +57,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
     abortRef.current?.abort()
     const ctrl = new AbortController()
     abortRef.current = ctrl
+    thinkingStart.current = Date.now()
 
     try {
       const res = await fetch('/api/chat/stream', {
@@ -83,7 +94,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
         for (const line of lines) {
           if (line.startsWith('event: ')) {
             eventType = line.slice(7).trim()
-            if (!gotFirst) { gotFirst = true; clearTimeout(tid) }
+            if (!gotFirst) { gotFirst = true; clearTimeout(tid); thinkingStart.current = null }
             continue
           }
           if (!line.startsWith('data: ')) { eventType = ''; continue }
@@ -135,6 +146,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
         return c
       })
     } finally {
+      thinkingStart.current = null
       setLoading(false)
     }
   }, [input, loading, selectedAgentId])
@@ -245,7 +257,20 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
               wordBreak: 'break-word',
             }}>
               {m.content || (loading && i === messages.length - 1
-                ? <span style={{ color: '#00D4FF', animation: 'pulse 1.2s infinite' }}>▍</span>
+                ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ display: 'flex', gap: 3 }}>
+                      {[0, 0.3, 0.6].map((d, k) => (
+                        <span key={k} style={{ animation: `blink 1.2s ${d}s infinite step-end`, color: '#00D4FF', fontSize: fs }}>●</span>
+                      ))}
+                    </span>
+                    {thinkingMs > 3000 && (
+                      <span style={{ fontSize: '9px', color: 'rgba(0,212,255,0.45)', fontFamily: 'JetBrains Mono, monospace' }}>
+                        {(thinkingMs / 1000).toFixed(0)}s
+                      </span>
+                    )}
+                  </span>
+                )
                 : '')}
             </div>
           </div>

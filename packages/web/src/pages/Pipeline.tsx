@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavBar } from '../components/NavBar'
 import type { NavPage } from '../components/NavBar'
 import { PipelineRun } from './PipelineRun.js'
+import { PANEL, BTN_CYAN, INPUT_STYLE, PAGE_BG, SECTION_LABEL } from '../styles/tokens.js'
 
 function adminHeaders(): Record<string, string> {
   const session = sessionStorage.getItem('cc_admin_session') ?? ''
@@ -19,35 +20,6 @@ interface Stage {
   agentId: string
   loopBack?: { toStageIdx: number; condition: string; maxIterations: number }
 }
-
-const PANEL = {
-  background: 'rgba(26,39,68,0.80)',
-  border: '1px solid rgba(0,212,255,0.15)',
-  borderRadius: '12px',
-  padding: '20px',
-} as const
-
-const BTN_CYAN = {
-  background: 'rgba(0,212,255,0.12)',
-  border: '1px solid rgba(0,212,255,0.30)',
-  color: '#00D4FF',
-  borderRadius: '8px',
-  padding: '6px 14px',
-  fontSize: '12px',
-  fontFamily: 'Space Grotesk, sans-serif',
-  cursor: 'pointer',
-} as const
-
-const INPUT_STYLE = {
-  background: 'rgba(5,13,26,0.8)',
-  border: '1px solid rgba(0,212,255,0.20)',
-  borderRadius: '8px',
-  padding: '6px 12px',
-  color: '#e2e8f0',
-  fontSize: '13px',
-  fontFamily: 'Inter, sans-serif',
-  outline: 'none',
-} as const
 
 function uid() { return Math.random().toString(36).slice(2) }
 
@@ -161,7 +133,7 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
   }
 
   return (
-    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)', fontFamily: 'Space Grotesk, sans-serif' }}>
+    <div className="text-white" style={PAGE_BG}>
       <NavBar page="pipeline" onNav={onNav} />
       <div className="pt-20 px-4 sm:px-6 max-w-3xl mx-auto pb-16">
 
@@ -194,7 +166,7 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
               Saved Pipelines
             </div>
             {savedPipelines.length === 0 && (
-              <p style={{ fontSize: '12px', color: '#475569' }}>No saved pipelines yet.</p>
+              <p style={{ fontSize: '12px', color: '#475569' }}>No saved pipelines yet. Build a pipeline and click Save to store it here.</p>
             )}
             {savedPipelines.map(p => (
               <div
@@ -213,7 +185,7 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
 
         {/* Stage list */}
         <div style={PANEL} className="mb-4">
-          <p className="text-xs font-mono mb-4" style={{ color: '#00D4FF', letterSpacing: '0.08em' }}>STAGES</p>
+          <p className="mb-4" style={SECTION_LABEL}>STAGES</p>
 
           {stages.map((stage, idx) => (
             <div key={stage.id} className="mb-4">
@@ -281,7 +253,7 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
 
         {/* Input prompt */}
         <div style={PANEL} className="mb-4">
-          <p className="text-xs font-mono mb-3" style={{ color: '#00D4FF', letterSpacing: '0.08em' }}>INITIAL PROMPT</p>
+          <p className="mb-3" style={SECTION_LABEL}>INITIAL PROMPT</p>
           <textarea
             value={input}
             onChange={e => setInput(e.target.value)}

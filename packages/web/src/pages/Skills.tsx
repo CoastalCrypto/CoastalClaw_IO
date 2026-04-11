@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { NavBar, type NavPage } from '../components/NavBar'
+import { EmptyState } from '../components/ui/EmptyState.js'
 
 interface Skill {
   id: string
@@ -238,11 +239,12 @@ export function Skills({ onNav }: { onNav: (page: NavPage) => void }) {
         {loading ? (
           <div className="text-cyan-500 font-mono text-sm animate-pulse">Loading skills...</div>
         ) : skills.length === 0 && !showForm ? (
-          <div className="rounded-xl border border-white/8 py-20 text-center" style={{ background: 'rgba(255,255,255,0.02)' }}>
-            <div className="text-4xl mb-4 opacity-30">⚡</div>
-            <p className="text-gray-500 text-sm">No skills yet.</p>
-            <p className="text-gray-600 text-xs mt-2">Create a skill to give users reusable, one-click prompts in chat.</p>
-          </div>
+          <EmptyState
+            icon="⚡"
+            title="No skills yet"
+            description="Skills are reusable, one-click prompts that appear in chat. Create your first skill to speed up common tasks."
+            action={{ label: '+ Create your first skill', onClick: () => setShowForm(true) }}
+          />
         ) : (
           <div className="space-y-3">
             {skills.map(s => (

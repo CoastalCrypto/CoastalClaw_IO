@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { NavBar, type NavPage } from '../components/NavBar'
 import { coreClient } from '../api/client'
+import { EmptyState } from '../components/ui/EmptyState.js'
 
 interface CustomTool {
   id: string
@@ -204,11 +205,12 @@ export function Tools({ onNav }: { onNav: (page: NavPage) => void }) {
         {loading ? (
           <div className="text-cyan-500 font-mono text-sm animate-pulse">Loading tools...</div>
         ) : tools.length === 0 ? (
-          <div className="rounded-xl border border-white/8 surface-panel py-20 text-center">
-            <div className="text-4xl mb-4 opacity-30">🔧</div>
-            <p className="text-gray-500 text-sm">No custom tools yet.</p>
-            <p className="text-gray-600 text-xs mt-2">Create a tool to extend what your agent can do.</p>
-          </div>
+          <EmptyState
+            icon="🔧"
+            title="No custom tools yet"
+            description="Tools extend what your agents can do — fetch URLs, query databases, call APIs, and more."
+            action={{ label: '+ Create your first tool', onClick: () => setCreating(true) }}
+          />
         ) : (
           <div className="space-y-3">
             {tools.map(t => (

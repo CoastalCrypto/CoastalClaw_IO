@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { NavBar, type NavPage } from '../components/NavBar'
 import { coreClient } from '../api/client'
+import { EmptyState } from '../components/ui/EmptyState.js'
 
 type ChannelType = 'telegram' | 'discord' | 'slack' | 'zapier'
 
@@ -270,11 +271,12 @@ export function Channels({ onNav }: { onNav: (page: NavPage) => void }) {
         {loading ? (
           <div className="text-cyan-500 font-mono text-sm animate-pulse">Loading...</div>
         ) : channels.length === 0 ? (
-          <div className="rounded-xl border border-white/8 surface-panel py-20 text-center">
-            <div className="text-4xl mb-4 opacity-30">📡</div>
-            <p className="text-gray-500 text-sm">No output channels configured.</p>
-            <p className="text-gray-600 text-xs mt-2">Connect Telegram, Discord, Slack, or Zapier to receive agent messages.</p>
-          </div>
+          <EmptyState
+            icon="📡"
+            title="No output channels configured"
+            description="Channels let agents send messages to Telegram, Discord, Slack, or Zapier webhooks. Add your first channel to route agent output."
+            action={{ label: '+ Add your first channel', onClick: () => setCreating(true) }}
+          />
         ) : (
           <div className="space-y-3">
             {channels.map(ch => (

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useEventStream, type AgentEvent } from '../hooks/useEventStream'
 import { NavBar, type NavPage } from '../components/NavBar'
+import { EmptyState } from '../components/ui/EmptyState.js'
 
 function relativeTime(ts: number): string {
   const diff = Date.now() - ts
@@ -386,11 +387,11 @@ export function Dashboard({ onNav }: { onNav: (page: NavPage) => void }) {
           </div>
 
           {events.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="text-4xl mb-4 opacity-30">⚡</div>
-              <p className="text-gray-500 text-sm">Waiting for agent activity...</p>
-              <p className="text-gray-600 text-xs mt-2">Start a conversation to see events appear here in real time.</p>
-            </div>
+            <EmptyState
+              icon="⚡"
+              title="Waiting for agent activity"
+              description="Start a conversation with an agent to see tool calls, memory updates, and pipeline events appear here in real time."
+            />
           ) : (
             <div className="divide-y divide-white/3 max-h-[60vh] overflow-y-auto">
               {reversed.map((event, i) => (

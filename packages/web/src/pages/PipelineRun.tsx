@@ -2,11 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import { usePipelineRun, type LiveStage } from '../hooks/usePipelineRun.js'
 import { NavBar } from '../components/NavBar.js'
 import type { NavPage } from '../components/NavBar.js'
+import { PANEL, BTN_CYAN, BTN_RED, MONO, PAGE_BG, COLOR } from '../styles/tokens.js'
 
-const PANEL = { background: 'rgba(26,39,68,0.80)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: '12px', padding: '16px' }
-const BTN = { background: 'rgba(0,212,255,0.12)', border: '1px solid rgba(0,212,255,0.30)', color: '#00D4FF', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600, cursor: 'pointer' } as React.CSSProperties
-const BTN_RED = { ...BTN, background: 'rgba(255,82,82,0.10)', border: '1px solid rgba(255,82,82,0.25)', color: '#ff5252' } as React.CSSProperties
-const MONO = { fontFamily: 'JetBrains Mono, monospace' }
+const BTN: React.CSSProperties = { ...BTN_CYAN, padding: '8px 16px', fontWeight: 600 }
 
 interface Props {
   runId: string
@@ -35,9 +33,9 @@ export function PipelineRun({ runId, pipelineName, stageCount, onBack, onNav }: 
   }, [state?.stages])
 
   if (!state) return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)' }}>
+    <div style={PAGE_BG}>
       <NavBar page="pipeline" onNav={onNav} />
-      <div className="pt-20 px-4 max-w-3xl mx-auto" style={{ color: '#A0AEC0' }}>
+      <div className="pt-20 px-4 max-w-3xl mx-auto" style={{ color: COLOR.muted }}>
         <p style={MONO}>Connecting to run {runId}...</p>
       </div>
     </div>
@@ -49,11 +47,11 @@ export function PipelineRun({ runId, pipelineName, stageCount, onBack, onNav }: 
     setSteerMsg('')
   }
 
-  const statusColor = state.status === 'done' ? '#00e676' : state.status === 'error' ? '#ff5252' : '#00D4FF'
+  const statusColor = state.status === 'done' ? COLOR.green : state.status === 'error' ? COLOR.red : COLOR.cyan
   const statusLabel = state.status === 'running' ? `Stage ${state.activeStageIdx + 1} of ${state.stageCount} · running` : state.status
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #050d1a 100%)' }}>
+    <div style={PAGE_BG}>
     <NavBar page="pipeline" onNav={onNav} />
     <div className="pt-20 px-4 max-w-3xl mx-auto pb-8" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
@@ -195,7 +193,12 @@ function StageThread({ stage, isExpanded, onToggle }: { stage: LiveStage; isExpa
           ))}
           {stage.status === 'running' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', color: 'rgba(0,212,255,0.50)' }}>
-              <span>● ● ●</span> thinking
+              <span style={{ display: 'flex', gap: 3 }}>
+                {[0, 0.3, 0.6].map((delay, i) => (
+                  <span key={i} style={{ animation: `blink 1.2s ${delay}s infinite step-end` }}>●</span>
+                ))}
+              </span>
+              thinking
             </div>
           )}
           {stage.output && stage.status === 'done' && (

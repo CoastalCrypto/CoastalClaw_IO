@@ -85,6 +85,10 @@ Flash a bootable USB drive. Plug it into any UEFI machine and boot — no instal
 | **Skills Library** | Save reusable prompt templates with fill-in variables, triggered with `/command` shortcuts in chat |
 | **Scheduled Agents** | Set agents to run automatically on a cron schedule — daily briefings, alerts, reports |
 | **Multi-Agent Swarm** | Send complex tasks to a team of specialist agents (COO, CFO, CTO) that work in parallel |
+| **Pipeline Builder** | Chain agents in sequence — each agent's output becomes the next agent's input. Save pipelines to a library and reload them instantly |
+| **Live Pipeline Execution** | Watch pipelines run in real time — stage threads stream every tool call live, with a progress timeline and status badges |
+| **Live Steering** | Type a message into the steer bar during any pipeline run and it's injected into the active agent on its next reasoning step |
+| **Pipeline Loop-Back** | Configure loop-back arrows on any stage — the runner re-executes a stage until a condition is met, up to a configurable iteration cap |
 | **Live Dashboard** | Real-time feed of all agent activity with built-in cron job management |
 | **Analytics** | Tool call stats, success rates, cost tracking, 7-day trends |
 | **Custom Tools** | Write JavaScript tools in the browser — agents call them automatically |
@@ -298,6 +302,32 @@ The **Analytics** page shows usage stats across all agents: total sessions, tool
 </p>
 
 The **Tools** page lets you write custom JavaScript tools that agents can call. Write the function body, define its parameters, test it with sample input — all from the browser. No restart required.
+
+---
+
+### Pipeline Builder
+
+The **Pipeline** page lets you chain agents together. Each agent's output becomes the next agent's input — build arbitrarily long sequences and save them to your library.
+
+**Building a pipeline:**
+1. Click **+ Add Stage** and select an agent for each step
+2. Optionally add a **↩ loop-back** on any stage — set a condition string and max iterations; the runner re-runs that stage until the output contains the condition text
+3. Give it a name and click **Save** to store it in the library
+4. Enter an initial prompt and click **▶ Run Pipeline**
+
+The page immediately navigates to the **Live Execution View**.
+
+---
+
+### Live Pipeline Execution
+
+Once a pipeline starts, you're taken to a live view with three sections:
+
+- **Timeline** — a horizontal row of stage dots (done ✓ / active pulse / waiting ○) that updates as each stage completes
+- **Stage threads** — each stage is a collapsible card. The active stage is expanded and shows every tool call streaming in real time, with function name, arguments, and result. Done stages collapse automatically.
+- **Steer bar** — type any message and hit **Send** to inject it into the active agent's next reasoning step. Steered messages appear inline in amber so you can see exactly where your input landed.
+
+Click **Abort** at any time to cancel the run, or **← Back** when it completes to return to the builder.
 
 ---
 
@@ -729,6 +759,40 @@ POST /api/team/run
   → { reply, subtaskCount, subtasks: [{ subtaskId, reply }] }
 ```
 
+### Pipeline
+
+```
+# Saved pipeline definitions
+GET    /api/admin/pipelines                → [pipeline]
+POST   /api/admin/pipelines               { name, stages } → pipeline
+GET    /api/admin/pipelines/:id           → pipeline
+PATCH  /api/admin/pipelines/:id           { name?, stages? }
+DELETE /api/admin/pipelines/:id
+
+# Execution
+POST   /api/pipeline/run/async            { stages, input } → { runId }
+GET    /api/pipeline/run/:runId           → { status, stageIdx }
+GET    /api/pipeline/run/:runId/events    (SSE stream — see event types below)
+POST   /api/pipeline/run/:runId/steer     { message } → 204
+DELETE /api/pipeline/run/:runId           (abort)
+```
+
+**SSE event types** emitted on `/events`:
+
+| Event | Key payload fields |
+|-------|--------------------|
+| `pipeline_start` | `runId, stageCount` |
+| `stage_start` | `stageIdx, agentId, agentName, iteration` |
+| `tool_call_start` | `stageIdx, toolName, args` |
+| `tool_call_end` | `stageIdx, toolName, result, durationMs` |
+| `stage_steer` | `stageIdx, message` |
+| `loop_iteration` | `fromStageIdx, toStageIdx, iteration, condition` |
+| `stage_end` | `stageIdx, output, durationMs` |
+| `pipeline_done` | `runId, finalOutput, totalDurationMs` |
+| `pipeline_error` | `stageIdx, error` |
+
+---
+
 ### System
 
 ```
@@ -767,6 +831,7 @@ CoastalClaw_IO/
 │   │       ├── analytics/         # Action log + snapshots
 │   │       ├── persona/           # Persona manager
 │   │       ├── agents/            # AgenticLoop, BossAgent, MetaAgent, TeamChannel
+│   │       ├── pipeline/          # PipelineStore, AsyncPipelineRunner, SteerQueue
 │   │       ├── cron/              # Scheduled job store + croner scheduler
 │   │       ├── skills/            # Skill template store
 │   │       ├── models/            # ModelRouter, AirLLM, vLLM clients
@@ -775,10 +840,10 @@ CoastalClaw_IO/
 │   │       └── api/routes/        # All HTTP routes
 │   ├── web/                       # React 19 + Tailwind + Vite 6
 │   │   └── src/
-│   │       ├── pages/             # Chat, Dashboard, Analytics, Skills, Tools, Agents...
+│   │       ├── pages/             # Chat, Dashboard, Analytics, Skills, Tools, Agents, Pipeline, PipelineRun...
 │   │       ├── components/        # NavBar, AgentEditor
 │   │       ├── context/           # AuthContext
-│   │       └── hooks/             # useEventStream
+│   │       └── hooks/             # useEventStream, usePipelineRun
 │   ├── daemon/                    # Proactive scheduler + voice
 │   ├── architect/                 # Self-build loop: Planner, Patcher, Validator
 │   └── shell/                     # Electron kiosk (ClawShell)
@@ -804,7 +869,8 @@ CoastalClaw_IO/
 | ClawTeam | ✅ | AirLLM, Infinity, VibeVoice, BossAgent swarm, MetaAgent, persona |
 | v1.0.0 Launch | ✅ | APT repo, SSE streaming, signed packages, security audit |
 | v1.1.0 | ✅ | Live dashboard, analytics, custom tool builder, output channels, multi-user auth |
-| **v1.2.0** | ✅ | Skills library, cron scheduler, agent voice, version update banner, Electron auto-updater |
+| v1.2.0 | ✅ | Skills library, cron scheduler, agent voice, version update banner, Electron auto-updater |
+| **v1.3.0** | ✅ | Pipeline builder — save/load pipelines, live SSE execution view, live steering, loop-back stages |
 
 ---
 

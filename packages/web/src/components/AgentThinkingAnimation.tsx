@@ -7,7 +7,7 @@
  * COO  → Wave Orchestration  (coordinated node-wave, workflow cadence)
  * CFO  → Data Pulse          (rising bars with financial data-stream feel)
  * CTO  → Neural Circuit      (pulsing circuit-board with connected nodes)
- * General → Claw Pulse       (the CoastalClaw claw mark with a heartbeat glow)
+ * General → Claw Pulse       (the Coastal.AI claw mark with a heartbeat glow)
  */
 
 import React from 'react'

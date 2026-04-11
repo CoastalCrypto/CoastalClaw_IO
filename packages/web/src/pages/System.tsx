@@ -35,7 +35,7 @@ function fmtUptime(s: number): string {
   return h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 
-const LOG_SERVICES = ['coastalclaw-server', 'coastalclaw-daemon', 'coastalclaw-architect', 'ollama']
+const LOG_SERVICES = ['coastal-ai-server', 'coastal-ai-daemon', 'coastal-ai-architect', 'ollama']
 
 export function System({ onNav }: { onNav: (page: NavPage) => void }) {
   const [stats, setStats]       = useState<SystemStats | null>(null)
@@ -123,7 +123,7 @@ export function System({ onNav }: { onNav: (page: NavPage) => void }) {
                     : 'bg-gray-800 hover:bg-gray-700 border-gray-700'
                 }`}
               >
-                {updating ? 'Updating...' : updateAvailable ? 'Update available ↑' : 'Update CoastalClaw'}
+                {updating ? 'Updating...' : updateAvailable ? 'Update available ↑' : 'Update Coastal.AI'}
               </button>
               {updateAvailable && (
                 <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-cyan-400 animate-ping" />
@@ -236,7 +236,7 @@ export function System({ onNav }: { onNav: (page: NavPage) => void }) {
                       : 'text-gray-500 hover:text-gray-300 border border-transparent'
                   }`}
                 >
-                  {s.replace('coastalclaw-', '')}
+                  {s.replace('coastal-ai-', '')}
                 </button>
               ))}
             </div>

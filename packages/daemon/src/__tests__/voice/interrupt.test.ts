@@ -1,7 +1,7 @@
 // packages/daemon/src/__tests__/voice/interrupt.test.ts
 import { describe, it, expect, vi } from 'vitest'
 import { InterruptHandler } from '../../voice/interrupt-handler.js'
-import { IterationBudget } from '@coastal-claw/core'
+import { IterationBudget } from '@coastal-ai/core'
 
 describe('InterruptHandler', () => {
   it('calls abort on active budget when triggered', () => {

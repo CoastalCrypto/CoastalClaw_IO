@@ -49,7 +49,7 @@ function createWindow(): void {
 function createTray(): void {
   const icon = nativeImage.createEmpty()
   tray = new Tray(icon)
-  tray.setToolTip('CoastalClaw OS')
+  tray.setToolTip('Coastal.AI')
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Show',   click: () => mainWindow?.show() },
     { label: 'Reload', click: () => mainWindow?.webContents.reload() },

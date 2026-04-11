@@ -1,7 +1,7 @@
 /**
  * OceanScene — Three.js animated ocean wave background
  *
- * A full-viewport 3D wave mesh with the CoastalClaw colour palette.
+ * A full-viewport 3D wave mesh with the Coastal.AI colour palette.
  * Drop onto any page as a background layer behind content.
  *
  * Usage:

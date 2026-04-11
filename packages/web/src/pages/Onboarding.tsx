@@ -54,7 +54,7 @@ export function Onboarding({ onComplete }: { onComplete: (sessionId: string) => 
 
   if (step === 1)
     return (
-      <WizardStep title="Welcome to CoastalClaw" step={1} totalSteps={4}>
+      <WizardStep title="Welcome to Coastal.AI" step={1} totalSteps={4}>
         <p className="text-gray-400 mb-6 leading-relaxed">
           Your private AI team, running on your hardware. Set up takes about 2 minutes.
         </p>

@@ -1,5 +1,5 @@
 // packages/daemon/src/voice/interrupt-handler.ts
-import type { IterationBudget } from '@coastal-claw/core'
+import type { IterationBudget } from '@coastal-ai/core'
 
 export class InterruptHandler {
   private activeBudget: IterationBudget | null = null

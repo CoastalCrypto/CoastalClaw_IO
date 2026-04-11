@@ -1,5 +1,5 @@
 /**
- * LottiePlayer — wrapper around lottie-react for CoastalClaw
+ * LottiePlayer — wrapper around lottie-react for Coastal.AI
  *
  * Lottie plays JSON animation files at 60fps with tiny bundle size.
  * Use for success states, loading spinners, onboarding illustrations.

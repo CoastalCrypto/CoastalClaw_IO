@@ -1,5 +1,5 @@
 // Daemon-local VibeVoice client — mirrors packages/core/src/voice/vibevoice.ts
-// Kept here to avoid importing @coastal-claw/core's main entry (which starts the HTTP server).
+// Kept here to avoid importing @coastal-ai/core's main entry (which starts the HTTP server).
 
 export interface TranscriptSpeaker {
   id: string

@@ -93,7 +93,7 @@ export function NavBar({ page, onNav, title, currentUser: userProp, onLogout: lo
             </svg>
             <span className="font-bold tracking-tight text-white text-sm shrink-0 hidden sm:block"
               style={{ fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.01em' }}>
-              CoastalClaw
+              Coastal.AI
             </span>
             <span className="font-bold tracking-tight text-white text-sm shrink-0 sm:hidden"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}>

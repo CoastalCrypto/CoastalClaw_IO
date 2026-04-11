@@ -12,7 +12,7 @@
   --animate-glow-pulse: glow-pulse 3s    infinite alternate;
   --animate-blink:      blink      1s    step-end infinite;
 
-  /* Brand palette — CoastalClaw Option 1 */
+  /* Brand palette — Coastal.AI Option 1 */
   --color-accent:          #00D4FF;
   --color-accent-hover:    #00B8D9;
   --color-accent-glow:     rgba(0, 212, 255, 0.25);

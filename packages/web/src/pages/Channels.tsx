@@ -22,7 +22,7 @@ const CHANNEL_META: Record<ChannelType, { label: string; icon: string; color: st
     label: 'Discord', icon: '🎮', color: '#5865F2',
     fields: [
       { key: 'webhookUrl', label: 'Webhook URL', placeholder: 'https://discord.com/api/webhooks/...', secret: true },
-      { key: 'username',   label: 'Bot name (optional)', placeholder: 'CoastalClaw' },
+      { key: 'username',   label: 'Bot name (optional)', placeholder: 'Coastal.AI' },
     ],
   },
   slack: {
@@ -30,7 +30,7 @@ const CHANNEL_META: Record<ChannelType, { label: string; icon: string; color: st
     fields: [
       { key: 'webhookUrl', label: 'Webhook URL', placeholder: 'https://hooks.slack.com/services/...', secret: true },
       { key: 'channel',    label: 'Channel (optional)', placeholder: '#general' },
-      { key: 'username',   label: 'Bot name (optional)', placeholder: 'CoastalClaw' },
+      { key: 'username',   label: 'Bot name (optional)', placeholder: 'Coastal.AI' },
       { key: 'iconEmoji',  label: 'Icon emoji (optional)', placeholder: ':robot_face:' },
     ],
   },

@@ -107,7 +107,7 @@ importers:
 
   packages/daemon:
     dependencies:
-      '@coastal-claw/core':
+      '@coastal-ai/core':
         specifier: workspace:*
         version: link:../core
       '@types/ws':

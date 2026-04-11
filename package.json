@@ -1,5 +1,5 @@
 {
-  "name": "coastal-claw",
+  "name": "coastal-ai",
   "version": "1.0.0",
   "license": "MIT",
   "private": true,
@@ -8,7 +8,7 @@
     "start": "concurrently --kill-others-on-fail --prefix-colors \"cyan,magenta\" --names \"core,web\" \"node packages/core/dist/main.js\" \"pnpm --filter web dev\"",
     "desktop": "concurrently --kill-others-on-fail --prefix-colors \"cyan,magenta,yellow\" --names \"core,web,shell\" \"pnpm --filter core dev\" \"pnpm --filter web dev\" \"sleep 4 && pnpm --filter shell dev\"",
     "start:fresh": "pnpm build && pnpm start",
-    "stop": "kill $(cat /tmp/coastal-claw-core.pid 2>/dev/null) 2>/dev/null; true",
+    "stop": "kill $(cat /tmp/coastal-ai-core.pid 2>/dev/null) 2>/dev/null; true",
     "dev": "turbo dev",
     "build": "turbo build",
     "test": "turbo test",

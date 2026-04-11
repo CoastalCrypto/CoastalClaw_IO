@@ -1,5 +1,5 @@
 {
-  "name": "@coastal-claw/shell",
+  "name": "@coastal-ai/shell",
   "version": "0.1.0",
   "private": true,
   "main": "dist/main.js",

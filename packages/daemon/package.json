@@ -1,5 +1,5 @@
 {
-  "name": "@coastal-claw/daemon",
+  "name": "@coastal-ai/daemon",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@coastal-claw/core": "workspace:*",
+    "@coastal-ai/core": "workspace:*",
     "@types/ws": "^8.18.1",
     "better-sqlite3": "^11.10.0",
     "dotenv": "^16.4.0",

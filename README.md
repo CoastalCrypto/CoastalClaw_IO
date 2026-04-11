@@ -89,7 +89,10 @@ Flash a bootable USB drive. Plug it into any UEFI machine and boot — no instal
 | **Live Pipeline Execution** | Watch pipelines run in real time — stage threads stream every tool call live, with a progress timeline and status badges |
 | **Live Steering** | Type a message into the steer bar during any pipeline run and it's injected into the active agent on its next reasoning step |
 | **Pipeline Loop-Back** | Configure loop-back arrows on any stage — the runner re-executes a stage until a condition is met, up to a configurable iteration cap |
-| **Live Dashboard** | Real-time feed of all agent activity with built-in cron job management |
+| **Pipeline Run History** | Browse past pipeline runs from the 🕐 Runs panel, replay their live execution view, and see status badge, duration, and timestamp at a glance |
+| **Chat Voice Playback** | Each chat pane has a per-pane 🔊/🔇 toggle — replies are read aloud via the browser speech engine (muted by default; prevents multi-pane collision) |
+| **Chat Retry** | Hover the last assistant reply and click ↺ retry to re-send the previous prompt without retyping |
+| **Live Dashboard** | Real-time event feed with expandable detail panels — click any tool call, stage, or pipeline event to see the full JSON payload inline |
 | **Analytics** | Tool call stats, success rates, cost tracking, 7-day trends |
 | **Custom Tools** | Write JavaScript tools in the browser — agents call them automatically |
 | **Output Channels** | Push agent messages to Telegram, Discord, Slack, or Zapier |
@@ -871,6 +874,7 @@ CoastalClaw_IO/
 | v1.1.0 | ✅ | Live dashboard, analytics, custom tool builder, output channels, multi-user auth |
 | v1.2.0 | ✅ | Skills library, cron scheduler, agent voice, version update banner, Electron auto-updater |
 | **v1.3.0** | ✅ | Pipeline builder — save/load pipelines, live SSE execution view, live steering, loop-back stages |
+| **v1.4.0** | ✅ | UX polish — pipeline run history & replay, per-pane chat voice, chat retry button, expandable dashboard events, empty states with CTAs, credential eye-toggle, nav-away warning |
 
 ---
 

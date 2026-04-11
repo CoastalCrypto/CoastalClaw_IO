@@ -48,7 +48,7 @@ useradd -m -s /bin/bash coastal || true
 mkdir -p /opt/coastal-ai /var/lib/coastal-ai/data /var/lib/coastal-ai/workspace
 
 # Clone and build Coastal.AI
-REPO_URL="${CC_REPO_URL:-https://github.com/CoastalCrypto/CoastalClaw_IO.git}"
+REPO_URL="${CC_REPO_URL:-https://github.com/CoastalCrypto/Coastal.AI.git}"
 REPO_REF="${CC_REPO_REF:-master}"
 if [[ ! -f /opt/coastal-ai/package.json ]]; then
   git clone --depth=1 --branch "$REPO_REF" "$REPO_URL" /opt/coastal-ai
@@ -79,6 +79,7 @@ systemctl enable coastal-server.service
 systemctl enable coastal-daemon.service
 systemctl enable coastal-architect.timer
 systemctl enable coastal-shell.service
+systemctl enable coastal-web.service
 
 # Set autologin for coastal user
 mkdir -p /etc/systemd/system/getty@tty1.service.d

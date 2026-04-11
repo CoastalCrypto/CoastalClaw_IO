@@ -1,6 +1,7 @@
 [Unit]
 Description=Coastal.AI Self-Build Architect
 After=coastal-server.service
+Requires=coastal-server.service
 
 [Service]
 Type=oneshot

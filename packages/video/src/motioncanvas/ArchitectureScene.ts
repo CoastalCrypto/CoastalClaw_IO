@@ -1,7 +1,7 @@
 /**
  * ArchitectureScene — Motion Canvas animated explainer
  *
- * Animates the CoastalClaw routing architecture diagram —
+ * Animates the Coastal.AI routing architecture diagram —
  * ideal for docs, YouTube explainers, or investor decks.
  *
  * Usage:

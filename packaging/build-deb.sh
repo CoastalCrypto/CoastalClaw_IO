@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# build-deb.sh — produce coastalclaw_<version>_amd64.deb
+# build-deb.sh — produce coastal-ai_<version>_amd64.deb
 # Usage: bash packaging/build-deb.sh [version]
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION="${1:-$(node -p "require('${REPO_ROOT}/package.json').version")}"
-PKG="coastalclaw_${VERSION}_amd64"
+PKG="coastal-ai_${VERSION}_amd64"
 STAGING="${REPO_ROOT}/dist-deb/${PKG}"
 
 echo "[deb] Building ${PKG}.deb..."
@@ -22,7 +22,7 @@ pnpm build
 cd - >/dev/null
 
 # ── Application files ─────────────────────────────────────────
-INSTALL_DIR="${STAGING}/opt/coastalclaw"
+INSTALL_DIR="${STAGING}/opt/coastal-ai"
 mkdir -p "${INSTALL_DIR}"
 
 # Copy everything including node_modules and built dist directories.
@@ -41,26 +41,26 @@ rsync -a \
 # ── Systemd units ─────────────────────────────────────────────
 SYSTEMD_DIR="${STAGING}/lib/systemd/system"
 mkdir -p "${SYSTEMD_DIR}"
-cp "${REPO_ROOT}/coastalos/systemd/coastal-server.service"    "${SYSTEMD_DIR}/coastalclaw-server.service"
-cp "${REPO_ROOT}/coastalos/systemd/coastal-daemon.service"    "${SYSTEMD_DIR}/coastalclaw-daemon.service"
-cp "${REPO_ROOT}/coastalos/systemd/coastal-web.service"       "${SYSTEMD_DIR}/coastalclaw-web.service"
-cp "${REPO_ROOT}/coastalos/systemd/coastal-architect.service" "${SYSTEMD_DIR}/coastalclaw-architect.service"
-cp "${REPO_ROOT}/coastalos/systemd/coastal-architect.timer"   "${SYSTEMD_DIR}/coastalclaw-architect.timer"
+cp "${REPO_ROOT}/coastalos/systemd/coastal-server.service"    "${SYSTEMD_DIR}/coastal-ai-server.service"
+cp "${REPO_ROOT}/coastalos/systemd/coastal-daemon.service"    "${SYSTEMD_DIR}/coastal-ai-daemon.service"
+cp "${REPO_ROOT}/coastalos/systemd/coastal-web.service"       "${SYSTEMD_DIR}/coastal-ai-web.service"
+cp "${REPO_ROOT}/coastalos/systemd/coastal-architect.service" "${SYSTEMD_DIR}/coastal-ai-architect.service"
+cp "${REPO_ROOT}/coastalos/systemd/coastal-architect.timer"   "${SYSTEMD_DIR}/coastal-ai-architect.timer"
 
 # Fix ExecStart paths in the copied units
-sed -i 's|/usr/bin/node packages/core/dist/main.js|/usr/bin/node /opt/coastalclaw/packages/core/dist/main.js|g' \
-  "${SYSTEMD_DIR}/coastalclaw-server.service"
-sed -i 's|/usr/bin/node packages/daemon/dist/index.js|/usr/bin/node /opt/coastalclaw/packages/daemon/dist/index.js|g' \
-  "${SYSTEMD_DIR}/coastalclaw-daemon.service"
+sed -i 's|/usr/bin/node packages/core/dist/main.js|/usr/bin/node /opt/coastal-ai/packages/core/dist/main.js|g' \
+  "${SYSTEMD_DIR}/coastal-ai-server.service"
+sed -i 's|/usr/bin/node packages/daemon/dist/index.js|/usr/bin/node /opt/coastal-ai/packages/daemon/dist/index.js|g' \
+  "${SYSTEMD_DIR}/coastal-ai-daemon.service"
 
 # ── CLI wrapper ───────────────────────────────────────────────
 BIN_DIR="${STAGING}/usr/bin"
 mkdir -p "${BIN_DIR}"
-cat > "${BIN_DIR}/coastalclaw" <<'SCRIPT'
+cat > "${BIN_DIR}/coastal-ai" <<'SCRIPT'
 #!/bin/bash
-exec node /opt/coastalclaw/packages/core/dist/main.js "$@"
+exec node /opt/coastal-ai/packages/core/dist/main.js "$@"
 SCRIPT
-chmod 755 "${BIN_DIR}/coastalclaw"
+chmod 755 "${BIN_DIR}/coastal-ai"
 
 # ── Debian control files ──────────────────────────────────────
 DEBIAN_DIR="${STAGING}/DEBIAN"

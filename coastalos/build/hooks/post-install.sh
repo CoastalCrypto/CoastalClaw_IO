@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "[post-install] Installing CoastalClaw..."
+echo "[post-install] Installing Coastal.AI..."
 
 # Install Node.js 22 via NodeSource (packages.list only ships the distro nodejs which may be < 22)
 if ! node --version 2>/dev/null | grep -qE '^v2[2-9]'; then
@@ -24,8 +24,8 @@ pip3 install openwakeword --break-system-packages
 # Always-on: Infinity vector DB
 curl -L https://github.com/infiniflow/infinity/releases/latest/download/infinity-linux-x86_64 \
   -o /usr/local/bin/infinity && chmod +x /usr/local/bin/infinity
-mkdir -p /var/lib/coastalclaw/infinity
-chown coastal:coastal /var/lib/coastalclaw/infinity
+mkdir -p /var/lib/coastal-ai/infinity
+chown coastal:coastal /var/lib/coastal-ai/infinity
 systemctl enable coastal-infinity.service
 
 # Install vLLM, VibeVoice, and AirLLM only if GPU present (CUDA or ROCm)
@@ -33,7 +33,7 @@ if nvidia-smi &>/dev/null 2>&1 || rocm-smi &>/dev/null 2>&1; then
   echo "[post-install] GPU detected — installing vLLM, VibeVoice, AirLLM..."
   pip3 install vllm --break-system-packages || echo "[post-install] vLLM install failed — Ollama fallback active"
   systemctl enable coastal-vllm.service || true
-  pip3 install -r /opt/coastalclaw/coastalos/vibevoice/requirements.txt --break-system-packages \
+  pip3 install -r /opt/coastal-ai/coastalos/vibevoice/requirements.txt --break-system-packages \
     || echo "[post-install] VibeVoice install failed — whisper-cpp/piper fallback active"
   systemctl enable coastal-vibevoice.service || true
   pip3 install airllm --break-system-packages \
@@ -45,19 +45,19 @@ fi
 
 # Create coastal user and install project
 useradd -m -s /bin/bash coastal || true
-mkdir -p /opt/coastalclaw /var/lib/coastalclaw/data /var/lib/coastalclaw/workspace
+mkdir -p /opt/coastal-ai /var/lib/coastal-ai/data /var/lib/coastal-ai/workspace
 
-# Clone and build CoastalClaw
+# Clone and build Coastal.AI
 REPO_URL="${CC_REPO_URL:-https://github.com/CoastalCrypto/CoastalClaw_IO.git}"
 REPO_REF="${CC_REPO_REF:-master}"
-if [[ ! -f /opt/coastalclaw/package.json ]]; then
-  git clone --depth=1 --branch "$REPO_REF" "$REPO_URL" /opt/coastalclaw
+if [[ ! -f /opt/coastal-ai/package.json ]]; then
+  git clone --depth=1 --branch "$REPO_REF" "$REPO_URL" /opt/coastal-ai
 fi
-cd /opt/coastalclaw
+cd /opt/coastal-ai
 pnpm install --frozen-lockfile
 pnpm build
 
-chown -R coastal:coastal /opt/coastalclaw /var/lib/coastalclaw
+chown -R coastal:coastal /opt/coastal-ai /var/lib/coastal-ai
 
 # Set up cgroup slice for namespace sandbox
 mkdir -p /etc/systemd/system/coastal.slice.d

@@ -47,9 +47,9 @@ cp "${COASTALOS_DIR}/labwc/rc.xml"    config/includes.chroot/tmp/labwc/
 cp "${COASTALOS_DIR}/labwc/autostart" config/includes.chroot/tmp/labwc/
 
 # Add waybar config
-mkdir -p config/includes.chroot/opt/coastalclaw/coastalos/waybar
-cp "${COASTALOS_DIR}/waybar/config.jsonc" config/includes.chroot/opt/coastalclaw/coastalos/waybar/
-cp "${COASTALOS_DIR}/waybar/style.css"    config/includes.chroot/opt/coastalclaw/coastalos/waybar/
+mkdir -p config/includes.chroot/opt/coastal-ai/coastalos/waybar
+cp "${COASTALOS_DIR}/waybar/config.jsonc" config/includes.chroot/opt/coastal-ai/coastalos/waybar/
+cp "${COASTALOS_DIR}/waybar/style.css"    config/includes.chroot/opt/coastal-ai/coastalos/waybar/
 
 # Add systemd units
 mkdir -p config/includes.chroot/etc/systemd/system

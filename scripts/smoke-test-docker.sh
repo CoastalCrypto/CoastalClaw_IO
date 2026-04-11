@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# smoke-test-docker.sh — build + boot CoastalClaw in Docker, verify the server starts
+# smoke-test-docker.sh — build + boot Coastal.AI in Docker, verify the server starts
 # Usage: bash scripts/smoke-test-docker.sh
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-IMAGE="coastalclaw-smoke:local"
+IMAGE="coastal-ai-smoke:local"
 CONTAINER="cc-smoke-$$"
 PORT=14747   # host port (mapped to 4747 inside container)
 TIMEOUT=60   # seconds to wait for /health

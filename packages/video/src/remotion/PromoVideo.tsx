@@ -1,5 +1,5 @@
 /**
- * CoastalClaw Promo Video — Remotion
+ * Coastal.AI Promo Video — Remotion
  *
  * Renders a 30-second promotional video as a React component.
  * Remotion uses ffmpeg to export it as MP4.

@@ -62,8 +62,8 @@ echo "[apt] Packages index generated ($(wc -l < "$BINARY_DIR/Packages") lines)"
 # apt-ftparchive computes the required MD5/SHA1/SHA256 hashes automatically
 if command -v apt-ftparchive &>/dev/null; then
   apt-ftparchive \
-    -o APT::FTPArchive::Release::Origin="CoastalClaw" \
-    -o APT::FTPArchive::Release::Label="CoastalClaw" \
+    -o APT::FTPArchive::Release::Origin="Coastal.AI" \
+    -o APT::FTPArchive::Release::Label="Coastal.AI" \
     -o APT::FTPArchive::Release::Suite="stable" \
     -o APT::FTPArchive::Release::Codename="stable" \
     -o APT::FTPArchive::Release::Architectures="amd64" \
@@ -81,8 +81,8 @@ else
   SIZE_GZ=$(wc -c < "$BINARY_DIR/Packages.gz")
 
   cat > "$DIST_DIR/Release" <<EOF
-Origin: CoastalClaw
-Label: CoastalClaw
+Origin: Coastal.AI
+Label: Coastal.AI
 Suite: stable
 Codename: stable
 Architectures: amd64
@@ -116,13 +116,13 @@ fi
 cat > setup.sh <<'SETUP'
 #!/bin/bash
 set -e
-curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/CoastalClaw_IO/master/coastalclaw-release.asc | \
-  sudo gpg --dearmor -o /usr/share/keyrings/coastalclaw.gpg
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/coastalclaw.gpg] \
-  https://CoastalCrypto.github.io/CoastalClaw_IO stable main" | \
-  sudo tee /etc/apt/sources.list.d/coastalclaw.list
+curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/Coastal.AI_IO/master/coastal-ai-release.asc | \
+  sudo gpg --dearmor -o /usr/share/keyrings/coastal-ai.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/coastal-ai.gpg] \
+  https://CoastalCrypto.github.io/Coastal.AI_IO stable main" | \
+  sudo tee /etc/apt/sources.list.d/coastal-ai.list
 sudo apt-get update
-sudo apt-get install -y coastalclaw
+sudo apt-get install -y coastal-ai
 SETUP
 chmod +x setup.sh
 
@@ -134,4 +134,4 @@ git commit -m "apt: publish ${DEB_FILE}" || echo "[apt] Nothing to commit"
 git push origin "$APT_BRANCH" --force
 
 echo "[apt] Published. Install with:"
-echo "  curl -fsSL https://CoastalCrypto.github.io/CoastalClaw_IO/setup.sh | sudo bash"
+echo "  curl -fsSL https://CoastalCrypto.github.io/Coastal.AI_IO/setup.sh | sudo bash"

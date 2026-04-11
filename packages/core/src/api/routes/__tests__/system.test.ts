@@ -22,7 +22,7 @@ describe('restartServer', () => {
 
     expect(spawnMock).toHaveBeenCalledWith(
       'cmd.exe',
-      expect.arrayContaining(['/c', expect.stringContaining('coastalclaw-restart.cmd')]),
+      expect.arrayContaining(['/c', expect.stringContaining('coastal-ai-restart.cmd')]),
       expect.objectContaining({ detached: true }),
     )
     expect(exitSpy).toHaveBeenCalledWith(0)
@@ -42,7 +42,7 @@ describe('restartServer', () => {
     restartServer('/install/dir')
 
     expect(execSyncMock).toHaveBeenCalledWith(
-      'systemctl restart coastalclaw-server',
+      'systemctl restart coastal-ai-server',
       expect.objectContaining({ timeout: 10_000 }),
     )
   })

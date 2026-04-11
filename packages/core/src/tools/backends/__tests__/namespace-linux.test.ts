@@ -13,7 +13,7 @@ describe.skipIf(!isLinux)('NamespaceBackend (real Linux, no mock)', () => {
   beforeAll(async () => {
     // Run without MOCK_NAMESPACE to exercise real unshare path
     delete process.env.MOCK_NAMESPACE
-    // Use /tmp for sandbox so tests don't require /var/lib/coastalclaw/workspace
+    // Use /tmp for sandbox so tests don't require /var/lib/coastal-ai/workspace
     process.env.CC_SANDBOX_DIR = '/tmp/coastal-test-ns'
     backend = new NamespaceBackend()
     available = await backend.isAvailable()

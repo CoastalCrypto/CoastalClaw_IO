@@ -3,6 +3,8 @@ title: Introduction
 description: What is Coastal.AI and why does it exist?
 ---
 
+![Coastal.AI](/banner.png)
+
 # Coastal.AI
 
 **Your private AI executive team — running on your hardware. Data never leaves the facility.**

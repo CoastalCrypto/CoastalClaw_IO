@@ -41,6 +41,13 @@ export function PipelineRun({ runId, pipelineName, stageCount, onBack, onNav }: 
     </div>
   )
 
+  const confirmLeave = (action: () => void) => {
+    if (state?.status === 'running') {
+      if (!window.confirm('A pipeline stage is still running. Leave and let it continue in the background?')) return
+    }
+    action()
+  }
+
   const send = async () => {
     if (!steerMsg.trim()) return
     await steer(steerMsg.trim())
@@ -52,13 +59,13 @@ export function PipelineRun({ runId, pipelineName, stageCount, onBack, onNav }: 
 
   return (
     <div style={PAGE_BG}>
-    <NavBar page="pipeline" onNav={onNav} />
+    <NavBar page="pipeline" onNav={p => confirmLeave(() => onNav(p))} />
     <div className="pt-20 px-4 max-w-3xl mx-auto pb-8" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
       {/* Header */}
       <div style={{ ...PANEL, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={onBack} style={{ ...BTN, padding: '5px 10px', fontSize: '11px' }}>← Back</button>
+          <button onClick={() => confirmLeave(onBack)} style={{ ...BTN, padding: '5px 10px', fontSize: '11px' }}>← Back</button>
           <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600, color: '#FFFFFF', fontSize: '15px' }}>
             ▣ {pipelineName || 'Pipeline Run'}
           </span>

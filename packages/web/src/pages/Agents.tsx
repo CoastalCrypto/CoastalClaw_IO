@@ -29,7 +29,7 @@ const PANEL_STYLE = {
 // ── Credentials panel ─────────────────────────────────────────────
 function CredentialsPanel({ agentId, agentName, onClose }: { agentId: string; agentName: string; onClose: () => void }) {
   const [, setCreds] = useState<Record<string, string>>({})
-  const [rows, setRows] = useState<Array<{ key: string; value: string }>>([])
+  const [rows, setRows] = useState<Array<{ key: string; value: string; visible?: boolean }>>([])
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -78,14 +78,24 @@ function CredentialsPanel({ agentId, agentName, onClose }: { agentId: string; ag
                 className="flex-1 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none"
                 style={{ background: 'rgba(5,13,26,0.8)', border: '1px solid rgba(0,212,255,0.20)', color: '#e2e8f0' }}
               />
-              <input
-                placeholder="value"
-                value={row.value}
-                type="password"
-                onChange={e => setRows(r => r.map((x, j) => j === i ? { ...x, value: e.target.value } : x))}
-                className="flex-1 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none"
-                style={{ background: 'rgba(5,13,26,0.8)', border: '1px solid rgba(0,212,255,0.20)', color: '#e2e8f0' }}
-              />
+              <div className="flex flex-1 relative">
+                <input
+                  placeholder="value"
+                  value={row.value}
+                  type={row.visible ? 'text' : 'password'}
+                  onChange={e => setRows(r => r.map((x, j) => j === i ? { ...x, value: e.target.value } : x))}
+                  className="flex-1 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none"
+                  style={{ background: 'rgba(5,13,26,0.8)', border: '1px solid rgba(0,212,255,0.20)', color: '#e2e8f0', paddingRight: '28px', width: '100%' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setRows(r => r.map((x, j) => j === i ? { ...x, visible: !x.visible } : x))}
+                  title={row.visible ? 'Hide value' : 'Show value'}
+                  style={{ position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: row.visible ? '#00D4FF' : '#4a5568', cursor: 'pointer', fontSize: '12px', padding: '2px' }}
+                >
+                  {row.visible ? '◑' : '○'}
+                </button>
+              </div>
               <button onClick={() => setRows(r => r.filter((_, j) => j !== i))} className="text-red-700 hover:text-red-400 text-xs px-1">✕</button>
             </div>
           ))}

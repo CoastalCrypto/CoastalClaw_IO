@@ -35,6 +35,9 @@ import { SkillStore } from './skills/store.js'
 import { ContextStore } from './context/store.js'
 import { UserModelStore } from './persona/user-model.js'
 import { SkillGapsLog } from './agents/skill-gaps.js'
+import { PipelineStore } from './pipeline/store.js'
+import { SteerQueue } from './pipeline/steer-queue.js'
+import { AsyncPipelineRunner } from './pipeline/runner.js'
 import { UnifiedMemory } from './memory/index.js'
 import { UserStore } from './users/store.js'
 import { AgentRegistry } from './agents/registry.js'
@@ -113,6 +116,11 @@ export async function buildServer() {
   const pipelineToolRegistry = new ToolRegistry(pipelineBackend)
   const pipelineLog = new ActionLog(db)
   const pipelinePersonaMgr = new PersonaManager(join(config.dataDir, 'persona.db'))
+  const pipelineStore = new PipelineStore(db)
+  const steerQueue = new SteerQueue()
+  const asyncRunner = new AsyncPipelineRunner(
+    agentRegistry, pipelineRouter, pipelineToolRegistry, gate, pipelineLog, pipelinePersonaMgr, steerQueue,
+  )
   await fastify.register(pipelineRoutes, {
     registry: agentRegistry,
     router: pipelineRouter,
@@ -120,6 +128,9 @@ export async function buildServer() {
     gate,
     log: pipelineLog,
     personaMgr: pipelinePersonaMgr,
+    steerQueue,
+    pipelineStore,
+    runner: asyncRunner,
   })
 
   await fastify.register(eventRoutes)

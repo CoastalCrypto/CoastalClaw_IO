@@ -5,6 +5,7 @@ import type { PermissionGate } from './permission-gate.js'
 import type { ActionLog } from './action-log.js'
 import type { LoopResult, GateDecision } from './types.js'
 import type { SkillGapsLog } from './skill-gaps.js'
+import type { SteerQueue } from '../pipeline/steer-queue.js'
 import { runBackgroundReview } from './learning-thread.js'
 import { IterationBudget } from './iteration-budget.js'
 import { eventBus } from '../events/bus.js'
@@ -35,6 +36,8 @@ export class AgenticLoop {
     budget?: IterationBudget,
     signal?: AbortSignal,
     images?: string[],
+    steerQueue?: SteerQueue,
+    runId?: string,
   ): Promise<LoopResult> {
     const messages: ChatMessage[] = session.buildMessages(userMessage, history)
     if (images?.length) {
@@ -111,6 +114,15 @@ export class AgenticLoop {
           for (const tc of toolCalls) {
             const { output } = await this.executeOne(tc, session, sessionId)
             messages.push({ role: 'tool', tool_call_id: tc.id, content: output })
+          }
+        }
+
+        // Drain any steering messages from the user and inject as user turns
+        if (steerQueue && runId) {
+          const steered = steerQueue.drain(runId)
+          for (const msg of steered) {
+            messages.push({ role: 'user', content: `[Live steering]: ${msg}` })
+            eventBus.publish({ type: 'stage_steer', ts: Date.now(), runId, stageIdx: -1, message: msg })
           }
         }
 

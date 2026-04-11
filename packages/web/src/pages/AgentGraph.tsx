@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback } from 'react'
-import ReactFlow, {
+import {
+  ReactFlow,
   ReactFlowProvider,
   Background,
   BackgroundVariant,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { AgentGraphState, AgentGraphEvent, GraphNode, GraphEdge } from '../types/agent-graph'
+import type { AgentGraphState, AgentGraphEvent } from '../types/agent-graph'
 
 const INITIAL_STATE: AgentGraphState = { nodes: [], edges: [], lastUpdated: 0 }
 

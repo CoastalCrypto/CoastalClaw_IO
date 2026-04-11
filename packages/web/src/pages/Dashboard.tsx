@@ -57,9 +57,9 @@ function StatBox({ label, value, sub }: { label: string; value: string | number;
   return (
     <div className="stat-card">
       <div className="p-4 pb-3">
-        <div className="text-xs font-mono mb-2 tracking-wider" style={{ color: '#A0AEC0' }}>{label}</div>
+        <div className="text-xs font-mono mb-2 tracking-wider" style={{ color: '#94adc4' }}>{label}</div>
         <div className="text-2xl font-bold text-white tabular-nums" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>{value}</div>
-        {sub && <div className="text-[11px] mt-1.5" style={{ color: 'rgba(160,174,192,0.60)' }}>{sub}</div>}
+        {sub && <div className="text-[11px] mt-1.5" style={{ color: 'rgba(148,173,196,0.60)' }}>{sub}</div>}
       </div>
       <div className="stat-card-bar">
         <div className="w-2 h-0.5 bg-black/20 mx-auto rounded-full" />
@@ -160,15 +160,15 @@ function CronSection() {
   }
 
   return (
-    <div className="rounded-xl overflow-hidden" style={{ background: 'rgba(13,24,41,0.80)', border: '1px solid rgba(0,212,255,0.10)' }}>
+    <div className="rounded-xl overflow-hidden" style={{ background: 'rgba(10,22,40,0.80)', border: '1px solid rgba(0,229,255,0.10)' }}>
       {/* Header */}
-      <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(0,212,255,0.08)' }}>
+      <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(0,229,255,0.08)' }}>
         <span className="section-heading">SCHEDULED JOBS</span>
         <button
           onClick={openNew}
           className="text-xs font-mono transition-colors rounded px-2 py-0.5"
-          style={{ color: '#00D4FF', border: '1px solid rgba(0,212,255,0.25)' }}
-          onMouseEnter={e => (e.target as HTMLElement).style.background = 'rgba(0,212,255,0.08)'}
+          style={{ color: '#00e5ff', border: '1px solid rgba(0,229,255,0.25)' }}
+          onMouseEnter={e => (e.target as HTMLElement).style.background = 'rgba(0,229,255,0.08)'}
           onMouseLeave={e => (e.target as HTMLElement).style.background = 'transparent'}
         >
           + NEW JOB
@@ -334,7 +334,7 @@ export function Dashboard({ onNav }: { onNav: (page: NavPage) => void }) {
   const reversed    = [...events].reverse()
 
   return (
-    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #0A0F1C 0%, #0D1829 60%, #0A0F1C 100%)' }}>
+    <div className="min-h-screen text-white" style={{ background: '#050a0f' }}>
       <NavBar page="dashboard" onNav={onNav} />
 
       <div className="pt-20 pb-12 px-4 sm:px-6 max-w-6xl mx-auto">
@@ -343,24 +343,24 @@ export function Dashboard({ onNav }: { onNav: (page: NavPage) => void }) {
         <div className="flex items-center justify-between mb-8">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <span style={{ color: '#00D4FF', fontSize: '20px', lineHeight: 1 }}>✳</span>
+              <span style={{ color: '#00e5ff', fontSize: '20px', lineHeight: 1 }}>✳</span>
               <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em' }}>
                 Activity Dashboard
               </h1>
             </div>
-            <p className="text-sm font-mono ml-8" style={{ color: '#A0AEC0' }}>
+            <p className="text-sm font-mono ml-8" style={{ color: '#94adc4' }}>
               Live agent event stream
               <span className={`inline-block w-2 h-2 rounded-full ml-2 ${connected ? 'animate-pulse' : ''}`}
-                style={{ background: connected ? '#00e676' : '#555' }} />
+                style={{ background: connected ? '#10b981' : '#555' }} />
               <span className="ml-1">{connected ? 'connected' : 'reconnecting...'}</span>
             </p>
           </div>
           <button
             onClick={clear}
             className="text-xs font-mono transition-colors rounded-lg px-3 py-1.5"
-            style={{ color: '#A0AEC0', border: '1px solid rgba(255,255,255,0.06)' }}
+            style={{ color: '#94adc4', border: '1px solid rgba(255,255,255,0.06)' }}
             onMouseEnter={e => { (e.target as HTMLElement).style.color = '#fff'; (e.target as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)' }}
-            onMouseLeave={e => { (e.target as HTMLElement).style.color = '#A0AEC0'; (e.target as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)' }}
+            onMouseLeave={e => { (e.target as HTMLElement).style.color = '#94adc4'; (e.target as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)' }}
           >
             clear
           </button>
@@ -380,10 +380,10 @@ export function Dashboard({ onNav }: { onNav: (page: NavPage) => void }) {
         </div>
 
         {/* Event feed */}
-        <div className="rounded-xl overflow-hidden" style={{ background: 'rgba(13,24,41,0.80)', border: '1px solid rgba(0,212,255,0.10)' }}>
-          <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(0,212,255,0.08)' }}>
+        <div className="rounded-xl overflow-hidden" style={{ background: 'rgba(10,22,40,0.80)', border: '1px solid rgba(0,229,255,0.10)' }}>
+          <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(0,229,255,0.08)' }}>
             <span className="section-heading">EVENT FEED</span>
-            <span className="text-xs font-mono" style={{ color: '#A0AEC0' }}>{events.length} events</span>
+            <span className="text-xs font-mono" style={{ color: '#94adc4' }}>{events.length} events</span>
           </div>
 
           {events.length === 0 ? (

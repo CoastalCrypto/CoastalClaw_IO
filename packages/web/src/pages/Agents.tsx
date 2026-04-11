@@ -20,8 +20,8 @@ function adminHeaders(): Record<string, string> {
 }
 
 const PANEL_STYLE = {
-  background: 'rgba(26,39,68,0.80)',
-  border: '1px solid rgba(0,212,255,0.20)',
+  background: 'rgba(13,31,51,0.80)',
+  border: '1px solid rgba(0,229,255,0.20)',
   borderRadius: '12px',
   padding: '20px',
 } as const
@@ -62,7 +62,7 @@ function CredentialsPanel({ agentId, agentName, onClose }: { agentId: string; ag
       <div style={{ ...PANEL_STYLE, width: '100%', maxWidth: '480px', fontFamily: 'Space Grotesk, sans-serif' }}>
         <div className="flex items-center justify-between mb-5">
           <div>
-            <p className="text-xs font-mono" style={{ color: '#00D4FF', letterSpacing: '0.08em' }}>CREDENTIALS</p>
+            <p className="text-xs font-mono" style={{ color: '#00e5ff', letterSpacing: '0.08em' }}>CREDENTIALS</p>
             <p className="text-sm font-bold text-white mt-0.5">{agentName}</p>
           </div>
           <button onClick={onClose} className="text-gray-600 hover:text-gray-400 text-lg">✕</button>
@@ -76,7 +76,7 @@ function CredentialsPanel({ agentId, agentName, onClose }: { agentId: string; ag
                 value={row.key}
                 onChange={e => setRows(r => r.map((x, j) => j === i ? { ...x, key: e.target.value } : x))}
                 className="flex-1 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none"
-                style={{ background: 'rgba(5,13,26,0.8)', border: '1px solid rgba(0,212,255,0.20)', color: '#e2e8f0' }}
+                style={{ background: 'rgba(10,22,40,0.90)', border: '1px solid rgba(0,229,255,0.20)', color: '#e2e8f0' }}
               />
               <div className="flex flex-1 relative">
                 <input
@@ -85,13 +85,13 @@ function CredentialsPanel({ agentId, agentName, onClose }: { agentId: string; ag
                   type={row.visible ? 'text' : 'password'}
                   onChange={e => setRows(r => r.map((x, j) => j === i ? { ...x, value: e.target.value } : x))}
                   className="flex-1 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none"
-                  style={{ background: 'rgba(5,13,26,0.8)', border: '1px solid rgba(0,212,255,0.20)', color: '#e2e8f0', paddingRight: '28px', width: '100%' }}
+                  style={{ background: 'rgba(10,22,40,0.90)', border: '1px solid rgba(0,229,255,0.20)', color: '#e2e8f0', paddingRight: '28px', width: '100%' }}
                 />
                 <button
                   type="button"
                   onClick={() => setRows(r => r.map((x, j) => j === i ? { ...x, visible: !x.visible } : x))}
                   title={row.visible ? 'Hide value' : 'Show value'}
-                  style={{ position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: row.visible ? '#00D4FF' : '#4a5568', cursor: 'pointer', fontSize: '12px', padding: '2px' }}
+                  style={{ position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: row.visible ? '#00e5ff' : '#4a5568', cursor: 'pointer', fontSize: '12px', padding: '2px' }}
                 >
                   {row.visible ? '◑' : '○'}
                 </button>
@@ -104,7 +104,7 @@ function CredentialsPanel({ agentId, agentName, onClose }: { agentId: string; ag
         <button
           onClick={() => setRows(r => [...r, { key: '', value: '' }])}
           className="text-xs font-mono mb-5"
-          style={{ color: '#00D4FF' }}
+          style={{ color: '#00e5ff' }}
         >
           + Add key
         </button>
@@ -115,7 +115,7 @@ function CredentialsPanel({ agentId, agentName, onClose }: { agentId: string; ag
             onClick={save}
             disabled={saving}
             className="px-4 py-2 rounded-lg text-xs font-mono font-bold transition-all"
-            style={{ background: '#00D4FF', color: '#050d1a' }}
+            style={{ background: '#00e5ff', color: '#050a0f' }}
           >
             {saving ? 'Saving…' : 'Save'}
           </button>
@@ -156,12 +156,12 @@ function BindingsPanel({ agentId, agentName, onClose }: { agentId: string; agent
       <div style={{ ...PANEL_STYLE, width: '100%', maxWidth: '560px', fontFamily: 'Space Grotesk, sans-serif' }}>
         <div className="flex items-center justify-between mb-2">
           <div>
-            <p className="text-xs font-mono" style={{ color: '#00D4FF', letterSpacing: '0.08em' }}>ROUTING BINDINGS</p>
+            <p className="text-xs font-mono" style={{ color: '#00e5ff', letterSpacing: '0.08em' }}>ROUTING BINDINGS</p>
             <p className="text-sm font-bold text-white mt-0.5">{agentName}</p>
           </div>
           <button onClick={onClose} className="text-gray-600 hover:text-gray-400 text-lg">✕</button>
         </div>
-        <p className="text-xs mb-5" style={{ color: '#A0AEC0' }}>
+        <p className="text-xs mb-5" style={{ color: '#94adc4' }}>
           Binding rules bypass domain routing. Higher priority = evaluated first.
         </p>
 
@@ -171,7 +171,7 @@ function BindingsPanel({ agentId, agentName, onClose }: { agentId: string; agent
 
         <div className="space-y-3 mb-4">
           {bindings.map((b, i) => (
-            <div key={i} className="rounded-lg p-3 flex flex-col gap-2" style={{ background: 'rgba(5,13,26,0.6)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div key={i} className="rounded-lg p-3 flex flex-col gap-2" style={{ background: 'rgba(10,22,40,0.60)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex gap-2">
                 <input
                   placeholder="sessionPattern (regex)"
@@ -204,7 +204,7 @@ function BindingsPanel({ agentId, agentName, onClose }: { agentId: string; agent
         <button
           onClick={() => setBindings(b => [...b, { priority: 10 }])}
           className="text-xs font-mono mb-5"
-          style={{ color: '#00D4FF' }}
+          style={{ color: '#00e5ff' }}
         >
           + Add rule
         </button>
@@ -215,7 +215,7 @@ function BindingsPanel({ agentId, agentName, onClose }: { agentId: string; agent
             onClick={save}
             disabled={saving}
             className="px-4 py-2 rounded-lg text-xs font-mono font-bold transition-all"
-            style={{ background: '#00D4FF', color: '#050d1a' }}
+            style={{ background: '#00e5ff', color: '#050a0f' }}
           >
             {saving ? 'Saving…' : 'Save'}
           </button>
@@ -284,7 +284,7 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
   const bindAgent = bindAgentId ? agents.find(a => a.id === bindAgentId) : null
 
   return (
-    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #0A0F1C 0%, #0D1829 60%, #0A0F1C 100%)' }}>
+    <div className="min-h-screen text-white" style={{ background: '#050a0f' }}>
       <NavBar page="agents" onNav={onNav} />
 
       {credAgent && (
@@ -297,7 +297,7 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
       <div className="pt-20 pb-12 px-4 sm:px-6 max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8 animate-slide-up">
           <div className="flex items-center gap-3">
-            <span style={{ color: '#00D4FF', fontSize: '24px', lineHeight: 1 }}>✳</span>
+            <span style={{ color: '#00e5ff', fontSize: '24px', lineHeight: 1 }}>✳</span>
             <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em' }}>
               AI Agents
             </h1>
@@ -306,9 +306,9 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
             <button
               onClick={() => setAdding(true)}
               className="px-4 py-2 text-black font-bold rounded-lg text-sm transition-all"
-              style={{ background: '#00D4FF', fontFamily: 'Space Grotesk, sans-serif' }}
-              onMouseEnter={e => { (e.target as HTMLElement).style.background = '#00B8D9'; (e.target as HTMLElement).style.boxShadow = '0 0 20px rgba(0,212,255,0.30)' }}
-              onMouseLeave={e => { (e.target as HTMLElement).style.background = '#00D4FF'; (e.target as HTMLElement).style.boxShadow = 'none' }}
+              style={{ background: '#00e5ff', fontFamily: 'Space Grotesk, sans-serif' }}
+              onMouseEnter={e => { (e.target as HTMLElement).style.background = '#00bfea'; (e.target as HTMLElement).style.boxShadow = '0 0 20px rgba(0,229,255,0.30)' }}
+              onMouseLeave={e => { (e.target as HTMLElement).style.background = '#00e5ff'; (e.target as HTMLElement).style.boxShadow = 'none' }}
             >
               + New Agent
             </button>
@@ -316,10 +316,10 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
         </div>
 
         {(adding || editing) && (
-          <div className="mb-8 animate-fade-in rounded-xl overflow-hidden" style={{ background: 'rgba(26,39,68,0.80)', border: '1px solid rgba(0,212,255,0.20)' }}>
-            <div className="px-6 py-3 flex items-center gap-2" style={{ background: 'rgba(0,212,255,0.06)', borderBottom: '1px solid rgba(0,212,255,0.12)' }}>
-              <span style={{ color: '#00D4FF' }}>✳</span>
-              <span className="text-sm font-bold" style={{ color: '#00D4FF', fontFamily: 'Space Grotesk, sans-serif' }}>
+          <div className="mb-8 animate-fade-in rounded-xl overflow-hidden" style={{ background: 'rgba(13,31,51,0.80)', border: '1px solid rgba(0,229,255,0.20)' }}>
+            <div className="px-6 py-3 flex items-center gap-2" style={{ background: 'rgba(0,229,255,0.06)', borderBottom: '1px solid rgba(0,229,255,0.12)' }}>
+              <span style={{ color: '#00e5ff' }}>✳</span>
+              <span className="text-sm font-bold" style={{ color: '#00e5ff', fontFamily: 'Space Grotesk, sans-serif' }}>
                 {editing ? 'Edit Agent' : 'New Agent'}
               </span>
             </div>

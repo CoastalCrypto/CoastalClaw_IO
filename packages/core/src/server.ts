@@ -93,7 +93,6 @@ export async function buildServer() {
   await fastify.register(websocket)
   await fastify.register(healthRoutes)
   await fastify.register(wsRoutes)
-  await fastify.register(agentEventsRoute)
   await fastify.register(adminRoutes)
 
   const agentRegistry = new AgentRegistry(join(config.dataDir, 'agents.db'))
@@ -101,6 +100,7 @@ export async function buildServer() {
   const customToolLoader = new CustomToolLoader(db)
   const channelManager = new ChannelManager(db)
 
+  await fastify.register(agentEventsRoute, { registry: agentRegistry })
   await fastify.register(agentRoutes, { registry: agentRegistry, gate })
   await fastify.register(teamRoutes)
   await fastify.register(personaRoutes, { registry: agentRegistry })

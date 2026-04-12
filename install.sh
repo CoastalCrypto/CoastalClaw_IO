@@ -19,12 +19,12 @@ step()    { echo -e "\n${BOLD}$*${RESET}"; }
 # ── Banner ───────────────────────────────────────────────────
 echo -e "
 ${CYAN}${BOLD}
-   ██████╗ ██████╗  █████╗ ███████╗████████╗ █████╗ ██╗      ██████╗██╗      █████╗ ██╗    ██╗
-  ██╔════╝██╔═══██╗██╔══██╗██╔════╝╚══██╔══╝██╔══██╗██║     ██╔════╝██║     ██╔══██╗██║    ██║
-  ██║     ██║   ██║███████║███████╗   ██║   ███████║██║     ██║     ██║     ███████║██║ █╗ ██║
-  ██║     ██║   ██║██╔══██║╚════██║   ██║   ██╔══██║██║     ██║     ██║     ██╔══██║██║███╗██║
-  ╚██████╗╚██████╔╝██║  ██║███████║   ██║   ██║  ██║███████╗╚██████╗███████╗██║  ██║╚███╔███╔╝
-   ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝ ╚═════╝╚══════╝╚═╝  ╚═╝ ╚══╝╚══╝
+   ██████╗ ██████╗  █████╗ ███████╗████████╗ █████╗ ██╗       █████╗ ██╗
+  ██╔════╝██╔═══██╗██╔══██╗██╔════╝╚══██╔══╝██╔══██╗██║      ██╔══██╗██║
+  ██║     ██║   ██║███████║███████╗   ██║   ███████║██║      ███████║██║
+  ██║     ██║   ██║██╔══██║╚════██║   ██║   ██╔══██║██║      ██╔══██║██║
+  ╚██████╗╚██████╔╝██║  ██║███████║   ██║   ██║  ██║███████╗ ██║  ██║██║
+   ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝ ╚═╝  ╚═╝╚═╝
 ${RESET}
   ${DIM}Your private AI executive team — running on your hardware.${RESET}
   ${DIM}Data never leaves the facility.${RESET}
@@ -156,12 +156,14 @@ success "Repository at ${INSTALL_DIR}"
 # ── Install dependencies ─────────────────────────────────────
 step "④ Installing dependencies"
 cd "$INSTALL_DIR"
-pnpm install
+info "Running pnpm install (this may take a minute)..."
+pnpm install --frozen-lockfile --reporter=append-only 2>&1 || pnpm install --reporter=append-only 2>&1
 success "Dependencies installed"
 
 # ── Build ────────────────────────────────────────────────────
 step "⑤ Building"
-pnpm build
+info "Building packages (this may take 30–60s)..."
+pnpm build 2>&1 | tail -5
 success "Build complete"
 
 # ── Create .env.local files ──────────────────────────────────

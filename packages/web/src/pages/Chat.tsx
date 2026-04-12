@@ -678,7 +678,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
       onDrop={handleDrop}
     >
       {/* Background overlay */}
-      <div className="absolute inset-0 -z-10 backdrop-blur-sm" style={{ background: activeBg.overlay }} />
+      <div className="absolute inset-0 pointer-events-none" style={{ background: activeBg.overlay }} />
 
       {/* Background picker panel */}
       {bgPickerOpen && (
@@ -716,7 +716,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
             <p className="text-xs font-mono text-gray-600 mb-1.5">Custom image URL</p>
             <div className="flex gap-2">
               <input
-                className="flex-1 bg-black/40 border border-white/10 text-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-cyan-500/60 placeholder-gray-700"
+                className="flex-1 min-w-0 bg-black/40 border border-white/10 text-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-cyan-500/60 placeholder-gray-700"
                 placeholder="https://..."
                 value={bgCustomDraft}
                 onChange={e => setBgCustomDraft(e.target.value)}
@@ -725,7 +725,26 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
               <button
                 onClick={() => { applyBg('custom', bgCustomDraft); setBgPickerOpen(false) }}
                 className="px-3 py-2 bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-xs font-mono rounded-lg hover:bg-cyan-500/30 transition-colors"
+                title="Apply Web URL"
               >set</button>
+              
+              <label className="px-3 py-2 bg-purple-500/20 border border-purple-500/30 text-purple-400 text-xs font-mono rounded-lg hover:bg-purple-500/30 transition-colors cursor-pointer" title="Upload Local File">
+                ↑ app
+                <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  const uploadResult = await coreClient.uploadFile(file).catch(err => {
+                    alert(`Upload failed: ${err.message}`)
+                    return null
+                  })
+                  if (uploadResult?.isImage && uploadResult?.dataUrl) {
+                    applyBg('custom', uploadResult.dataUrl)
+                    setBgCustomDraft('')
+                    setBgPickerOpen(false)
+                  }
+                  e.target.value = '' // reset
+                }} />
+              </label>
             </div>
             {bgCustomUrl && (
               <button

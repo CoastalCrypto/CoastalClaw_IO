@@ -1,19 +1,19 @@
-# Contributing to CoastalClaw
+# Contributing to Coastal.AI
 
 Thanks for your interest. Here's everything you need to get started.
 
 ## Development setup
 
 ```bash
-git clone https://github.com/CoastalCrypto/CoastalClaw_IO.git
-cd CoastalClaw_IO
+git clone https://github.com/CoastalCrypto/Coastal.AI.git
+cd Coastal.AI
 pnpm install
 pnpm build
 ```
 
 Start the dev server:
 ```bash
-pnpm --filter @coastal-claw/core dev   # API on :4747
+pnpm --filter @coastal-ai/core dev   # API on :4747
 pnpm --filter web dev                  # UI on :5173
 ```
 
@@ -21,7 +21,7 @@ pnpm --filter web dev                  # UI on :5173
 
 ```bash
 pnpm test                      # all packages
-pnpm --filter @coastal-claw/core test  # core only
+pnpm --filter @coastal-ai/core test  # core only
 bash scripts/smoke-test-docker.sh      # end-to-end Docker smoke test
 ```
 
@@ -34,9 +34,6 @@ bash scripts/smoke-test-docker.sh      # end-to-end Docker smoke test
 | `packages/architect` | MetaAgent self-improvement scheduler |
 | `packages/shell` | Electron kiosk shell |
 | `packages/web` | React + Vite admin UI |
-| `coastalos/` | ISO build (live-build) and systemd units |
-| `packer/` | AWS AMI (Packer HCL) |
-| `packaging/` | .deb packaging scripts |
 
 ## Making a change
 

@@ -67,35 +67,41 @@ export class CustomToolLoader {
         reversible: false,
       },
       execute: async (args: Record<string, unknown>): Promise<string> => {
-        // Sandboxed execution — no access to process, fs, require, etc.
-        const sandbox = {
-          args,
-          result: '',
-          console: {
-            log: (...a: unknown[]) => { sandbox.result += a.join(' ') + '\n' },
-            error: (...a: unknown[]) => { sandbox.result += '[error] ' + a.join(' ') + '\n' },
-          },
-          JSON,
-          Math,
-          Date,
-          String,
-          Number,
-          Boolean,
-          Array,
-          Object,
-          parseFloat,
-          parseInt,
-          isNaN,
-          isFinite,
-        }
+        // Sandboxed execution — no access to process, fs, require.
+        // We disconnect host prototypes by stringifying arguments and defining
+        // the console interface directly inside the VM, closing the prototype escape hatch.
+        const sandbox = Object.create(null)
+        sandbox.argsJson = JSON.stringify(args || {})
         vm.createContext(sandbox)
+
         const script = new vm.Script(`
-          (async function(args) {
-            ${row.impl_body}
-          })(args).then(r => { if (r !== undefined) result = String(r) })
+          (async function() {
+            let __result = '';
+            const console = {
+              log: (...a) => { __result += a.join(' ') + '\\n' },
+              error: (...a) => { __result += '[error] ' + a.join(' ') + '\\n' }
+            };
+            const args = JSON.parse(argsJson);
+            try {
+              const r = await (async function(args) {
+                ${row.impl_body}
+              })(args);
+              if (r !== undefined) {
+                __result += (String(__result).length > 0 ? '\\n' : '') + String(r);
+              }
+            } catch (e) {
+              __result += (String(__result).length > 0 ? '\\n' : '') + '[error] ' + String(e);
+            }
+            return __result.trim();
+          })();
         `)
-        await script.runInContext(sandbox, { timeout: TOOL_TIMEOUT_MS })
-        return sandbox.result || '(no output)'
+
+        try {
+          const result = await script.runInContext(sandbox, { timeout: TOOL_TIMEOUT_MS })
+          return result || '(no output)'
+        } catch (e: any) {
+          return `[tool error] ${e.message}`
+        }
       },
     }
   }

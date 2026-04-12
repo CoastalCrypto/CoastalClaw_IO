@@ -1,1 +1,0 @@
-{ "id": "qa_lead", "tools": ["read_file", "run_command", "http_get"], "hand": { "enabled": false } }

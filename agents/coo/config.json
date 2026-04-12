@@ -1,1 +1,0 @@
-{ "id": "coo", "tools": ["read_file", "list_dir", "http_get", "query_db"], "hand": { "enabled": false } }

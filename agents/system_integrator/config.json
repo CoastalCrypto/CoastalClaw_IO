@@ -1,1 +1,0 @@
-{ "id": "system_integrator", "tools": ["read_file", "run_command", "list_dir"], "hand": { "enabled": false } }

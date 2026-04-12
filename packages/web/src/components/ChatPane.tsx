@@ -246,6 +246,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
           onClick={e => { e.stopPropagation(); if (!voiceMuted) window.speechSynthesis?.cancel(); setVoiceMuted(m => !m) }}
           title={voiceMuted ? 'Enable voice' : 'Mute voice'}
           style={{ fontSize: '11px', color: voiceMuted ? '#2d3748' : '#00e5ff', cursor: 'pointer', background: 'none', border: 'none', padding: '2px 3px' }}
+          aria-label={voiceMuted ? 'Enable voice' : 'Mute voice'}
         >
           {voiceMuted ? '🔇' : '🔊'}
         </button>
@@ -254,6 +255,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
           <button
             onClick={e => { e.stopPropagation(); abortRef.current?.abort(); window.speechSynthesis?.cancel(); setMessages([]); setLoading(false) }}
             title="Clear pane"
+            aria-label="Clear pane"
             style={{ fontSize: '10px', color: '#4a5568', cursor: 'pointer', background: 'none', border: 'none', padding: '2px 4px', borderRadius: '4px' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#a0aec0')}
             onMouseLeave={e => (e.currentTarget.style.color = '#4a5568')}
@@ -324,6 +326,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
                 <button
                   onClick={e => { e.stopPropagation(); retry() }}
                   title="Retry"
+                  aria-label="Retry"
                   style={{ fontSize: '9px', color: '#4a5568', cursor: 'pointer', background: 'none', border: 'none', padding: '2px 4px', marginTop: '2px', fontFamily: 'monospace' }}
                   onMouseEnter={e => (e.currentTarget.style.color = '#a0aec0')}
                   onMouseLeave={e => (e.currentTarget.style.color = '#4a5568')}
@@ -372,6 +375,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
         <button
           onClick={e => { e.stopPropagation(); send() }}
           disabled={!input.trim() || loading}
+          aria-label="Send message"
           style={{
             padding: `${inputPy}px ${compact ? 10 : 14}px`,
             background: input.trim() && !loading ? '#00e5ff' : 'rgba(0,229,255,0.08)',

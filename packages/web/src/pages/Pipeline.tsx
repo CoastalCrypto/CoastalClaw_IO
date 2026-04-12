@@ -262,9 +262,9 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
                 >↩</button>
 
                 <div className="flex gap-1 shrink-0">
-                  <button onClick={() => moveStage(idx, -1)} disabled={idx === 0} className="text-gray-600 hover:text-gray-300 disabled:opacity-20 text-xs px-1">↑</button>
-                  <button onClick={() => moveStage(idx, 1)} disabled={idx === stages.length - 1} className="text-gray-600 hover:text-gray-300 disabled:opacity-20 text-xs px-1">↓</button>
-                  <button onClick={() => removeStage(stage.id)} className="text-red-700 hover:text-red-400 text-xs px-1">✕</button>
+                  <button onClick={() => moveStage(idx, -1)} disabled={idx === 0} className="text-gray-600 hover:text-gray-300 disabled:opacity-20 text-xs px-1" aria-label="Move stage up">↑</button>
+                  <button onClick={() => moveStage(idx, 1)} disabled={idx === stages.length - 1} className="text-gray-600 hover:text-gray-300 disabled:opacity-20 text-xs px-1" aria-label="Move stage down">↓</button>
+                  <button onClick={() => removeStage(stage.id)} className="text-red-700 hover:text-red-400 text-xs px-1" aria-label="Remove stage">✕</button>
                 </div>
               </div>
 

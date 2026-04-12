@@ -91,12 +91,12 @@ export function PipelineRun({ runId, pipelineName, stageCount, onBack, onNav }: 
                 fontSize: '9px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace',
                 background: s.status === 'done' ? 'rgba(16,185,129,0.15)' : s.status === 'running' ? 'rgba(0,229,255,0.15)' : 'rgba(255,255,255,0.04)',
                 border: s.status === 'done' ? '1px solid #10b981' : s.status === 'running' ? '1px solid #00e5ff' : '1px solid rgba(255,255,255,0.10)',
-                color: s.status === 'done' ? '#10b981' : s.status === 'running' ? '#00e5ff' : 'rgba(255,255,255,0.25)',
+                color: s.status === 'done' ? '#10b981' : s.status === 'running' ? '#00e5ff' : 'rgba(255,255,255,0.45)',
                 boxShadow: s.status === 'running' ? '0 0 8px rgba(0,229,255,0.3)' : 'none',
               }}>
                 {s.status === 'done' ? '✓' : i + 1}
               </div>
-              <span style={{ ...MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em', color: s.status === 'done' ? '#10b981' : s.status === 'running' ? '#00e5ff' : 'rgba(255,255,255,0.25)' }}>
+              <span style={{ ...MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em', color: s.status === 'done' ? '#10b981' : s.status === 'running' ? '#00e5ff' : 'rgba(255,255,255,0.45)' }}>
                 {s.agentName.length > 10 ? s.agentName.slice(0, 10) + '…' : s.agentName}
               </span>
             </div>
@@ -165,7 +165,7 @@ function StageThread({ stage, isExpanded, onToggle }: { stage: LiveStage; isExpa
     fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', letterSpacing: '0.06em',
     textTransform: 'uppercase', padding: '2px 8px', borderRadius: 10,
     background: isDone ? 'rgba(16,185,129,0.10)' : isActive ? 'rgba(0,229,255,0.10)' : 'rgba(255,255,255,0.04)',
-    color: isDone ? '#10b981' : isActive ? '#00e5ff' : 'rgba(255,255,255,0.25)',
+    color: isDone ? '#10b981' : isActive ? '#00e5ff' : 'rgba(255,255,255,0.45)',
     border: isDone ? '1px solid rgba(16,185,129,0.20)' : isActive ? '1px solid rgba(0,229,255,0.25)' : '1px solid rgba(255,255,255,0.08)',
   }
   const panel = isActive ? { background: 'rgba(26,39,68,0.80)', border: '1px solid rgba(0,229,255,0.30)', borderRadius: 12, overflow: 'hidden' } : { background: 'rgba(26,39,68,0.80)', border: '1px solid rgba(0,229,255,0.10)', borderRadius: 12, overflow: 'hidden' }
@@ -180,7 +180,7 @@ function StageThread({ stage, isExpanded, onToggle }: { stage: LiveStage; isExpa
           <span style={badgeStyle}>{stage.status === 'running' ? 'running' : stage.status === 'done' ? `done${stage.durationMs ? ` · ${(stage.durationMs / 1000).toFixed(1)}s` : ''}` : 'waiting'}</span>
           {stage.iteration > 0 && <span style={{ ...badgeStyle, background: 'rgba(255,179,0,0.10)', color: '#ffb300', border: '1px solid rgba(255,179,0,0.25)' }}>×{stage.iteration + 1}</span>}
         </div>
-        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', color: 'rgba(255,255,255,0.20)' }}>{isExpanded ? '▾' : '▸'}</span>
+        <span aria-label={isExpanded ? 'Collapse stage' : 'Expand stage'} style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', color: 'rgba(255,255,255,0.30)' }}>{isExpanded ? '▾' : '▸'}</span>
       </div>
 
       {isExpanded && (

@@ -87,6 +87,6 @@ export const COLOR = {
   amber:   '#ffb300',
   red:     '#ff5252',
   muted:   '#94adc4',
-  dim:     'rgba(255,255,255,0.25)',
+  dim:     'rgba(255,255,255,0.45)',
   dimPlus: 'rgba(255,255,255,0.45)',
 } as const

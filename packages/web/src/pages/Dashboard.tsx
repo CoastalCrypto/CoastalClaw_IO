@@ -324,6 +324,7 @@ function CronSection() {
 // ── Main Dashboard ────────────────────────────────────────────────────────────
 export function Dashboard({ onNav }: { onNav: (page: NavPage) => void }) {
   const { events, connected, clear } = useEventStream(200)
+  const [expandedEvent, setExpandedEvent] = useState<number | null>(null)
 
   const toolCalls   = events.filter(e => e.type === 'tool_call_end')
   const successful  = toolCalls.filter(e => e.success !== false)
@@ -394,25 +395,44 @@ export function Dashboard({ onNav }: { onNav: (page: NavPage) => void }) {
             />
           ) : (
             <div className="divide-y divide-white/3 max-h-[60vh] overflow-y-auto">
-              {reversed.map((event, i) => (
-                <div
-                  key={`${event.ts}-${i}`}
-                  className={`flex items-start gap-3 px-4 py-3 border-l-2 transition-colors hover:bg-white/2 ${eventColor(event)}`}
-                >
-                  <span className="text-base mt-0.5 shrink-0">{eventIcon(event.type)}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-200 truncate">{eventLabel(event)}</p>
-                    {event.sessionId && (
-                      <p className="text-xs text-gray-600 font-mono mt-0.5 truncate">
-                        {event.sessionId}
-                      </p>
+              {reversed.map((event, i) => {
+                const isExpanded = expandedEvent === i
+                return (
+                  <div key={`${event.ts}-${i}`}>
+                    <div
+                      className={`flex items-start gap-3 px-4 py-3 border-l-2 transition-colors cursor-pointer hover:bg-white/2 ${eventColor(event)}`}
+                      onClick={() => setExpandedEvent(isExpanded ? null : i)}
+                      aria-label={isExpanded ? 'Collapse event details' : 'Expand event details'}
+                    >
+                      <span className="text-base mt-0.5 shrink-0">{eventIcon(event.type)}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-200 truncate">{eventLabel(event)}</p>
+                        {event.sessionId && (
+                          <p className="text-xs text-gray-600 font-mono mt-0.5 truncate">
+                            {event.sessionId}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 mt-0.5">
+                        <span className="text-xs text-gray-600 font-mono">
+                          {relativeTime(event.ts)}
+                        </span>
+                        <span className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.30)' }}>{isExpanded ? '▾' : '▸'}</span>
+                      </div>
+                    </div>
+                    {isExpanded && (
+                      <div className="px-4 pb-3 pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.03)' }}>
+                        <pre
+                          className="text-[11px] font-mono rounded-lg p-3 overflow-auto max-h-48"
+                          style={{ background: 'rgba(5,10,15,0.70)', border: '1px solid rgba(0,229,255,0.08)', color: '#94adc4', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}
+                        >
+                          {JSON.stringify(event, null, 2)}
+                        </pre>
+                      </div>
                     )}
                   </div>
-                  <span className="text-xs text-gray-600 font-mono shrink-0 mt-0.5">
-                    {relativeTime(event.ts)}
-                  </span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>

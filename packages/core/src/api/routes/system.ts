@@ -82,9 +82,12 @@ function memInfo(): { total: number; used: number; free: number; cached: number 
 }
 
 function diskStats(paths: string[]): DiskStat[] {
+  if (process.platform === 'win32') {
+    return paths.map(p => ({ path: p, total: 0, used: 0, free: 0 }))
+  }
   return paths.map((p) => {
     try {
-      const out = execSync(`df -B1 "${p}" 2>/dev/null | tail -1`, { timeout: 2000 }).toString().trim()
+      const out = execSync(`df -B1 "${p}" | tail -1`, { timeout: 2000, stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim()
       const [, total, used, free] = out.split(/\s+/).map(Number)
       return { path: p, total, used, free }
     } catch { return { path: p, total: 0, used: 0, free: 0 } }
@@ -109,7 +112,7 @@ function gpuStats(): { name: string; vramUsed: number; vramTotal: number; utilPe
 
 function loadedModels(): string[] {
   try {
-    const out = execSync('ollama ps 2>/dev/null', { timeout: 2000 }).toString()
+    const out = execSync('ollama ps', { timeout: 2000, stdio: ['pipe', 'pipe', 'ignore'] }).toString()
     return out.split('\n').slice(1).filter(Boolean).map(l => l.split(/\s+/)[0])
   } catch { return [] }
 }
@@ -142,13 +145,15 @@ export async function systemRoutes(fastify: FastifyInstance) {
       const lines   = Math.min(Number(req.query.lines ?? 200), 1000)
 
       // Prefer journald if available, fall back to log file
-      try {
-        const out = execSync(
-          `journalctl -u "${service.replace(/[^a-z0-9._-]/gi, '')}" -n ${lines} --no-pager --output=short-iso 2>/dev/null`,
-          { timeout: 5000 }
-        ).toString()
-        return reply.send({ service, lines: out.split('\n').filter(Boolean) })
-      } catch {
+      if (process.platform !== 'win32') {
+        try {
+          const out = execSync(
+            `journalctl -u "${service.replace(/[^a-z0-9._-]/gi, '')}" -n ${lines} --no-pager --output=short-iso`,
+            { timeout: 5000, stdio: ['pipe', 'pipe', 'ignore'] }
+          ).toString()
+          return reply.send({ service, lines: out.split('\n').filter(Boolean) })
+        } catch { /* skip */ }
+      }
         // Fallback: plain log file
         const logFile = join(config.dataDir, `${service}.log`)
         if (existsSync(logFile)) {
@@ -156,7 +161,6 @@ export async function systemRoutes(fastify: FastifyInstance) {
           return reply.send({ service, lines: raw.slice(-lines).filter(Boolean) })
         }
         return reply.send({ service, lines: [] })
-      }
     }
   )
 

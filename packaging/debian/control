@@ -1,0 +1,13 @@
+Package: coastalclaw
+Version: 0.6.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Depends: nodejs (>= 22), npm, curl, git, sqlite3
+Recommends: ollama
+Maintainer: CoastalClaw contributors <hello@coastalclaw.io>
+Homepage: https://github.com/CoastalCrypto/CoastalClaw_IO
+Description: Private AI agent OS — runs on your hardware
+ CoastalClaw is a self-hosted AI agent platform. It provides a configurable
+ AI assistant with a web UI, multi-agent swarm, local vector memory, and
+ voice pipeline. All inference runs on-premise; data never leaves the machine.

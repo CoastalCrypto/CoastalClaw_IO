@@ -1,0 +1,24 @@
+[Unit]
+Description=Coastal.AI API Server
+After=network.target ollama.service
+Wants=ollama.service
+
+[Service]
+Type=simple
+User=coastal
+WorkingDirectory=/opt/coastal-ai
+ExecStart=/usr/bin/node packages/core/dist/main.js
+Restart=always
+RestartSec=5
+Environment=CC_PORT=4747
+Environment=CC_HOST=127.0.0.1
+Environment=CC_DATA_DIR=/var/lib/coastal-ai/data
+Environment=CC_AGENT_WORKDIR=/var/lib/coastal-ai/workspace
+Environment=CC_INFINITY_URL=http://127.0.0.1:23817
+Environment=CC_VIBEVOICE_URL=http://127.0.0.1:8001
+Environment=CC_AIRLLM_URL=http://127.0.0.1:8002
+AmbientCapabilities=CAP_SYS_ADMIN CAP_NET_ADMIN
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_NET_ADMIN
+
+[Install]
+WantedBy=multi-user.target

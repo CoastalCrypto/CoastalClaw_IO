@@ -1,0 +1,46 @@
+# CoastalOS package list — pinned for reproducible builds
+# Core runtime
+nodejs
+npm
+python3
+python3-pip
+python3-venv
+
+# Display / kiosk
+labwc
+alacritty
+chromium-browser
+xwayland
+xdg-utils
+
+# Audio (voice pipeline)
+pipewire
+pipewire-pulse
+wireplumber
+portaudio19-dev
+
+# Sandbox tools
+util-linux
+cgroup-tools
+
+# Voice pipeline dependencies
+curl
+wget
+ffmpeg
+
+# Development / build tools (for pnpm install on first boot)
+git
+build-essential
+
+# Keyboard shortcut tools
+grim
+xdotool
+swaylock
+brightnessctl
+
+# Network management (first-boot WiFi/IP config)
+network-manager
+network-manager-gnome
+
+# Status bar
+waybar

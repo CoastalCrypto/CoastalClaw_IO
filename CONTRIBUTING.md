@@ -34,6 +34,9 @@ bash scripts/smoke-test-docker.sh      # end-to-end Docker smoke test
 | `packages/architect` | MetaAgent self-improvement scheduler |
 | `packages/shell` | Electron kiosk shell |
 | `packages/web` | React + Vite admin UI |
+| `coastalos/` | ISO build (live-build) and systemd units |
+| `packer/` | AWS AMI (Packer HCL) |
+| `packaging/` | .deb packaging scripts |
 
 ## Making a change
 

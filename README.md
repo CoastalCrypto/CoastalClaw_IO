@@ -7,9 +7,11 @@
 </p>
 
 <p align="center">
+  <a href="#-choose-your-path">Choose Your Path</a> ·
   <a href="#-quick-start">Quick Start</a> ·
   <a href="#-first-boot-walkthrough">Walkthrough</a> ·
   <a href="#-features">Features</a> ·
+  <a href="#-coastalos--standalone-os">CoastalOS</a> ·
   <a href="#-architecture">Architecture</a> ·
   <a href="#%EF%B8%8F-configuration">Configuration</a> ·
   <a href="#-api-reference">API</a>
@@ -28,6 +30,44 @@ It gives you a private command center for AI: chat with intelligent agents that 
 - Teams that want shared AI agents with role-based access control
 - Developers who want to build and automate with AI tools
 - Power users who want AI running on their own hardware 24/7
+
+---
+
+## 🗺 Choose Your Path
+
+Coastal.AI runs three different ways. Pick the one that fits your situation:
+
+---
+
+### Path 1 — Install on your existing computer *(recommended for most people)*
+
+Runs alongside your current OS (Mac, Linux, or Windows). Nothing is erased. You can stop and start it whenever you want.
+
+**Best for:** personal use, development, trying it out
+
+→ **[Jump to Quick Start](#-quick-start)**
+
+---
+
+### Path 2 — Install as a system service on a Linux server
+
+Installs as a `systemd` service that starts automatically on boot. Ideal for a dedicated machine, home server, or VPS.
+
+**Best for:** always-on setups, team deployments, production use
+
+→ **[Jump to Server Install](#ubuntu--debian--apt-install)**
+
+---
+
+### Path 3 — Boot from USB as a standalone OS (CoastalOS)
+
+Flash a bootable USB drive. Plug it into any UEFI machine and boot — no installation, nothing written to the host disk. CoastalOS is a minimal Linux environment built entirely around Coastal.AI.
+
+**Best for:** dedicated AI appliances, air-gapped setups, taking your AI anywhere
+
+→ **[Jump to CoastalOS](#-coastalos--standalone-os)**
+
+---
 
 ---
 
@@ -304,7 +344,89 @@ Click **Abort** at any time to cancel the run, or **← Back** when it completes
 
 ---
 
+## 💿 CoastalOS — Standalone OS
 
+> **This is Path 3.** CoastalOS boots from a USB drive as a complete, self-contained operating system — no existing OS required on the host machine.
+
+CoastalOS is a dedicated Linux image that runs Coastal.AI as a complete operating system. Boot from a USB drive — no installation required, nothing written to your machine's disk.
+
+<p align="center">
+  <img src="docs/screenshots/coastalos-desktop.png" alt="CoastalOS desktop" width="80%"/>
+</p>
+
+### What you need
+
+- USB drive **8 GB or larger** (all data on it will be erased)
+- Latest ISO from the [Releases page](https://github.com/CoastalCrypto/Coastal.AI/releases)
+
+---
+
+### Writing the ISO to USB
+
+**Easiest method (all platforms) — Balena Etcher:**
+
+1. Download [Balena Etcher](https://etcher.balena.io) and open it
+2. Click **Flash from file** → select the `.iso` file
+3. Click **Select target** → select your USB drive
+4. Click **Flash** and wait (~5 minutes)
+
+That's all. Eject the drive when done.
+
+---
+
+**Mac (Terminal method):**
+
+```bash
+# Step 1: Find your USB drive name (look for "external" in the list)
+diskutil list
+
+# Step 2: Unmount it (replace disk2 with your drive)
+diskutil unmountDisk /dev/disk2
+
+# Step 3: Write the ISO (replace disk2 and the filename)
+sudo dd if=~/Downloads/coastalos-1.0.0.iso of=/dev/rdisk2 bs=4m status=progress
+
+# Step 4: Eject
+diskutil eject /dev/disk2
+```
+
+> Use `/dev/rdisk2` (with the `r`) — it's faster than `/dev/disk2`.
+
+---
+
+**Linux (Terminal method):**
+
+```bash
+# Step 1: Find your USB drive (look for your drive size)
+lsblk
+
+# Step 2: Write the ISO (replace sdb and the filename)
+sudo dd if=~/Downloads/coastalos-1.0.0.iso of=/dev/sdb bs=4M status=progress oflag=sync
+```
+
+> Double-check the drive letter (`sdb`, `sdc`, etc.) — writing to the wrong device will erase it.
+
+---
+
+### Booting from USB
+
+1. Plug the USB drive into the computer you want to run CoastalOS on
+2. Restart the computer
+3. When the logo appears, press the boot menu key:
+   - **Most PCs:** `F12`, `F11`, or `F9`
+   - **HP:** `F9`
+   - **Dell:** `F12`
+   - **Lenovo:** `F12`
+   - **Mac:** Hold `Option ⌥` immediately after the chime
+4. Select your USB drive from the list
+5. CoastalOS boots in ~30–60 seconds and opens the interface fullscreen
+
+**Notes:**
+- Your data (memory, persona, users) is stored on the USB — take it anywhere
+- The AI model (~2 GB) is downloaded on first boot — internet required
+- Requires UEFI firmware (most machines from 2012 onward)
+
+---
 
 ## 🔧 Stopping and Starting
 
@@ -329,7 +451,15 @@ Stop-Process -Id (Get-Content $env:TEMP\coastal-ai-web.pid)  -ErrorAction Silent
 & "$env:USERPROFILE\Downloads\Coastal.AI-install.ps1"
 ```
 
+### If you installed via APT (Ubuntu/Debian)
 
+```bash
+sudo systemctl stop Coastal.AI
+sudo systemctl start Coastal.AI
+sudo systemctl status Coastal.AI   # check it's running
+```
+
+---
 
 ## 🛠 Troubleshooting
 
@@ -342,7 +472,19 @@ Stop-Process -Id (Get-Content $env:TEMP\coastal-ai-web.pid)  -ErrorAction Silent
 | Forgot your password | Delete `./data/users.db` and re-run setup (this resets all users) |
 | Install script failed | Make sure you have `curl` installed: `which curl` |
 
+---
 
+## Ubuntu / Debian — APT install
+
+For servers and production setups, install as a system service:
+
+```bash
+curl -fsSL https://CoastalCrypto.github.io/Coastal.AI/setup.sh | sudo bash
+```
+
+This adds the signed APT repository and installs `Coastal.AI` as a systemd service that starts automatically on boot.
+
+---
 
 ## 🎭 Agent Persona
 

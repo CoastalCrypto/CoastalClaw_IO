@@ -1,0 +1,17 @@
+[Unit]
+Description=Coastal.AI Shell (labwc Wayland kiosk)
+After=graphical.target coastal-server.service
+Requires=coastal-server.service
+
+[Service]
+Type=simple
+User=coastal
+PAMName=login
+Environment=XDG_SESSION_TYPE=wayland
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=HOME=/home/coastal
+ExecStart=/usr/bin/labwc
+Restart=always
+
+[Install]
+WantedBy=graphical.target

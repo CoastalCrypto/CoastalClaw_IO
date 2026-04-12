@@ -216,13 +216,13 @@ export async function systemRoutes(fastify: FastifyInstance) {
     setTimeout(async () => {
       try {
         console.log('[update] Running git pull...')
-        execSync('git pull --ff-only', { cwd: installDir, timeout: 60_000, shell: true, stdio: 'inherit' })
+        execSync('git pull --ff-only', { cwd: installDir, timeout: 60_000, stdio: 'inherit' })
         
         console.log('[update] Running pnpm install...')
-        execSync('pnpm install --frozen-lockfile', { cwd: installDir, timeout: 180_000, shell: true, stdio: 'inherit' })
+        execSync('pnpm install --frozen-lockfile', { cwd: installDir, timeout: 180_000, stdio: 'inherit' })
         
         console.log('[update] Running pnpm build...')
-        execSync('pnpm build', { cwd: installDir, timeout: 180_000, shell: true, stdio: 'inherit' })
+        execSync('pnpm build', { cwd: installDir, timeout: 180_000, stdio: 'inherit' })
         
         console.log('[update] Restarting server...')
         // Platform-aware restart: Windows uses detached cmd.exe, Linux uses systemd

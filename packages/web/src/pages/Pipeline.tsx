@@ -82,7 +82,7 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...adminHeaders() },
         body: JSON.stringify({
-          stages: filled.map(s => ({ agentId: s.agentId, loopBack: s.loopBack })),
+          stages: filled.map(s => ({ agentId: s.agentId, type: 'agent' as const, loopBack: s.loopBack })),
           input: input.trim(),
           pipelineName: pipelineName.trim() || 'Ad-hoc run',
         }),

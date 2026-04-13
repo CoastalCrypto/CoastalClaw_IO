@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { coreClient, type Persona } from '../api/client'
 import { NavBar, type NavPage } from '../components/NavBar'
 
+type TrustLevel = 'sandboxed' | 'trusted' | 'autonomous'
+
 const PERSONALITY_PRESETS = [
   { id: 'direct', label: 'Direct', desc: 'Concise, data-first, no filler.' },
   { id: 'collaborative', label: 'Collaborative', desc: 'Warm, asks clarifying questions, thinks out loud.' },
@@ -29,6 +31,9 @@ export function Settings({ onNav }: { onNav: (page: NavPage) => void }) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [trustLevel, setTrustLevel] = useState<TrustLevel>('trusted')
+  const [trustSaving, setTrustSaving] = useState(false)
+  const [trustSaved, setTrustSaved] = useState(false)
 
   const input = 'w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-cyan-500'
 
@@ -40,11 +45,28 @@ export function Settings({ onNav }: { onNav: (page: NavPage) => void }) {
       })
       .catch(() => setError('Could not load settings. Is coastal-server running?'))
       .finally(() => setLoading(false))
+    coreClient.getTrustLevel().then(setTrustLevel).catch(() => {})
   }, [])
 
   const handlePreset = (id: string) => {
     setPersonalityPreset(id)
     if (id !== 'custom') setPersona((p) => ({ ...p, personality: PERSONALITY_TEXT[id] ?? '' }))
+  }
+
+  const handleTrustToggle = async (enabled: boolean) => {
+    const next: TrustLevel = enabled ? 'autonomous' : 'trusted'
+    setTrustSaving(true)
+    setTrustSaved(false)
+    try {
+      await coreClient.setTrustLevel(next)
+      setTrustLevel(next)
+      setTrustSaved(true)
+      setTimeout(() => setTrustSaved(false), 3000)
+    } catch {
+      // silently revert on error
+    } finally {
+      setTrustSaving(false)
+    }
   }
 
   const handleSave = async () => {
@@ -68,6 +90,38 @@ export function Settings({ onNav }: { onNav: (page: NavPage) => void }) {
       <NavBar page="settings" onNav={onNav} />
 
       <div className="pt-20 px-4 sm:px-6 max-w-xl mx-auto py-12">
+
+        {/* System File Access */}
+        <div className="mb-10 p-5 rounded-xl border border-gray-700 bg-gray-900/50">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="font-semibold text-white">System File Access</p>
+              <p className="text-sm text-gray-400 mt-1">
+                {trustLevel === 'autonomous'
+                  ? 'Agents can read and write anywhere on your system.'
+                  : 'Agents are restricted to their workspace folder.'}
+              </p>
+              {trustSaved && (
+                <p className="text-xs text-yellow-400 mt-1">Saved — restart the server for the change to take effect.</p>
+              )}
+            </div>
+            <button
+              onClick={() => handleTrustToggle(trustLevel !== 'autonomous')}
+              disabled={trustSaving}
+              aria-pressed={trustLevel === 'autonomous'}
+              className={`relative flex-shrink-0 w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-40 ${
+                trustLevel === 'autonomous' ? 'bg-cyan-500' : 'bg-gray-600'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${
+                  trustLevel === 'autonomous' ? 'translate-x-6' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
         <h1 className="text-2xl font-bold mb-1">Agent Persona</h1>
         <p className="text-gray-500 text-sm mb-8">Changes take effect on the next conversation.</p>
 

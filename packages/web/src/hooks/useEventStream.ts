@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 
-const BASE = `http://localhost:${(import.meta as any).env?.VITE_CORE_PORT ?? 4747}`
-
 export interface AgentEvent {
   type: string
   ts: number
@@ -27,7 +25,7 @@ export function useEventStream(maxEvents = 100) {
 
   const connect = useCallback(() => {
     if (esRef.current) esRef.current.close()
-    const es = new EventSource(`${BASE}/api/events`)
+    const es = new EventSource('/api/events')
     esRef.current = es
 
     es.onopen = () => setConnected(true)

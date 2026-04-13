@@ -45,7 +45,9 @@ export function useAgentGraph() {
     if (wsRef.current?.readyState === WebSocket.OPEN) return
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/agent-events`)
+    const token = sessionStorage.getItem('cc_admin_session') ?? ''
+    const query = token ? `?token=${encodeURIComponent(token)}` : ''
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/agent-events${query}`)
     wsRef.current = ws
 
     ws.onopen = () => setConnected(true)

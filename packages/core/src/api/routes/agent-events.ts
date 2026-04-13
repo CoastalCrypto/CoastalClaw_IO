@@ -26,8 +26,13 @@ export async function agentEventsRoute(
   opts: { registry: AgentRegistry; validateSession: (token: string) => boolean }
 ) {
   app.get('/ws/agent-events', { websocket: true }, (connection: SocketStream, req) => {
+    // Browsers cannot set custom headers on WebSocket upgrades, so the session
+    // token is accepted either via the x-admin-session header (server-side clients)
+    // or via the ?token= query parameter (browser clients).
     const sessionHeader = req.headers['x-admin-session']
-    const token = typeof sessionHeader === 'string' ? sessionHeader : (Array.isArray(sessionHeader) ? sessionHeader[0] : '')
+    const headerToken = typeof sessionHeader === 'string' ? sessionHeader : (Array.isArray(sessionHeader) ? sessionHeader[0] : '')
+    const queryToken = (req.query as Record<string, string>)?.token ?? ''
+    const token = headerToken || queryToken
     if (!token || !opts.validateSession(token)) {
       connection.socket.close(1008, 'Unauthorized')
       return

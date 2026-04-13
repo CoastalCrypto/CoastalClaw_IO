@@ -21,6 +21,7 @@ export interface Config {
   approvalTimeoutMs: number
   defaultModel: string
   agentTrustLevel: TrustLevel
+  cloudConsentGranted: boolean
   vllmUrl: string
   airllmUrl: string
   infinityUrl: string
@@ -74,11 +75,16 @@ export function loadConfig(): Config {
       const trustFile = join(dataDir, '.trust-level')
       const raw = (existsSync(trustFile)
         ? readFileSync(trustFile, 'utf8').trim()
-        : null) ?? process.env.CC_TRUST_LEVEL ?? 'sandboxed'
+        : null) ?? process.env.CC_TRUST_LEVEL ?? 'trusted'
       if (!['sandboxed', 'trusted', 'autonomous'].includes(raw)) {
         throw new Error(`Trust level must be 'sandboxed'|'trusted'|'autonomous', got: "${raw}"`)
       }
       return raw as TrustLevel
+    })(),
+    cloudConsentGranted: (() => {
+      const dataDir = process.env.CC_DATA_DIR ?? './data'
+      const consentFile = join(dataDir, '.cloud-consent')
+      return existsSync(consentFile)
     })(),
   }
 }

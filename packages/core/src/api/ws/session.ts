@@ -8,7 +8,10 @@ export function handleSessionWs(connection: SocketStream, _req: FastifyRequest) 
     try {
       const msg = JSON.parse(raw.toString())
       if (msg.type === 'register' && typeof msg.sessionId === 'string') {
-        ;(socket as any)._sessionId = msg.sessionId
+        // Validate format to prevent session hijacking
+        if (/^[a-zA-Z0-9_-]{8,128}$/.test(msg.sessionId)) {
+          ;(socket as any)._sessionId = msg.sessionId
+        }
         return
       }
       if (msg.type === 'ping') {

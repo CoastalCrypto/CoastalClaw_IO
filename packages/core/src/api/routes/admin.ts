@@ -199,7 +199,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
   }, async (req, reply) => {
     const { name, sessionId } = req.body
 
-    if (!/^[a-zA-Z0-9_.:/-]+$/.test(name)) {
+    if (!/^[a-zA-Z0-9_.:-]+(?:\/[a-zA-Z0-9_.:-]+)*$/.test(name)) {
       return reply.status(400).send({ error: 'Invalid model name' })
     }
 

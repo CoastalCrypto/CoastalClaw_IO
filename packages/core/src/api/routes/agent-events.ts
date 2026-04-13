@@ -23,9 +23,15 @@ function toGraphEvent(event: AgentEvent): Record<string, unknown> | null {
 
 export async function agentEventsRoute(
   app: FastifyInstance,
-  opts: { registry: AgentRegistry }
+  opts: { registry: AgentRegistry; validateSession: (token: string) => boolean }
 ) {
-  app.get('/ws/agent-events', { websocket: true }, (connection: SocketStream) => {
+  app.get('/ws/agent-events', { websocket: true }, (connection: SocketStream, req) => {
+    const sessionHeader = req.headers['x-admin-session']
+    const token = typeof sessionHeader === 'string' ? sessionHeader : (Array.isArray(sessionHeader) ? sessionHeader[0] : '')
+    if (!token || !opts.validateSession(token)) {
+      connection.socket.close(1008, 'Unauthorized')
+      return
+    }
     const socket = connection.socket
 
     // Send initial state

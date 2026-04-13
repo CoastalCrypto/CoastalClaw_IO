@@ -62,7 +62,11 @@ export async function buildServer() {
   const userStore = new UserStore(db, adminToken)
 
   fastify.addHook('onRequest', async (req, reply) => {
-    if (!req.url.startsWith('/api/admin')) return
+    const isAdminRoute = req.url.startsWith('/api/admin')
+    const isNetworkRoute = req.url.startsWith('/api/chat') || req.url.startsWith('/api/upload')
+    // Only enforce auth on admin routes, and on chat/upload when server is network-exposed
+    const isNetworkExposed = config.host !== '127.0.0.1' && config.host !== '::1' && config.host !== 'localhost'
+    if (!isAdminRoute && !(isNetworkExposed && isNetworkRoute)) return
     if (req.url === '/api/admin/login') return
 
     // 1. Raw admin token (legacy / CLI usage)
@@ -100,7 +104,14 @@ export async function buildServer() {
   const customToolLoader = new CustomToolLoader(db)
   const channelManager = new ChannelManager(db)
 
-  await fastify.register(agentEventsRoute, { registry: agentRegistry })
+  await fastify.register(agentEventsRoute, {
+    registry: agentRegistry,
+    validateSession: (token: string) => {
+      if (validateSessionToken(adminToken, token)) return true
+      const claims = userStore.verifySessionToken(token)
+      return claims !== null
+    }
+  })
   await fastify.register(agentRoutes, { registry: agentRegistry, gate })
   await fastify.register(teamRoutes)
   await fastify.register(personaRoutes, { registry: agentRegistry })
@@ -142,8 +153,9 @@ export async function buildServer() {
   await fastify.register(userRoutes, { store: userStore })
 
   const cronStore = new CronStore(db)
+  const internalHost = (config.host === '0.0.0.0' || config.host === '::') ? '127.0.0.1' : config.host
   const cronScheduler = new CronScheduler(cronStore, async (agentId, task) => {
-    const res = await fetch(`http://127.0.0.1:${config.port}/api/chat`, {
+    const res = await fetch(`http://${internalHost}:${config.port}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: task, sessionId: `cron_${agentId}_${Date.now()}` }),

@@ -40,7 +40,7 @@ export class AsyncPipelineRunner {
     private store?: PipelineStore,
   ) {}
 
-  start(stages: RunStage[], input: string, pipelineId?: string, pipelineName?: string): { runId: string } {
+  async start(stages: RunStage[], input: string, pipelineId?: string, pipelineName?: string): Promise<{ runId: string }> {
     const runId = randomUUID()
     const controller = new AbortController()
     const run: ActiveRun = {
@@ -51,7 +51,7 @@ export class AsyncPipelineRunner {
       startedAt: Date.now(),
     }
     this.runs.set(runId, run)
-    this.store?.createRun(runId, pipelineId, pipelineName ?? 'Ad-hoc run', stages.length, run.startedAt)
+    await this.store?.createRun(runId, pipelineId, pipelineName ?? 'Ad-hoc run', stages.length, run.startedAt)
 
     // Fire and forget — errors are published as pipeline_error events
     this._execute(run, stages, input, pipelineId, controller.signal).catch(() => {})
@@ -138,12 +138,12 @@ export class AsyncPipelineRunner {
       const totalMs = Date.now() - startedAt
       run.status = finalStatus
       eventBus.publish({ type: 'pipeline_done', ts: Date.now(), runId, finalOutput: currentInput, totalDurationMs: totalMs })
-      this.store?.finalizeRun(runId, finalStatus, { finalOutput: currentInput, totalDurationMs: totalMs })
+      await this.store?.finalizeRun(runId, finalStatus, { finalOutput: currentInput, totalDurationMs: totalMs })
     } catch (e: unknown) {
       run.status = 'error'
       const error = e instanceof Error ? e.message : String(e)
       eventBus.publish({ type: 'pipeline_error', ts: Date.now(), runId, stageIdx: run.stageIdx, error })
-      this.store?.finalizeRun(runId, 'error', { error, totalDurationMs: Date.now() - startedAt })
+      await this.store?.finalizeRun(runId, 'error', { error, totalDurationMs: Date.now() - startedAt })
     } finally {
       this.steerQueue.cleanup(runId)
     }

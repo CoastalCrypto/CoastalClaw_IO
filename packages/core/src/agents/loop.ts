@@ -10,8 +10,8 @@ import { runBackgroundReview } from './learning-thread.js'
 import { IterationBudget } from './iteration-budget.js'
 import { eventBus } from '../events/bus.js'
 
-const MAX_TURNS = () => Number(process.env.CC_AGENT_MAX_TURNS ?? 10)
-const MAX_RESULT_CHARS = () => Number(process.env.CC_TOOL_RESULT_MAX_CHARS ?? 4000)
+const MAX_TURNS = () => { const n = Number(process.env.CC_AGENT_MAX_TURNS ?? 10); return (isNaN(n) || n < 1) ? 10 : n }
+const MAX_RESULT_CHARS = () => { const n = Number(process.env.CC_TOOL_RESULT_MAX_CHARS ?? 4000); return (isNaN(n) || n < 1) ? 4000 : n }
 
 export class AgenticLoop {
   private skillGaps?: SkillGapsLog

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { DomainAssigner } from './DomainAssigner'
 
@@ -26,11 +26,13 @@ describe('DomainAssigner', () => {
     expect(screen.getByText('custom')).toBeInTheDocument()
   })
 
-  it('calls onChange when a select changes', () => {
+  it('calls onChange when a select changes', async () => {
     const onChange = vi.fn()
     render(<DomainAssigner agents={agents} models={models} registry={{}} onChange={onChange} />)
     const selects = screen.getAllByRole('combobox')
-    fireEvent.change(selects[0], { target: { value: 'model-a-q4' } })
+    await act(async () => {
+      fireEvent.change(selects[0], { target: { value: 'model-a-q4' } })
+    })
     expect(onChange).toHaveBeenCalled()
   })
 

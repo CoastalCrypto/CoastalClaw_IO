@@ -70,7 +70,7 @@ export async function pipelineRoutes(
       if (!agent) return reply.status(400).send({ error: `Agent not found: ${stage.agentId}` })
       if (!agent.active) return reply.status(400).send({ error: `Agent is offline: ${stage.agentId}` })
     }
-    const { runId } = runner.start(stages, input, pipelineId, pipelineName)
+    const { runId } = await runner.start(stages, input, pipelineId, pipelineName)
     return reply.status(202).send({ runId })
   })
 
@@ -92,13 +92,21 @@ export async function pipelineRoutes(
     reply.raw.setHeader('Connection', 'keep-alive')
     reply.raw.flushHeaders()
 
+    // Match events by runId directly, or by sessionId prefix for tool_call events
+    // (tool_call_start/end use sessionId: `${runId}_stage_N` instead of runId)
+    const matchesRun = (event: AgentEvent): boolean => {
+      if ('runId' in event) return (event as any).runId === runId
+      if ('sessionId' in event) return String((event as any).sessionId).startsWith(`${runId}_stage_`)
+      return false
+    }
+
     const send = (event: AgentEvent) => {
-      if (!('runId' in event) || (event as any).runId !== runId) return
+      if (!matchesRun(event)) return
       reply.raw.write(`data: ${JSON.stringify(event)}\n\n`)
     }
 
     // Replay recent history filtered to this runId
-    eventBus.getHistory(200).filter(e => 'runId' in e && (e as any).runId === runId).forEach(send)
+    eventBus.getHistory(200).filter(matchesRun).forEach(send)
 
     eventBus.onAgent(send)
 

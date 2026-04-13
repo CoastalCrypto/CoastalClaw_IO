@@ -18,6 +18,7 @@ import { Pipeline } from './pages/Pipeline'
 import { AgentGraph } from './pages/AgentGraph'
 import { NavBar, type NavPage } from './components/NavBar'
 import { TitleBar } from './components/TitleBar'
+import { CommandPalette } from './components/CommandPalette'
 import { coreClient } from './api/client'
 import './index.css'
 
@@ -39,6 +40,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const [sessionId,   setSessionId]   = useState<string | null>(null)
   const [page,        setPage]        = useState<NavPage>('chat')
+  const [paletteOpen, setPaletteOpen] = useState(false)
 
   useEffect(() => {
     async function init() {
@@ -65,6 +67,17 @@ export default function App() {
       }
     }
     init()
+  }, [])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setPaletteOpen(p => !p)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
   }, [])
 
   const handleLogin = async (sessionToken: string, user: AuthUser) => {
@@ -129,6 +142,9 @@ export default function App() {
   return (
     <AuthContext.Provider value={{ currentUser, onLogout: handleLogout }}>
       <TitleBar />
+      {paletteOpen && currentUser && (
+        <CommandPalette onNav={(p) => { setPage(p); setPaletteOpen(false) }} onClose={() => setPaletteOpen(false)} />
+      )}
       {page === 'dashboard' && <Dashboard onNav={nav} />}
       {page === 'analytics' && <Analytics onNav={nav} />}
       {page === 'tools'     && <Tools onNav={nav} />}

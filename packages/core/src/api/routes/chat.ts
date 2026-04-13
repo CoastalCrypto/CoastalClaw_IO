@@ -29,7 +29,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
 
   const db = new Database(pathJoin(config.dataDir, 'coastal-ai.db'))
   const router = new ModelRouter({ ollamaUrl: config.ollamaUrl, vllmUrl: config.vllmUrl, airllmUrl: config.airllmUrl, defaultModel: config.defaultModel })
-  const memory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey })
+  const memory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey, cloudConsentGranted: config.cloudConsentGranted })
   const agentRegistry = new AgentRegistry(pathJoin(config.dataDir, 'agents.db'))
   const backend = await createBackend(config.agentTrustLevel, [config.agentWorkdir])
   const browserManager = config.agentTrustLevel !== 'sandboxed'
@@ -126,7 +126,8 @@ export async function chatRoutes(fastify: FastifyInstance) {
 
     // Upsert session record with auto-generated title from first user message
     const title = message.slice(0, 80).replace(/\s+/g, ' ').trim()
-    fetch(`http://127.0.0.1:${config.port}/api/sessions/${sessionId}`, {
+    const internalHost = (config.host === '0.0.0.0' || config.host === '::') ? '127.0.0.1' : config.host
+    fetch(`http://${internalHost}:${config.port}/api/sessions/${sessionId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title }),
@@ -141,7 +142,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
         const predLoop = new AgenticLoop(router.ollama, toolRegistry, gate, log, onApprovalNeeded)
         const pResult = await predLoop.run(predSession, prompt, sessionId, [])
         fastify.websocketServer?.clients.forEach((client: any) => {
-          if (client._sessionId === sessionId || !client._sessionId) {
+          if (client._sessionId === sessionId) {
             client.send(JSON.stringify({ type: 'proactive_suggestion', suggestion: pResult.reply, sessionId }))
           }
         })

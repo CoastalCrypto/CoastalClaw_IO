@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { loadConfig } from '../../config.js'
 import { ModelRegistry } from '../../models/registry.js'
 import { QuantizationPipeline } from '../../models/quantizer.js'
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync, unlinkSync } from 'node:fs'
 import { join } from 'node:path'
 import { randomBytes, timingSafeEqual, createHmac } from 'node:crypto'
 
@@ -516,6 +516,39 @@ export async function adminRoutes(fastify: FastifyInstance) {
       client.send(JSON.stringify({ type: 'architect_applied', ...req.body }))
     })
     return reply.send({ ok: true })
+  })
+
+  // GET /api/admin/cloud-consent
+  fastify.get('/api/admin/cloud-consent', async (_req, reply) => {
+    const consentFile = join(config.dataDir, '.cloud-consent')
+    const granted = existsSync(consentFile)
+    const grantedAt = granted ? statSync(consentFile).mtimeMs : null
+    return reply.send({
+      mem0Available: !!process.env.MEM0_API_KEY,
+      consentGranted: granted,
+      consentGrantedAt: grantedAt,
+    })
+  })
+
+  // POST /api/admin/cloud-consent
+  fastify.post<{ Body: { granted: boolean } }>('/api/admin/cloud-consent', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['granted'],
+        properties: { granted: { type: 'boolean' } },
+      },
+    },
+  }, async (req, reply) => {
+    const consentFile = join(config.dataDir, '.cloud-consent')
+    if (req.body.granted) {
+      mkdirSync(config.dataDir, { recursive: true })
+      writeFileSync(consentFile, new Date().toISOString(), { mode: 0o600 })
+      return reply.send({ granted: true, message: 'Cloud consent granted. Restart the server to activate Mem0.' })
+    } else {
+      if (existsSync(consentFile)) unlinkSync(consentFile)
+      return reply.send({ granted: false, message: 'Cloud consent revoked.' })
+    }
   })
 
   fastify.addHook('onClose', async () => {

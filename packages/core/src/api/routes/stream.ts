@@ -22,7 +22,7 @@ export async function streamRoutes(fastify: FastifyInstance) {
 
   const db = new Database(join(config.dataDir, 'coastal-ai.db'))
   const router = new ModelRouter({ ollamaUrl: config.ollamaUrl, vllmUrl: config.vllmUrl, airllmUrl: config.airllmUrl, defaultModel: config.defaultModel })
-  const memory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey })
+  const memory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey, cloudConsentGranted: config.cloudConsentGranted })
   const agentRegistry = new AgentRegistry(join(config.dataDir, 'agents.db'))
   const backend = await createBackend(config.agentTrustLevel, [config.agentWorkdir])
   const toolRegistry = new ToolRegistry(backend)
@@ -97,7 +97,8 @@ export async function streamRoutes(fastify: FastifyInstance) {
 
       // Upsert session title
       const title = message.slice(0, 80).replace(/\s+/g, ' ').trim()
-      fetch(`http://127.0.0.1:${config.port}/api/sessions/${sessionId}`, {
+      const internalHost = (config.host === '0.0.0.0' || config.host === '::') ? '127.0.0.1' : config.host
+      fetch(`http://${internalHost}:${config.port}/api/sessions/${sessionId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title }),

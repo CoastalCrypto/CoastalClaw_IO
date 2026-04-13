@@ -7,6 +7,7 @@ export interface UnifiedMemoryConfig {
   dataDir: string
   mem0ApiKey?: string
   infinityUrl?: string
+  cloudConsentGranted?: boolean
 }
 
 export class UnifiedMemory {
@@ -17,9 +18,15 @@ export class UnifiedMemory {
 
   constructor(config: UnifiedMemoryConfig) {
     this.lossless = new LosslessAdapter({ dataDir: config.dataDir })
-    this.mem0 = config.mem0ApiKey
-      ? new Mem0Adapter({ apiKey: config.mem0ApiKey })
-      : null
+    if (config.mem0ApiKey && config.cloudConsentGranted) {
+      this.mem0 = new Mem0Adapter({ apiKey: config.mem0ApiKey })
+      console.log('[memory] Mem0 cloud memory: ENABLED (user consented)')
+    } else if (config.mem0ApiKey && !config.cloudConsentGranted) {
+      this.mem0 = null
+      console.warn('[memory] Mem0 API key found but cloud consent not granted. Enable in Settings → Cloud Features.')
+    } else {
+      this.mem0 = null
+    }
     this.infinity = new InfinityClient(config.infinityUrl ?? 'http://localhost:23817')
     // Probe Infinity in background — don't block constructor
     this.infinity.isAvailable().then(ok => {

@@ -170,7 +170,7 @@ export async function buildServer() {
   const skillGaps = new SkillGapsLog(config.dataDir)
   const contextStore = new ContextStore(db)
   const userModelStore = new UserModelStore(db)
-  const searchMemory = new UnifiedMemory({ dataDir: config.dataDir })
+  const searchMemory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey, cloudConsentGranted: config.cloudConsentGranted })
 
   await fastify.register(skillRoutes, { store: skillStore, router: pipelineRouter, gaps: skillGaps })
   await fastify.register(searchRoutes, { memory: searchMemory })

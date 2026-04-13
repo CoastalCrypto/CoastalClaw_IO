@@ -240,14 +240,14 @@ airllmUrl: process.env.CC_AIRLLM_URL ?? 'http://127.0.0.1:8002',
 
 ```ini
 [Unit]
-Description=CoastalClaw AirLLM Inference Server (layer-streaming)
+Description=Coastal.AI AirLLM Inference Server (layer-streaming)
 After=network.target
 ConditionPathExists=/usr/local/bin/airllm-server
 
 [Service]
 Type=simple
 User=coastal
-WorkingDirectory=/opt/coastalclaw
+WorkingDirectory=/opt/Coastal.AI
 Environment=CC_AIRLLM_MODEL=meta-llama/Meta-Llama-3-70B-Instruct
 ExecStart=/usr/local/bin/airllm-server --model ${CC_AIRLLM_MODEL} --port 8002
 Restart=on-failure
@@ -431,14 +431,14 @@ infinityUrl: process.env.CC_INFINITY_URL ?? 'http://127.0.0.1:23817',
 
 ```ini
 [Unit]
-Description=CoastalClaw Infinity Vector Database
+Description=Coastal.AI Infinity Vector Database
 After=network.target
 
 [Service]
 Type=simple
 User=coastal
-WorkingDirectory=/var/lib/coastalclaw/data
-ExecStart=/usr/local/bin/infinity --port 23817 --data-dir /var/lib/coastalclaw/infinity
+WorkingDirectory=/var/lib/Coastal.AI/data
+ExecStart=/usr/local/bin/infinity --port 23817 --data-dir /var/lib/Coastal.AI/infinity
 Restart=always
 RestartSec=5
 
@@ -731,14 +731,14 @@ websockets>=12.0
 
 ```ini
 [Unit]
-Description=CoastalClaw VibeVoice ASR + TTS Service
+Description=Coastal.AI VibeVoice ASR + TTS Service
 After=network.target
-ConditionPathExists=/opt/coastalclaw/coastalos/vibevoice/server.py
+ConditionPathExists=/opt/Coastal.AI/coastalos/vibevoice/server.py
 
 [Service]
 Type=simple
 User=coastal
-WorkingDirectory=/opt/coastalclaw
+WorkingDirectory=/opt/Coastal.AI
 Environment=VIBEVOICE_PORT=8001
 Environment=VIBEVOICE_ASR_MODEL=microsoft/VibeVoice-ASR
 Environment=VIBEVOICE_TTS_MODEL=microsoft/VibeVoice-Realtime-0.5B
@@ -770,7 +770,7 @@ In `coastalos/build/hooks/post-install.sh`, inside the GPU-conditional block:
 
 ```bash
 # Install VibeVoice
-pip3 install -r /opt/coastalclaw/coastalos/vibevoice/requirements.txt --break-system-packages \
+pip3 install -r /opt/Coastal.AI/coastalos/vibevoice/requirements.txt --break-system-packages \
   || echo "[post-install] VibeVoice install failed — whisper-cpp/piper fallback active"
 systemctl enable coastal-vibevoice.service || true
 ```
@@ -1206,7 +1206,7 @@ systemctl enable coastal-infinity.service
 
 # GPU-conditional: VibeVoice + AirLLM
 if nvidia-smi &>/dev/null 2>&1; then
-  pip3 install -r /opt/coastalclaw/coastalos/vibevoice/requirements.txt --break-system-packages || true
+  pip3 install -r /opt/Coastal.AI/coastalos/vibevoice/requirements.txt --break-system-packages || true
   pip3 install airllm --break-system-packages || true
   systemctl enable coastal-vibevoice.service || true
   systemctl enable coastal-airllm.service || true

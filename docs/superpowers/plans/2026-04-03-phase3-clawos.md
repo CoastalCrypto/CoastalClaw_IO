@@ -126,14 +126,14 @@ import { join } from 'node:path'
 import { NativeBackend } from './native.js'
 import type { ShellBackend, ShellResult } from './types.js'
 
-const SANDBOX_BASE = process.env.CC_SANDBOX_DIR ?? '/var/lib/coastalclaw/workspace'
+const SANDBOX_BASE = process.env.CC_SANDBOX_DIR ?? '/var/lib/Coastal.AI/workspace'
 
 /**
  * Linux namespace-based sandbox. Uses unshare(1) for mount/pid/net/ipc/uts isolation.
  * Each session gets an isolated workdir under CC_SANDBOX_DIR.
  *
  * Set MOCK_NAMESPACE=1 to run on non-Linux (dev/CI on Windows/Mac).
- * Set CC_SANDBOX_DIR to override workspace root (defaults to /var/lib/coastalclaw/workspace).
+ * Set CC_SANDBOX_DIR to override workspace root (defaults to /var/lib/Coastal.AI/workspace).
  */
 export class NamespaceBackend implements ShellBackend {
   readonly name = 'namespace'
@@ -703,7 +703,7 @@ Replace `coastalos/build/hooks/post-install.sh`:
 #!/bin/bash
 set -e
 
-echo "[post-install] Installing CoastalClaw..."
+echo "[post-install] Installing Coastal.AI..."
 
 # Install pnpm
 npm install -g pnpm
@@ -728,8 +728,8 @@ fi
 
 # Create coastal user
 useradd -m -s /bin/bash coastal || true
-mkdir -p /opt/coastalclaw /var/lib/coastalclaw/data /var/lib/coastalclaw/workspace
-chown -R coastal:coastal /opt/coastalclaw /var/lib/coastalclaw
+mkdir -p /opt/Coastal.AI /var/lib/Coastal.AI/data /var/lib/Coastal.AI/workspace
+chown -R coastal:coastal /opt/Coastal.AI /var/lib/Coastal.AI
 
 # Set up cgroup slice for namespace sandbox
 mkdir -p /etc/systemd/system/coastal.slice.d
@@ -769,14 +769,14 @@ Create `coastalos/systemd/coastal-vllm.service`:
 
 ```ini
 [Unit]
-Description=CoastalClaw vLLM Inference Server
+Description=Coastal.AI vLLM Inference Server
 After=network.target
 ConditionPathExists=/usr/local/bin/vllm
 
 [Service]
 Type=simple
 User=coastal
-WorkingDirectory=/opt/coastalclaw
+WorkingDirectory=/opt/Coastal.AI
 Environment=CC_VLLM_MODEL=llama3.2
 ExecStart=/usr/local/bin/vllm serve ${CC_VLLM_MODEL} --host 127.0.0.1 --port 8000
 Restart=on-failure

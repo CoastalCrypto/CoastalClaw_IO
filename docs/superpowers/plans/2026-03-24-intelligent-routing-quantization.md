@@ -93,7 +93,7 @@ export function loadConfig(): Config {
 - [ ] **Step 3: Run existing tests to confirm nothing broke**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core
+cd C:/Users/John/Coastal.AI/packages/core
 pnpm test
 ```
 
@@ -102,7 +102,7 @@ Expected: all 19 tests still passing (config tests check existing fields only).
 - [ ] **Step 4: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/routing/types.ts packages/core/src/config.ts
 git commit -m "feat(core/routing): add RouteSignals/RouteDecision types and routing config vars"
 ```
@@ -118,7 +118,7 @@ git commit -m "feat(core/routing): add RouteSignals/RouteDecision types and rout
 - [ ] **Step 1: Install onnxruntime-node**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core
+cd C:/Users/John/Coastal.AI/packages/core
 pnpm add onnxruntime-node
 ```
 
@@ -158,7 +158,7 @@ describe('TinyRouterClient', () => {
 - [ ] **Step 3: Run to verify FAIL**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "tiny-router"
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "tiny-router"
 ```
 
 Expected: `Cannot find module '../../src/routing/tiny-router.js'`
@@ -204,7 +204,7 @@ export class TinyRouterClient {
 - [ ] **Step 5: Run tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: all tests pass (tiny-router: 2 tests).
@@ -212,7 +212,7 @@ Expected: all tests pass (tiny-router: 2 tests).
 - [ ] **Step 6: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/routing/tiny-router.ts packages/core/tests/routing/tiny-router.test.ts packages/core/package.json pnpm-lock.yaml
 git commit -m "feat(core/routing): add TinyRouterClient with ONNX wrapper and graceful fallback"
 ```
@@ -303,7 +303,7 @@ describe.skipIf(!modelAvailable)('TinyRouterClient — live ONNX inference', () 
 - [ ] **Step 3: Run to verify FAIL (or SKIP if model absent)**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "live ONNX"
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "live ONNX"
 ```
 
 Expected: tests skip if model not present (`skipped 2`), or fail with inference error if present.
@@ -399,7 +399,7 @@ export class TinyRouterClient {
 - [ ] **Step 5: Run tests — expect PASS (model-absent tests pass; live tests skip)**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: all prior tiny-router tests pass; live ONNX tests skipped.
@@ -407,7 +407,7 @@ Expected: all prior tiny-router tests pass; live ONNX tests skipped.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/routing/tiny-router.ts packages/core/src/routing/tiny-router-tokenizer.ts packages/core/tests/routing/tiny-router.test.ts
 git commit -m "feat(core/routing): implement TinyRouterClient ONNX inference with WordPiece tokenizer"
 ```
@@ -493,7 +493,7 @@ describe('DomainClassifier', () => {
 - [ ] **Step 2: Run to verify FAIL**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "domain-classifier"
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "domain-classifier"
 ```
 
 Expected: `Cannot find module '../../src/routing/domain-classifier.js'`
@@ -587,7 +587,7 @@ export class DomainClassifier {
 - [ ] **Step 4: Run tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: 4 new domain-classifier tests pass, all 21+ tests pass total.
@@ -595,7 +595,7 @@ Expected: 4 new domain-classifier tests pass, all 21+ tests pass total.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/routing/domain-classifier.ts packages/core/tests/routing/domain-classifier.test.ts
 git commit -m "feat(core/routing): add DomainClassifier with rules cascade and LLM fallback"
 ```
@@ -668,7 +668,7 @@ describe('ModelRegistry', () => {
 - [ ] **Step 2: Run to verify FAIL**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "registry"
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "registry"
 ```
 
 Expected: `Cannot find module '../../src/models/registry.js'`
@@ -759,7 +759,7 @@ export class ModelRegistry {
 - [ ] **Step 4: Run tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: 3 new registry tests pass, all tests pass.
@@ -767,7 +767,7 @@ Expected: 3 new registry tests pass, all tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/models/registry.ts packages/core/tests/models/registry.test.ts
 git commit -m "feat(core/models): add ModelRegistry with SQLite models table"
 ```
@@ -885,7 +885,7 @@ describe('DomainModelRegistry', () => {
 - [ ] **Step 2: Run to verify FAIL**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "domain-registry"
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "domain-registry"
 ```
 
 Expected: `Cannot find module '../../src/routing/domain-registry.js'`
@@ -954,7 +954,7 @@ export class DomainModelRegistry {
 - [ ] **Step 4: Run tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: 5 new domain-registry tests pass.
@@ -962,7 +962,7 @@ Expected: 5 new domain-registry tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/routing/domain-registry.ts packages/core/tests/routing/domain-registry.test.ts
 git commit -m "feat(core/routing): add DomainModelRegistry with hot-reload"
 ```
@@ -1038,7 +1038,7 @@ describe('VRAMManager', () => {
 - [ ] **Step 2: Run to verify FAIL**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "vram-manager"
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "vram-manager"
 ```
 
 Expected: `Cannot find module '../../src/routing/vram-manager.js'`
@@ -1112,7 +1112,7 @@ export class VRAMManager {
 - [ ] **Step 4: Run tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: 4 new vram-manager tests pass.
@@ -1120,7 +1120,7 @@ Expected: 4 new vram-manager tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/routing/vram-manager.ts packages/core/tests/routing/vram-manager.test.ts
 git commit -m "feat(core/routing): add VRAMManager with quant degradation"
 ```
@@ -1222,7 +1222,7 @@ describe('CascadeRouter', () => {
 - [ ] **Step 2: Run to verify FAIL**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "cascade"
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "cascade"
 ```
 
 Expected: `Cannot find module '../../src/routing/cascade.js'`
@@ -1305,7 +1305,7 @@ export class CascadeRouter {
 - [ ] **Step 4: Run tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: 3 new cascade tests pass, all tests pass.
@@ -1313,7 +1313,7 @@ Expected: 3 new cascade tests pass, all tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/routing/cascade.ts packages/core/tests/routing/cascade.test.ts
 git commit -m "feat(core/routing): add CascadeRouter orchestrating full routing pipeline"
 ```
@@ -1377,7 +1377,7 @@ Add to `packages/core/tests/memory/unified.test.ts` (append after existing test)
 - [ ] **Step 2: Run to verify FAIL**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "unified"
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "unified"
 ```
 
 Expected: tests fail because `write()` doesn't accept a second argument yet.
@@ -1406,7 +1406,7 @@ async write(
 - [ ] **Step 4: Run unified tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test -- tests/memory/unified.test.ts
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test -- tests/memory/unified.test.ts
 ```
 
 Expected: 4 unified tests pass.
@@ -1500,7 +1500,7 @@ export class ModelRouter {
 - [ ] **Step 7: Run router tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test -- tests/models/router.test.ts
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test -- tests/models/router.test.ts
 ```
 
 Expected: all 4 router tests pass.
@@ -1586,7 +1586,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
 - [ ] **Step 9: Run all tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: all tests pass.
@@ -1611,7 +1611,7 @@ Expected: all tests pass.
 - [ ] **Step 10: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/memory/index.ts packages/core/src/models/router.ts packages/core/src/api/routes/chat.ts packages/core/tests/memory/unified.test.ts packages/core/tests/models/router.test.ts packages/core/tests/api/chat.test.ts
 git commit -m "feat(core): wire retention signal end-to-end through ModelRouter and chatRoutes"
 ```
@@ -1735,7 +1735,7 @@ describe('QuantizationPipeline', () => {
 - [ ] **Step 2: Run to verify FAIL**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "quantizer"
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test -- --reporter=verbose 2>&1 | grep -A3 "quantizer"
 ```
 
 Expected: `Cannot find module '../../src/models/quantizer.js'`
@@ -1890,7 +1890,7 @@ export class QuantizationPipeline {
 - [ ] **Step 4: Run tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: 5 new quantizer tests pass.
@@ -1898,7 +1898,7 @@ Expected: 5 new quantizer tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/models/quantizer.ts packages/core/tests/models/quantizer.test.ts
 git commit -m "feat(core/models): add QuantizationPipeline for HuggingFace → GGUF → Ollama"
 ```
@@ -2014,7 +2014,7 @@ describe('Admin API', () => {
 - [ ] **Step 2: Run to verify FAIL**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test -- tests/api/admin.test.ts
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test -- tests/api/admin.test.ts
 ```
 
 Expected: fails — admin routes not registered.
@@ -2178,7 +2178,7 @@ await fastify.register(adminRoutes)
 - [ ] **Step 5: Run all tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: 7 new admin tests pass, all pass.
@@ -2186,7 +2186,7 @@ Expected: 7 new admin tests pass, all pass.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/api/routes/admin.ts packages/core/tests/api/admin.test.ts packages/core/src/server.ts
 git commit -m "feat(core/api): add admin routes for model management with token auth"
 ```
@@ -2271,7 +2271,7 @@ describe('CoreClient admin methods', () => {
 - [ ] **Step 2: Run to verify FAIL**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/web && pnpm test
+cd C:/Users/John/Coastal.AI/packages/web && pnpm test
 ```
 
 Expected: fails — new client constructor overload not present.
@@ -2374,7 +2374,7 @@ export const coreClient = new CoreClient('/api')
 - [ ] **Step 4: Run web tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/web && pnpm test
+cd C:/Users/John/Coastal.AI/packages/web && pnpm test
 ```
 
 Expected: all web tests pass.
@@ -2382,7 +2382,7 @@ Expected: all web tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/web/src/api/client.ts packages/web/src/api/client.test.ts
 git commit -m "feat(web/api): add admin methods to CoreClient (listModels, removeModel, updateRegistry)"
 ```
@@ -2482,7 +2482,7 @@ describe('ModelInstaller', () => {
 - [ ] **Step 3: Run to verify FAIL**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/web && pnpm test
+cd C:/Users/John/Coastal.AI/packages/web && pnpm test
 ```
 
 Expected: `Cannot find module './ModelCard'` and `Cannot find module './ModelInstaller'`
@@ -2632,7 +2632,7 @@ interface QuantProgress {
 - [ ] **Step 6: Run tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/web && pnpm test
+cd C:/Users/John/Coastal.AI/packages/web && pnpm test
 ```
 
 Expected: all tests pass.
@@ -2640,7 +2640,7 @@ Expected: all tests pass.
 - [ ] **Step 7: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/web/src/components/ModelCard.tsx packages/web/src/components/ModelCard.test.tsx packages/web/src/components/ModelInstaller.tsx packages/web/src/components/ModelInstaller.test.tsx
 git commit -m "feat(web): add ModelCard and ModelInstaller components"
 ```
@@ -2692,7 +2692,7 @@ describe('DomainAssigner', () => {
 - [ ] **Step 2: Run to verify FAIL**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/web && pnpm test
+cd C:/Users/John/Coastal.AI/packages/web && pnpm test
 ```
 
 Expected: `Cannot find module './DomainAssigner'`
@@ -3053,7 +3053,7 @@ export function Chat({ sessionId, onNav }: { sessionId: string; onNav: () => voi
 - [ ] **Step 7: Run all tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw && pnpm test
+cd C:/Users/John/Coastal.AI && pnpm test
 ```
 
 Expected: all tests pass across core and web.
@@ -3061,7 +3061,7 @@ Expected: all tests pass across core and web.
 - [ ] **Step 8: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/web/src/
 git commit -m "feat(web): add Models page with DomainAssigner, ModelCard, ModelInstaller, and App routing"
 ```
@@ -3073,7 +3073,7 @@ git commit -m "feat(web): add Models page with DomainAssigner, ModelCard, ModelI
 - [ ] **Step 1: Run complete monorepo test suite**
 
 ```bash
-cd C:/Users/John/CoastalClaw && pnpm test
+cd C:/Users/John/Coastal.AI && pnpm test
 ```
 
 Expected: all tasks pass across both packages.
@@ -3081,5 +3081,5 @@ Expected: all tasks pass across both packages.
 - [ ] **Step 2: Push to GitHub**
 
 ```bash
-cd C:/Users/John/CoastalClaw && git push origin master
+cd C:/Users/John/Coastal.AI && git push origin master
 ```

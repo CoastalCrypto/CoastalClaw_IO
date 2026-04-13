@@ -1,4 +1,4 @@
-# CoastalClaw Phase 2 — CoastalOS Design Spec
+# Coastal.AI Phase 2 — CoastalOS Design Spec
 
 **Date:** 2026-04-01
 **Status:** Implementation complete — v0.3.0-phase2-coastalos
@@ -160,7 +160,7 @@ coastalos/
   installer/
     calamares-config/   — CoastalOS branding, partitioning presets, welcome screen
   grub/
-    coastal-grub-theme/ — boot screen: CoastalClaw logo, dark background
+    coastal-grub-theme/ — boot screen: Coastal.AI logo, dark background
 ```
 
 ### Distribution Formats
@@ -168,7 +168,7 @@ coastalos/
 | Format | Target |
 |--------|--------|
 | ISO | Dedicated hardware, USB install via Calamares |
-| APT package | Existing Ubuntu servers (`apt install coastalclaw`) |
+| APT package | Existing Ubuntu servers (`apt install Coastal.AI`) |
 | Docker image | Development, Windows users |
 
 ### Electron Shell (Windows / macOS)
@@ -316,7 +316,7 @@ All audio tests use mock streams — no mic/speaker hardware needed in CI.
 ## Updated Project Structure
 
 ```
-CoastalClaw/
+Coastal.AI/
 ├── agents/                    — per-agent config (Phase 1, + voiceModel field)
 ├── packages/
 │   ├── core/                  — Fastify server + tools (+ browser/ tools)
@@ -340,7 +340,7 @@ CoastalClaw/
 |-------|--------|-------------|
 | Phase 1 APEX | ✅ Done | ShellBackend, trust tiers, daemon, Agent Hands, learning loop |
 | **Phase 2** | **In progress** | coastal-architect, CoastalOS (systemd + labwc kiosk + browser tools + Electron shell + manual `build.sh` ISO), Voice Pipeline |
-| Phase 3 | Planned | NamespaceBackend (Linux `unshare`, replaces Docker on CoastalOS), automated ISO CI/CD (GitHub Actions), APT repo (`apt.coastalclaw.io`), Calamares installer polish |
+| Phase 3 | Planned | NamespaceBackend (Linux `unshare`, replaces Docker on CoastalOS), automated ISO CI/CD (GitHub Actions), APT repo (`apt.Coastal.AI.io`), Calamares installer polish |
 | Phase 4 | Planned | ClawTeam swarm (HKUDS), session tools, boss fan-out |
 | Phase 5 | Planned | Open source launch, cloud marketplaces |
 

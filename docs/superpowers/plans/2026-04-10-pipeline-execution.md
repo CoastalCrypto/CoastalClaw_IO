@@ -6,7 +6,7 @@
 
 **Architecture:** `POST /api/pipeline/run` returns a `{ runId }` immediately and kicks off background execution. The existing `EventBus` is extended with pipeline-specific event types; a new SSE endpoint filters the stream by `runId`. A lightweight steer queue lets the frontend inject messages that the `AgenticLoop` reads between tool calls.
 
-**Tech Stack:** Fastify (SSE), better-sqlite3 (pipeline store), vitest (tests), React + TypeScript (frontend), CoastalClaw EventBus (existing singleton)
+**Tech Stack:** Fastify (SSE), better-sqlite3 (pipeline store), vitest (tests), React + TypeScript (frontend), Coastal.AI EventBus (existing singleton)
 
 ---
 

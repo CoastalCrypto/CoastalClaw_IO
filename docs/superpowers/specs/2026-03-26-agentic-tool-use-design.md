@@ -1,6 +1,6 @@
 # Agentic Tool Use — Sub-project A Design
 
-**Goal:** Give CoastalClaw agents (and user-created custom agents) full tool-use capabilities — file system access, shell execution, plugin/MCP integrations, and a permission gate — so they operate with the same autonomous control as Claude Code and OpenClaw.
+**Goal:** Give Coastal.AI agents (and user-created custom agents) full tool-use capabilities — file system access, shell execution, plugin/MCP integrations, and a permission gate — so they operate with the same autonomous control as Claude Code and OpenClaw.
 
 **Architecture:** A new `agents/` module and `tools/` module sit between `ModelRouter` and the client. The `CascadeRouter` (Phase 2) classifies the domain; `AgentSession` loads that agent's soul and tool set; `AgenticLoop` iterates LLM ↔ tool calls until the agent is done. Core tools are built-in TypeScript. External tools come via an MCP adapter layer.
 
@@ -124,7 +124,7 @@ Session ID: {sessionId}
 Built-in soul example (`SOUL_CTO.md`, abbreviated):
 
 ```markdown
-# Chief Technology Officer — CoastalClaw
+# Chief Technology Officer — Coastal.AI
 
 You are the CTO of this organization. Your responsibilities:
 - Architecture: system design, technology selection, technical direction

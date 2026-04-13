@@ -1,4 +1,4 @@
-# CoastalClaw Phase 4 — ClawTeam Design Spec
+# Coastal.AI Phase 4 — ClawTeam Design Spec
 
 **Date:** 2026-04-05
 **Status:** Approved for implementation planning
@@ -8,7 +8,7 @@
 
 ## Goal
 
-Phase 4 makes CoastalClaw a full multi-agent, voice-native, retrieval-augmented AI system:
+Phase 4 makes Coastal.AI a full multi-agent, voice-native, retrieval-augmented AI system:
 
 - **ClawTeam** — boss agent fans work out to specialist sub-agents in parallel; agents can spawn, communicate, and self-improve
 - **VibeVoice** — replaces whisper-cpp + piper-tts with Microsoft's streaming ASR (7B, diarization) and real-time TTS (0.5B, 200ms latency), GPU-conditional with CPU fallback
@@ -24,7 +24,7 @@ Everything degrades gracefully: VibeVoice falls back to whisper-cpp + piper-tts 
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                  CoastalClaw Core                    │
+│                  Coastal.AI Core                    │
 │                                                      │
 │  Voice Pipeline (packages/daemon)                    │
 │    openwakeword → VibeVoiceClient.transcribe()       │

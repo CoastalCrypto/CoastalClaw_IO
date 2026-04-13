@@ -89,6 +89,9 @@ export async function buildServer() {
       // 3. User session token (issued by /api/auth/login) — admin role required
       const claims = userStore.verifySessionToken(session)
       if (claims?.role === 'admin') return
+      console.warn(`[auth] 401 ${req.method} ${req.url} — session present but invalid (role=${claims?.role ?? 'null'}, prefix=${session.slice(0, 3)})`)
+    } else {
+      console.warn(`[auth] 401 ${req.method} ${req.url} — no session token in x-admin-session header`)
     }
 
     return reply.status(401).send({ error: 'Unauthorized' })

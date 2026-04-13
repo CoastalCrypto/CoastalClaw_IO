@@ -1,4 +1,4 @@
-# CoastalClaw Phase 3 — ClawOS Native Layer Design Spec
+# Coastal.AI Phase 3 — ClawOS Native Layer Design Spec
 
 **Date:** 2026-04-03
 **Status:** Approved for implementation planning
@@ -88,7 +88,7 @@ async isAvailable(): Promise<boolean> {
 unshare --mount --pid --net --ipc --uts --fork --map-root-user \
   sh -c "
     mount -t overlay overlay \
-      -o lowerdir=/opt/coastalclaw/base,upperdir=$SESSION_DIR/upper,workdir=$SESSION_DIR/work \
+      -o lowerdir=/opt/Coastal.AI/base,upperdir=$SESSION_DIR/upper,workdir=$SESSION_DIR/work \
       $SESSION_DIR/merged
     mount -t proc proc $SESSION_DIR/merged/proc
     cgexec -g memory,cpu:coastal-$SESSION_ID \

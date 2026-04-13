@@ -208,7 +208,7 @@ describe('restartServer', () => {
 
     expect(spawnMock).toHaveBeenCalledWith(
       'cmd.exe',
-      expect.arrayContaining(['/c', expect.stringContaining('coastalclaw-restart.cmd')]),
+      expect.arrayContaining(['/c', expect.stringContaining('Coastal.AI-restart.cmd')]),
       expect.objectContaining({ detached: true }),
     )
     expect(exitSpy).toHaveBeenCalledWith(0)
@@ -228,7 +228,7 @@ describe('restartServer', () => {
     restartServer('/install/dir')
 
     expect(execSyncMock).toHaveBeenCalledWith(
-      'systemctl restart coastalclaw-server',
+      'systemctl restart Coastal.AI-server',
       expect.objectContaining({ timeout: 10_000 }),
     )
   })
@@ -263,7 +263,7 @@ import { join } from 'node:path'
  */
 export function restartServer(installDir: string): void {
   if (process.platform === 'win32') {
-    const script = join(tmpdir(), 'coastalclaw-restart.cmd')
+    const script = join(tmpdir(), 'Coastal.AI-restart.cmd')
     writeFileSync(script, [
       '@echo off',
       'timeout /t 2 /nobreak > nul',
@@ -279,7 +279,7 @@ export function restartServer(installDir: string): void {
     process.exit(0)
   } else {
     try {
-      execSync('systemctl restart coastalclaw-server', { timeout: 10_000 })
+      execSync('systemctl restart Coastal.AI-server', { timeout: 10_000 })
     } catch {
       process.exit(0)
     }
@@ -300,7 +300,7 @@ Find:
 ```ts
         // Restart via systemd if running under it, otherwise send SIGHUP
         try {
-          execSync('systemctl restart coastalclaw-server 2>/dev/null || true', { timeout: 10_000 })
+          execSync('systemctl restart Coastal.AI-server 2>/dev/null || true', { timeout: 10_000 })
         } catch {
           process.exit(0) // supervisor (systemd Restart=always) will restart us
         }

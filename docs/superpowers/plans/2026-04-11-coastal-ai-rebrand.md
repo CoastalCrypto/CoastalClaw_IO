@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Rename every user-visible and package-level reference from CoastalClaw/coastal-claw to Coastal.AI/coastal-ai across all active source, config, and doc files, then rename the GitHub repo.
+**Goal:** Rename every user-visible and package-level reference from Coastal.AI/coastal-claw to Coastal.AI/coastal-ai across all active source, config, and doc files, then rename the GitHub repo.
 
 **Architecture:** Pure find-and-replace across ~40 files, grouped by layer (package manifests → source → HTML → docs → install scripts). No logic changes. The local directory stays `coastal-claw/` to avoid git history issues. The SQLite DB file is renamed from `coastal-claw.db` → `coastal-ai.db` in code; existing data files are unaffected (fresh install scenario).
 
@@ -175,7 +175,7 @@ Replace all with: `[coastal-ai]`
 
 - [ ] **Step 5: `api/routes/channels.ts` — update test message**
 
-Find: `'👋 Test message from CoastalClaw'`
+Find: `'👋 Test message from Coastal.AI'`
 Replace with: `'👋 Test message from Coastal.AI'`
 
 - [ ] **Step 6: `api/routes/chat.ts` — update DB filename**
@@ -190,25 +190,25 @@ Replace with: `'coastal-ai.db'`
 
 - [ ] **Step 8: `api/routes/system-restart.ts` — update temp file + service name**
 
-Find: `'coastalclaw-restart.cmd'`
+Find: `'Coastal.AI-restart.cmd'`
 Replace with: `'coastal-ai-restart.cmd'`
 
-Find: `'coastalclaw-server'`
+Find: `'Coastal.AI-server'`
 Replace with: `'coastal-ai-server'`
 
 - [ ] **Step 9: `api/routes/system.ts` — update service name default**
 
-Find: `'coastalclaw-server'`
+Find: `'Coastal.AI-server'`
 Replace with: `'coastal-ai-server'`
 
 - [ ] **Step 10: `channels/discord.ts` — update default bot username**
 
-Find: `'CoastalClaw'`
+Find: `'Coastal.AI'`
 Replace with: `'Coastal.AI'`
 
 - [ ] **Step 11: `channels/zapier.ts` — update source field**
 
-Find: `'coastalclaw'`
+Find: `'Coastal.AI'`
 Replace with: `'coastal-ai'`
 
 - [ ] **Step 12: `tools/core/sqlite.ts` — update DB filename + description**
@@ -216,7 +216,7 @@ Replace with: `'coastal-ai'`
 Find: `'coastal-claw.db'`
 Replace with: `'coastal-ai.db'`
 
-Find: `'CoastalClaw database'`
+Find: `'Coastal.AI database'`
 Replace with: `'Coastal.AI database'`
 
 - [ ] **Step 13: `tools/mcp/adapter.ts` — update client name**
@@ -224,11 +224,11 @@ Replace with: `'Coastal.AI database'`
 Find: `{ name: 'coastal-claw', version: '1.0.0' }`
 Replace with: `{ name: 'coastal-ai', version: '1.0.0' }`
 
-- [ ] **Step 14: Verify — no remaining coastal-claw/CoastalClaw in core src**
+- [ ] **Step 14: Verify — no remaining coastal-claw/Coastal.AI in core src**
 
 Run:
 ```bash
-grep -rn "CoastalClaw\|coastal-claw\|coastalclaw" packages/core/src/
+grep -rn "Coastal.AI\|coastal-claw\|Coastal.AI" packages/core/src/
 ```
 Expected: no output.
 
@@ -270,60 +270,60 @@ Replace with: `@coastal-ai/core`
 
 - [ ] **Step 3: `shell/main.ts` — update tray tooltip**
 
-Find: `'CoastalClaw OS'`
+Find: `'Coastal.AI OS'`
 Replace with: `'Coastal.AI'`
 
 - [ ] **Step 4: `web/NavBar.tsx` — update display name**
 
-Find: `CoastalClaw` (the visible text node, line ~96)
+Find: `Coastal.AI` (the visible text node, line ~96)
 Replace with: `Coastal.AI`
 
 - [ ] **Step 5: `web/ErrorBoundary.tsx` — update log prefix**
 
-Find: `'[CoastalClaw]'`
+Find: `'[Coastal.AI]'`
 Replace with: `'[Coastal.AI]'`
 
 - [ ] **Step 6: `web/AgentThinkingAnimation.tsx` — update comment**
 
-Find: `CoastalClaw`
+Find: `Coastal.AI`
 Replace with: `Coastal.AI`
 
 - [ ] **Step 7: `web/animations/LottiePlayer.tsx` — update comment**
 
-Find: `CoastalClaw`
+Find: `Coastal.AI`
 Replace with: `Coastal.AI`
 
 - [ ] **Step 8: `web/animations/OceanScene.tsx` — update comment**
 
-Find: `CoastalClaw`
+Find: `Coastal.AI`
 Replace with: `Coastal.AI`
 
 - [ ] **Step 9: `web/pages/Channels.tsx` — update placeholder**
 
-Find all: `placeholder: 'CoastalClaw'`
+Find all: `placeholder: 'Coastal.AI'`
 Replace all with: `placeholder: 'Coastal.AI'`
 
 - [ ] **Step 10: `web/pages/Onboarding.tsx` — update welcome title**
 
-Find: `'Welcome to CoastalClaw'`
+Find: `'Welcome to Coastal.AI'`
 Replace with: `'Welcome to Coastal.AI'`
 
 - [ ] **Step 11: `web/pages/System.tsx` — update service names + button**
 
-Find: `['coastalclaw-server', 'coastalclaw-daemon', 'coastalclaw-architect', 'ollama']`
+Find: `['Coastal.AI-server', 'Coastal.AI-daemon', 'Coastal.AI-architect', 'ollama']`
 Replace with: `['coastal-ai-server', 'coastal-ai-daemon', 'coastal-ai-architect', 'ollama']`
 
-Find: `'Update CoastalClaw'`
+Find: `'Update Coastal.AI'`
 Replace with: `'Update Coastal.AI'`
 
-Find: `s.replace('coastalclaw-', '')`
+Find: `s.replace('Coastal.AI-', '')`
 Replace with: `s.replace('coastal-ai-', '')`
 
-- [ ] **Step 12: Verify — no remaining CoastalClaw in web/daemon/shell**
+- [ ] **Step 12: Verify — no remaining Coastal.AI in web/daemon/shell**
 
 Run:
 ```bash
-grep -rn "CoastalClaw\|coastal-claw\|coastalclaw" packages/web/src packages/daemon/src packages/shell/src
+grep -rn "Coastal.AI\|coastal-claw\|Coastal.AI" packages/web/src packages/daemon/src packages/shell/src
 ```
 Expected: no output.
 
@@ -347,7 +347,7 @@ git commit -m "chore(rebrand): update web/daemon/shell string literals → Coast
 
 - [ ] **Step 1: `packages/web/index.html` — update title**
 
-Find: `<title>CoastalClaw</title>`
+Find: `<title>Coastal.AI</title>`
 Replace with: `<title>Coastal.AI</title>`
 
 - [ ] **Step 2: `install.sh` — update all references**
@@ -355,7 +355,7 @@ Replace with: `<title>Coastal.AI</title>`
 Replacements (apply all):
 | Find | Replace |
 |------|---------|
-| `CoastalClaw_IO` | `Coastal.AI` |
+| `Coastal.AI_IO` | `Coastal.AI` |
 | `[coastal-claw]` | `[coastal-ai]` |
 | `DEFAULT_INSTALL_DIR="${HOME}/coastal-claw"` | `DEFAULT_INSTALL_DIR="${HOME}/coastal-ai"` |
 | `coastal-claw-core.log` | `coastal-ai-core.log` |
@@ -371,8 +371,8 @@ Replacements (apply all):
 Replacements (apply all):
 | Find | Replace |
 |------|---------|
-| `CoastalClaw_IO` | `Coastal.AI` |
-| `coastalclaw-install.ps1` | `coastal-ai-install.ps1` |
+| `Coastal.AI_IO` | `Coastal.AI` |
+| `Coastal.AI-install.ps1` | `coastal-ai-install.ps1` |
 | `$env:USERPROFILE\coastal-claw` | `$env:USERPROFILE\coastal-ai` |
 | `coastal-claw-core.log` | `coastal-ai-core.log` |
 | `coastal-claw-core.pid` | `coastal-ai-core.pid` |
@@ -385,7 +385,7 @@ Replacements (apply all):
 
 Run:
 ```bash
-grep -n "CoastalClaw\|coastal-claw\|coastalclaw" packages/web/index.html install.sh install.ps1
+grep -n "Coastal.AI\|coastal-claw\|Coastal.AI" packages/web/index.html install.sh install.ps1
 ```
 Expected: only the `CoastalCrypto/Coastal.AI` repo URL references (which are correct).
 
@@ -411,30 +411,30 @@ git commit -m "chore(rebrand): update HTML title and install scripts → Coastal
 Run:
 ```bash
 cd /path/to/coastal-claw
-find docs/site -name "*.md" -o -name "*.json" | xargs sed -i 's/CoastalClaw/Coastal.AI/g; s/coastal-claw/coastal-ai/g; s/coastalclaw/coastal-ai/g; s/CoastalClaw_IO/Coastal.AI/g'
+find docs/site -name "*.md" -o -name "*.json" | xargs sed -i 's/Coastal.AI/Coastal.AI/g; s/coastal-claw/coastal-ai/g; s/Coastal.AI/coastal-ai/g; s/Coastal.AI_IO/Coastal.AI/g'
 ```
 
 On Windows (git bash or PowerShell):
 ```bash
 # git bash:
-find docs/site -type f \( -name "*.md" -o -name "*.json" \) -exec sed -i 's/CoastalClaw/Coastal.AI/g; s/coastal-claw/coastal-ai/g; s/coastalclaw/coastal-ai/g' {} +
+find docs/site -type f \( -name "*.md" -o -name "*.json" \) -exec sed -i 's/Coastal.AI/Coastal.AI/g; s/coastal-claw/coastal-ai/g; s/Coastal.AI/coastal-ai/g' {} +
 ```
 
 - [ ] **Step 2: Verify docs/site**
 
 Run:
 ```bash
-grep -rn "CoastalClaw\|coastal-claw\|coastalclaw" docs/site/
+grep -rn "Coastal.AI\|coastal-claw\|Coastal.AI" docs/site/
 ```
 Expected: no output.
 
 - [ ] **Step 3: Update README.md**
 
 Do a global replace:
-- `CoastalClaw_IO` → `Coastal.AI`
-- `CoastalClaw` → `Coastal.AI`
+- `Coastal.AI_IO` → `Coastal.AI`
+- `Coastal.AI` → `Coastal.AI`
 - `coastal-claw` → `coastal-ai`
-- `coastalclaw` → `coastal-ai`
+- `Coastal.AI` → `coastal-ai`
 
 Also update the install script URLs to point to the new repo:
 ```
@@ -446,7 +446,7 @@ https://raw.githubusercontent.com/CoastalCrypto/Coastal.AI/master/install.ps1
 
 Run:
 ```bash
-grep -n "CoastalClaw\|coastal-claw\|coastalclaw" README.md
+grep -n "Coastal.AI\|coastal-claw\|Coastal.AI" README.md
 ```
 Expected: no output.
 

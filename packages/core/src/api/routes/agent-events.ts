@@ -34,6 +34,7 @@ export async function agentEventsRoute(
     const queryToken = (req.query as Record<string, string>)?.token ?? ''
     const token = headerToken || queryToken
     if (!token || !opts.validateSession(token)) {
+      console.warn(`[ws/agent-events] 1008 Unauthorized — token ${token ? `present (prefix=${token.slice(0,3)}, len=${token.length})` : 'missing'}`)
       connection.socket.close(1008, 'Unauthorized')
       return
     }

@@ -128,7 +128,7 @@ coverage/
 - [ ] **Step 8: Install root dependencies**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 pnpm install
 ```
 
@@ -137,7 +137,7 @@ Expected: `node_modules/` created at root with turbo and typescript.
 - [ ] **Step 9: Initialize git and commit scaffold**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git init
 git add package.json pnpm-workspace.yaml tsconfig.base.json turbo.json .nvmrc .gitignore
 git commit -m "chore: initialize coastal-claw monorepo scaffold"
@@ -157,8 +157,8 @@ git commit -m "chore: initialize coastal-claw monorepo scaffold"
 - [ ] **Step 1: Create directory structure**
 
 ```bash
-mkdir -p C:/Users/John/CoastalClaw/packages/core/src
-mkdir -p C:/Users/John/CoastalClaw/packages/core/tests
+mkdir -p C:/Users/John/Coastal.AI/packages/core/src
+mkdir -p C:/Users/John/Coastal.AI/packages/core/tests
 ```
 
 - [ ] **Step 2: Write `packages/core/package.json`**
@@ -237,7 +237,7 @@ describe('loadConfig', () => {
 - [ ] **Step 5: Run test — expect FAIL**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core
+cd C:/Users/John/Coastal.AI/packages/core
 pnpm install
 pnpm test
 ```
@@ -269,7 +269,7 @@ export function loadConfig(): Config {
 - [ ] **Step 7: Run test — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core
+cd C:/Users/John/Coastal.AI/packages/core
 pnpm test
 ```
 
@@ -289,7 +289,7 @@ export { loadConfig }
 - [ ] **Step 9: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/
 git commit -m "feat(core): scaffold core package with typed config"
 ```
@@ -338,7 +338,7 @@ describe('health endpoint', () => {
 - [ ] **Step 2: Run — expect FAIL**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: `Cannot find module '../src/server'`
@@ -380,7 +380,7 @@ export async function buildServer(config: Pick<Config, 'port' | 'host'>) {
 - [ ] **Step 5: Run test — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: `✓ server.test.ts (1 test) — all pass`
@@ -403,7 +403,7 @@ export { loadConfig, buildServer }
 - [ ] **Step 7: Smoke test manually**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core
+cd C:/Users/John/Coastal.AI/packages/core
 node --loader ts-node/esm src/index.ts &
 sleep 2
 curl http://127.0.0.1:4747/health
@@ -416,7 +416,7 @@ Kill background process: `kill %1`
 - [ ] **Step 8: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/ packages/core/tests/
 git commit -m "feat(core): add Fastify server with health endpoint"
 ```
@@ -470,7 +470,7 @@ describe('WebSocket session channel', () => {
 
 Add `ws` to dev dependencies:
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core
+cd C:/Users/John/Coastal.AI/packages/core
 pnpm add -D ws @types/ws
 ```
 
@@ -531,7 +531,7 @@ await fastify.register(wsRoutes)
 - [ ] **Step 6: Run test — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: `✓ ws.test.ts (1 test) — all pass`
@@ -539,7 +539,7 @@ Expected: `✓ ws.test.ts (1 test) — all pass`
 - [ ] **Step 7: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/
 git commit -m "feat(core): add WebSocket session channel with ping/pong"
 ```
@@ -559,7 +559,7 @@ git commit -m "feat(core): add WebSocket session channel with ping/pong"
 
 LosslessClaw is an OpenClaw plugin. Install it as an npm package:
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core
+cd C:/Users/John/Coastal.AI/packages/core
 pnpm add lossless-claw
 ```
 
@@ -642,7 +642,7 @@ describe('LosslessAdapter', () => {
 - [ ] **Step 4: Run — expect FAIL**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: `Cannot find module '../../src/memory/lossless'`
@@ -725,7 +725,7 @@ export class LosslessAdapter implements MemoryStore {
 - [ ] **Step 6: Run test — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: `✓ memory/lossless.test.ts (2 tests) — all pass`
@@ -733,7 +733,7 @@ Expected: `✓ memory/lossless.test.ts (2 tests) — all pass`
 - [ ] **Step 7: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/memory/ packages/core/tests/memory/
 git commit -m "feat(core/memory): add LosslessAdapter with SQLite backing"
 ```
@@ -749,7 +749,7 @@ git commit -m "feat(core/memory): add LosslessAdapter with SQLite backing"
 - [ ] **Step 1: Add Mem0 SDK**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core
+cd C:/Users/John/Coastal.AI/packages/core
 pnpm add mem0ai
 ```
 
@@ -850,7 +850,7 @@ Expected: `✓ memory/mem0.test.ts (2 tests) — all pass`
 - [ ] **Step 6: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/memory/mem0.ts packages/core/tests/memory/mem0.test.ts
 git commit -m "feat(core/memory): add Mem0Adapter for personalized memory"
 ```
@@ -980,7 +980,7 @@ Expected: `✓ memory/unified.test.ts (1 test) — all pass`
 - [ ] **Step 5: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/memory/index.ts packages/core/tests/memory/unified.test.ts
 git commit -m "feat(core/memory): add UnifiedMemory with lossless+mem0 fan-out"
 ```
@@ -1150,7 +1150,7 @@ export class ModelRouter {
 - [ ] **Step 6: Run all tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: all tests pass including both new test files
@@ -1158,7 +1158,7 @@ Expected: all tests pass including both new test files
 - [ ] **Step 7: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/models/ packages/core/tests/models/
 git commit -m "feat(core/models): add OllamaClient and ModelRouter"
 ```
@@ -1320,7 +1320,7 @@ await fastify.register(chatRoutes)
 - [ ] **Step 5: Run all tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core && pnpm test
+cd C:/Users/John/Coastal.AI/packages/core && pnpm test
 ```
 
 Expected: all tests pass
@@ -1328,7 +1328,7 @@ Expected: all tests pass
 - [ ] **Step 6: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/core/src/api/routes/chat.ts packages/core/tests/api/
 git commit -m "feat(core/api): add POST /api/chat with memory persistence"
 ```
@@ -1347,7 +1347,7 @@ git commit -m "feat(core/api): add POST /api/chat with memory persistence"
 - [ ] **Step 1: Scaffold with Vite**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages
+cd C:/Users/John/Coastal.AI/packages
 pnpm create vite web --template react-ts
 cd web
 pnpm install
@@ -1429,7 +1429,7 @@ describe('CoreClient', () => {
 - [ ] **Step 5: Run — expect FAIL**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/web
+cd C:/Users/John/Coastal.AI/packages/web
 pnpm test
 ```
 
@@ -1483,7 +1483,7 @@ Expected: `✓ client.test.ts (2 tests) — all pass`
 - [ ] **Step 8: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/web/
 git commit -m "feat(web): scaffold React + Vite + Tailwind with CoreClient API layer"
 ```
@@ -1503,7 +1503,7 @@ The wizard has 5 steps: Welcome → Company Info → Goals → Focus Agent → L
 - [ ] **Step 1: Add vitest + testing-library**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/web
+cd C:/Users/John/Coastal.AI/packages/web
 pnpm add -D @testing-library/react @testing-library/jest-dom jsdom @vitejs/plugin-react
 ```
 
@@ -1736,7 +1736,7 @@ export function Onboarding({ onComplete }: { onComplete: (sessionId: string) => 
 - [ ] **Step 8: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/web/src/
 git commit -m "feat(web): add 5-step onboarding wizard with WizardStep component"
 ```
@@ -1921,20 +1921,20 @@ export default function App() {
 - [ ] **Step 7: Run all tests — expect PASS**
 
 ```bash
-cd C:/Users/John/CoastalClaw/packages/web && pnpm test
+cd C:/Users/John/Coastal.AI/packages/web && pnpm test
 ```
 
 - [ ] **Step 8: Smoke test full UI**
 
 Start core service in one terminal:
 ```bash
-cd C:/Users/John/CoastalClaw/packages/core
+cd C:/Users/John/Coastal.AI/packages/core
 node --loader ts-node/esm src/index.ts
 ```
 
 Start web dev server in another:
 ```bash
-cd C:/Users/John/CoastalClaw/packages/web
+cd C:/Users/John/Coastal.AI/packages/web
 pnpm dev
 ```
 
@@ -1943,7 +1943,7 @@ Open `http://localhost:5173`. Walk through the 5-step wizard. Verify chat UI loa
 - [ ] **Step 9: Commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add packages/web/src/
 git commit -m "feat(web): add Chat page with ChatBubble component and full App routing"
 ```
@@ -1984,13 +1984,13 @@ echo "=== All checks passed ==="
 ```
 
 ```bash
-chmod +x C:/Users/John/CoastalClaw/scripts/smoke-test.sh
+chmod +x C:/Users/John/Coastal.AI/scripts/smoke-test.sh
 ```
 
 - [ ] **Step 2: Run full test suite**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 pnpm test
 ```
 
@@ -2010,7 +2010,7 @@ Kill core: `kill %1`
 - [ ] **Step 4: Final commit**
 
 ```bash
-cd C:/Users/John/CoastalClaw
+cd C:/Users/John/Coastal.AI
 git add scripts/
 git commit -m "chore: add Phase 1 smoke test script"
 ```

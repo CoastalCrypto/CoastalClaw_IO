@@ -18,7 +18,7 @@
 - Modify: `install.ps1:148`
 
 - [ ] Fix "Launching Coastal Claw" → "Launching Coastal.AI"
-- [ ] Commit: `fix(install): rebrand step 8 from CoastalClaw to Coastal.AI`
+- [ ] Commit: `fix(install): rebrand step 8 from Coastal.AI to Coastal.AI`
 
 ### Task 2: README — local data + sandbox + cloud consent sections
 

@@ -1,6 +1,6 @@
 # Coastal.AI Rebrand Design
 
-**Goal:** Rename every user-visible and package-level reference from CoastalClaw to Coastal.AI across the codebase and GitHub.
+**Goal:** Rename every user-visible and package-level reference from Coastal.AI to Coastal.AI across the codebase and GitHub.
 
 **Architecture:** Mechanical find-and-replace across package.json files, source string literals, HTML, docs, and install scripts, followed by a GitHub repo rename. Historical plan/spec docs and the local directory name are left untouched.
 
@@ -18,13 +18,13 @@
 | `packages/shell/package.json` | any `coastal-claw` refs | `coastal-ai` |
 | `packages/architect/package.json` | any `coastal-claw` refs | `coastal-ai` |
 | `packages/video/package.json` | any `coastal-claw` refs | `coastal-ai` |
-| Source string literals (NavBar, Onboarding, System, ErrorBoundary, config, channels, skills) | `"CoastalClaw"` / `"Coastal Claw"` | `"Coastal.AI"` |
-| `packages/web/index.html` `<title>` | `CoastalClaw` | `Coastal.AI` |
+| Source string literals (NavBar, Onboarding, System, ErrorBoundary, config, channels, skills) | `"Coastal.AI"` / `"Coastal Claw"` | `"Coastal.AI"` |
+| `packages/web/index.html` `<title>` | `Coastal.AI` | `Coastal.AI` |
 | `packages/core/src/config.ts` | app name constant | `Coastal.AI` |
 | Install scripts (`install.sh`, `install.ps1`) | display name + paths | `Coastal.AI` / `coastal-ai` |
 | `docs/site/*` active docs | throughout | `Coastal.AI` |
 | `README.md` | full rebrand | `Coastal.AI` |
-| GitHub repo | `CoastalCrypto/CoastalClaw_IO` | `CoastalCrypto/Coastal.AI` |
+| GitHub repo | `CoastalCrypto/Coastal.AI_IO` | `CoastalCrypto/Coastal.AI` |
 
 ## Out of Scope
 

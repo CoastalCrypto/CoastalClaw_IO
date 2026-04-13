@@ -228,14 +228,22 @@ function BindingsPanel({ agentId, agentName, onClose }: { agentId: string; agent
 // ── Main page ─────────────────────────────────────────────────────
 export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
   const [agents, setAgents] = useState<Agent[]>([])
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Agent | null>(null)
   const [adding, setAdding] = useState(false)
   const [credAgentId, setCredAgentId] = useState<string | null>(null)
   const [bindAgentId, setBindAgentId] = useState<string | null>(null)
 
   const load = async () => {
-    const res = await fetch('/api/admin/agents', { headers: adminHeaders() })
-    if (res.ok) setAgents(await res.json())
+    try {
+      setLoadError(null)
+      const res = await fetch('/api/admin/agents', { headers: adminHeaders() })
+      if (res.status === 401) { setLoadError('Session expired — please log out and sign in again'); return }
+      if (!res.ok) { setLoadError(`Failed to load agents (HTTP ${res.status})`); return }
+      setAgents(await res.json())
+    } catch (err: any) {
+      setLoadError(err?.message ?? 'Network error — is the server running?')
+    }
   }
 
   useEffect(() => { load() }, [])
@@ -333,7 +341,11 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
           </div>
         )}
 
-        {agents.length === 0 ? (
+        {loadError ? (
+          <div className="rounded-xl px-6 py-5 text-sm font-mono" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#fca5a5' }}>
+            {loadError}
+          </div>
+        ) : agents.length === 0 ? (
           <EmptyState
             icon="✳"
             title="No agents configured"

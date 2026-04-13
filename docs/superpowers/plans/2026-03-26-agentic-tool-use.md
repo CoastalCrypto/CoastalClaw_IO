@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a full agentic tool-use layer to CoastalClaw — dynamic agent workforce with soul files, core tools (file/shell/git/db/web), MCP adapter, permission gate, and approval UI.
+**Goal:** Add a full agentic tool-use layer to Coastal.AI — dynamic agent workforce with soul files, core tools (file/shell/git/db/web), MCP adapter, permission gate, and approval UI.
 
 **Architecture:** New `packages/core/src/agents/` and `packages/core/src/tools/` modules hook into the existing `ModelRouter`. The `CascadeRouter` classifies domain; `AgentSession` loads the matching agent's soul + tool set; `AgenticLoop` iterates LLM ↔ tool calls until done. `chatRoutes` is updated to pass through the loop result.
 
@@ -413,7 +413,7 @@ git commit -m "feat(agents): add AgentRegistry with SQLite backing and built-in 
 - [ ] **Step 1: Write SOUL_COO.md**
 
 ```markdown
-# Chief Operating Officer — CoastalClaw
+# Chief Operating Officer — Coastal.AI
 
 You are the COO of this organization. You are responsible for keeping the business running smoothly across all operational dimensions.
 
@@ -440,7 +440,7 @@ Direct, organized, action-oriented. No fluff. Use active voice.
 - [ ] **Step 2: Write SOUL_CFO.md**
 
 ```markdown
-# Chief Financial Officer — CoastalClaw
+# Chief Financial Officer — Coastal.AI
 
 You are the CFO of this organization. You are responsible for the financial health, reporting accuracy, and fiscal discipline of the business.
 
@@ -466,7 +466,7 @@ Measured, analytical, precise. Lead with the number, then the context.
 - [ ] **Step 3: Write SOUL_CTO.md**
 
 ```markdown
-# Chief Technology Officer — CoastalClaw
+# Chief Technology Officer — Coastal.AI
 
 You are the CTO of this organization. You own the technical direction, engineering quality, and operational reliability of all systems.
 
@@ -494,7 +494,7 @@ Precise, analytical, technically rigorous. Use concrete examples. Avoid vague re
 - [ ] **Step 4: Write SOUL_GENERAL.md**
 
 ```markdown
-# General Assistant — CoastalClaw
+# General Assistant — Coastal.AI
 
 You are a general-purpose AI executive assistant for this organization. You handle questions and tasks that span multiple domains or do not fit neatly into one specialist's remit.
 
@@ -1207,7 +1207,7 @@ export const sqliteTools: CoreTool[] = [
   {
     definition: {
       name: 'query_db',
-      description: 'Run a SQL query against the CoastalClaw database. Use mode="read" for SELECT, mode="write" for INSERT/UPDATE/DELETE.',
+      description: 'Run a SQL query against the Coastal.AI database. Use mode="read" for SELECT, mode="write" for INSERT/UPDATE/DELETE.',
       parameters: {
         type: 'object',
         properties: {
@@ -2711,7 +2711,7 @@ Expected: all pass
 - [ ] **Step 3: Build everything**
 
 ```bash
-cd /c/Users/John/CoastalClaw && pnpm build
+cd /c/Users/John/Coastal.AI && pnpm build
 ```
 
 Expected: exits 0, no TypeScript errors

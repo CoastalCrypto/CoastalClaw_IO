@@ -127,7 +127,7 @@ Route: `/pipeline/run/:runId`
 
 ## UI Design Reference
 
-Design system: CoastalClaw dark console aesthetic.
+Design system: Coastal.AI dark console aesthetic.
 
 - Backgrounds: `#0A0F1C` page, `rgba(26,39,68,0.80)` panels
 - Borders: `1px solid rgba(0,212,255,0.15)` default, `rgba(0,212,255,0.30)` active

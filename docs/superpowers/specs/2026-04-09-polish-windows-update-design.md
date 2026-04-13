@@ -1,4 +1,4 @@
-# CoastalClaw — Polish & Windows Update Fix Design
+# Coastal.AI — Polish & Windows Update Fix Design
 
 **Date:** 2026-04-09
 **Branch:** `master`
@@ -65,7 +65,7 @@ Three issues identified after v1.2.1 / multi-pane chat launch:
 ### Root Cause
 After `pnpm build`, the update handler does:
 ```ts
-execSync('systemctl restart coastalclaw-server 2>/dev/null || true', { timeout: 10_000 })
+execSync('systemctl restart Coastal.AI-server 2>/dev/null || true', { timeout: 10_000 })
 ```
 On Windows, `systemctl` doesn't exist. The `2>/dev/null` redirect is also a bash-ism. The whole call throws, the catch block runs `process.exit(0)`, and the server dies permanently.
 
@@ -81,7 +81,7 @@ import { tmpdir } from 'node:os'
 // After pnpm build succeeds:
 if (process.platform === 'win32') {
   // Write a detached .cmd that waits 2s then re-launches the server
-  const script = join(tmpdir(), 'coastalclaw-restart.cmd')
+  const script = join(tmpdir(), 'Coastal.AI-restart.cmd')
   writeFileSync(script, [
     '@echo off',
     'timeout /t 2 /nobreak > nul',
@@ -98,7 +98,7 @@ if (process.platform === 'win32') {
 } else {
   // Linux/Mac — existing systemd path
   try {
-    execSync('systemctl restart coastalclaw-server', { timeout: 10_000 })
+    execSync('systemctl restart Coastal.AI-server', { timeout: 10_000 })
   } catch {
     process.exit(0)
   }

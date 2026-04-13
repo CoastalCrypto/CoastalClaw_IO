@@ -59,8 +59,13 @@ export function useAgentGraph() {
       } catch { /* ignore malformed */ }
     }
 
-    ws.onclose = () => {
+    ws.onclose = (e) => {
       setConnected(false)
+      if (e.code === 1008) {
+        console.error('[AgentGraph] WebSocket closed: Unauthorized (1008) — check that cc_admin_session is set in sessionStorage')
+      } else if (e.code !== 1000) {
+        console.warn(`[AgentGraph] WebSocket closed: code=${e.code} reason=${e.reason || '(none)'}`)
+      }
       reconnectRef.current = setTimeout(connect, 3000)
     }
 

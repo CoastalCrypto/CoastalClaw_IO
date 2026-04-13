@@ -158,7 +158,7 @@ export default defineConfig({ test: { globals: false } })
 - [ ] **Step 4: Install**
 
 ```bash
-cd C:/Users/John/CoastalClaw && pnpm install
+cd C:/Users/John/Coastal.AI && pnpm install
 ```
 
 Expected: `@coastal-claw/architect` workspace package resolved.
@@ -1296,7 +1296,7 @@ Expected: PASS — all existing tests + 5 new architect route tests (propose×1,
 - [ ] **Step 6: Run all tests**
 
 ```bash
-cd C:/Users/John/CoastalClaw && pnpm test
+cd C:/Users/John/Coastal.AI && pnpm test
 ```
 
 Expected: All packages PASS.
@@ -1868,7 +1868,7 @@ function createWindow(): void {
 function createTray(): void {
   const icon = nativeImage.createEmpty()
   tray = new Tray(icon)
-  tray.setToolTip('CoastalClaw')
+  tray.setToolTip('Coastal.AI')
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Show', click: () => mainWindow?.show() },
     { label: 'Quit', click: () => app.quit() },
@@ -1902,8 +1902,8 @@ contextBridge.exposeInMainWorld('coastalShell', {
 - [ ] **Step 5: Create build/electron-builder.yml**
 
 ```yaml
-appId: com.coastalcrypto.coastalclaw
-productName: CoastalClaw
+appId: com.coastalcrypto.Coastal.AI
+productName: Coastal.AI
 directories:
   output: dist-electron
 files:
@@ -1964,21 +1964,21 @@ git commit -m "feat(shell): add Electron wrapper for Win/Mac — frameless Brows
 `coastalos/systemd/coastal-server.service`:
 ```ini
 [Unit]
-Description=CoastalClaw API Server
+Description=Coastal.AI API Server
 After=network.target ollama.service
 Wants=ollama.service
 
 [Service]
 Type=simple
 User=coastal
-WorkingDirectory=/opt/coastalclaw
+WorkingDirectory=/opt/Coastal.AI
 ExecStart=/usr/bin/node packages/core/dist/index.js
 Restart=always
 RestartSec=5
 Environment=CC_PORT=4747
 Environment=CC_HOST=127.0.0.1
-Environment=CC_DATA_DIR=/var/lib/coastalclaw/data
-Environment=CC_AGENT_WORKDIR=/var/lib/coastalclaw/workspace
+Environment=CC_DATA_DIR=/var/lib/Coastal.AI/data
+Environment=CC_AGENT_WORKDIR=/var/lib/Coastal.AI/workspace
 
 [Install]
 WantedBy=multi-user.target
@@ -1987,19 +1987,19 @@ WantedBy=multi-user.target
 `coastalos/systemd/coastal-daemon.service`:
 ```ini
 [Unit]
-Description=CoastalClaw Daemon (Scheduler + Voice)
+Description=Coastal.AI Daemon (Scheduler + Voice)
 After=coastal-server.service
 Requires=coastal-server.service
 
 [Service]
 Type=simple
 User=coastal
-WorkingDirectory=/opt/coastalclaw
+WorkingDirectory=/opt/Coastal.AI
 ExecStart=/usr/bin/node packages/daemon/dist/index.js
 Restart=always
 RestartSec=10
 Environment=CC_SERVER_URL=http://localhost:4747
-Environment=CC_DATA_DIR=/var/lib/coastalclaw/data
+Environment=CC_DATA_DIR=/var/lib/Coastal.AI/data
 
 [Install]
 WantedBy=multi-user.target
@@ -2008,23 +2008,23 @@ WantedBy=multi-user.target
 `coastalos/systemd/coastal-architect.service`:
 ```ini
 [Unit]
-Description=CoastalClaw Self-Build Architect
+Description=Coastal.AI Self-Build Architect
 After=coastal-server.service
 
 [Service]
 Type=oneshot
 User=coastal
-WorkingDirectory=/opt/coastalclaw
+WorkingDirectory=/opt/Coastal.AI
 ExecStart=/usr/bin/node packages/architect/dist/index.js
-Environment=CC_DATA_DIR=/var/lib/coastalclaw/data
-Environment=CC_REPO_ROOT=/opt/coastalclaw
+Environment=CC_DATA_DIR=/var/lib/Coastal.AI/data
+Environment=CC_REPO_ROOT=/opt/Coastal.AI
 Environment=CC_OLLAMA_URL=http://127.0.0.1:11434
 ```
 
 `coastalos/systemd/coastal-architect.timer`:
 ```ini
 [Unit]
-Description=Run CoastalClaw Architect nightly at 02:00
+Description=Run Coastal.AI Architect nightly at 02:00
 
 [Timer]
 OnCalendar=*-*-* 02:00:00
@@ -2038,7 +2038,7 @@ WantedBy=timers.target
 `coastalos/systemd/coastal-shell.service`:
 ```ini
 [Unit]
-Description=CoastalClaw Shell (labwc Wayland kiosk)
+Description=Coastal.AI Shell (labwc Wayland kiosk)
 After=graphical.target coastal-server.service
 Requires=coastal-server.service
 
@@ -2076,7 +2076,7 @@ WantedBy=graphical.target
 `coastalos/labwc/autostart`:
 ```bash
 #!/bin/sh
-# CoastalClaw labwc autostart — launch Chromium in kiosk mode
+# Coastal.AI labwc autostart — launch Chromium in kiosk mode
 chromium-browser \
   --kiosk \
   --no-first-run \
@@ -2119,7 +2119,7 @@ Note: `python3-openwakeword` and `whisper-cpp` are available as Ubuntu 24.04 pac
 #!/bin/bash
 set -e
 
-echo "[post-install] Installing CoastalClaw..."
+echo "[post-install] Installing Coastal.AI..."
 
 # Install pnpm
 npm install -g pnpm
@@ -2135,8 +2135,8 @@ pip3 install openwakeword --break-system-packages
 
 # Create coastal user
 useradd -m -s /bin/bash coastal || true
-mkdir -p /opt/coastalclaw /var/lib/coastalclaw/data /var/lib/coastalclaw/workspace
-chown -R coastal:coastal /opt/coastalclaw /var/lib/coastalclaw
+mkdir -p /opt/Coastal.AI /var/lib/Coastal.AI/data /var/lib/Coastal.AI/workspace
+chown -R coastal:coastal /opt/Coastal.AI /var/lib/Coastal.AI
 
 # Copy labwc config
 mkdir -p /home/coastal/.config/labwc
@@ -3347,7 +3347,7 @@ process.on('SIGINT', async () => {
 - [ ] **Step 4: Run all tests**
 
 ```bash
-cd C:/Users/John/CoastalClaw && pnpm test
+cd C:/Users/John/Coastal.AI && pnpm test
 ```
 
 Expected: All packages PASS.
@@ -3366,7 +3366,7 @@ git commit -m "feat(voice): wire VoicePipeline into daemon at AUTONOMOUS tier + 
 - [ ] **Step 1: Run full test suite**
 
 ```bash
-cd C:/Users/John/CoastalClaw && pnpm test
+cd C:/Users/John/Coastal.AI && pnpm test
 ```
 
 Expected: All packages PASS.

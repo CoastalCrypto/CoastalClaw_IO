@@ -13,6 +13,15 @@ export type AgentEventType =
   | 'stage_end'
   | 'pipeline_done'
   | 'pipeline_error'
+  | 'graph_edge'
+
+export interface GraphEdgeEvent {
+  type: 'graph_edge'
+  ts: number
+  source: string
+  target: string
+  edgeType: 'agent-tool' | 'agent-model' | 'agent-channel'
+}
 
 export interface ToolCallStartEvent {
   type: 'tool_call_start'
@@ -152,3 +161,4 @@ export type AgentEvent =
   | StageEndEvent
   | PipelineDoneEvent
   | PipelineErrorEvent
+  | GraphEdgeEvent

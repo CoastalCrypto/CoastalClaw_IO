@@ -235,6 +235,8 @@ export class AgenticLoop {
 
     // Emit tool_call_start
     eventBus.publish({ type: 'tool_call_start', ts: start, sessionId, agentId: session.agent.id, toolName: tc.name, args: tc.args })
+    // Emit graph_edge
+    eventBus.publish({ type: 'graph_edge', ts: start, source: session.agent.id, target: tc.name, edgeType: 'agent-tool' })
 
     // Execute the tool
     let raw = ''

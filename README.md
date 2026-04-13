@@ -102,6 +102,61 @@ Flash a bootable USB drive. Plug it into any UEFI machine and boot — no instal
 
 ---
 
+## 🔒 Privacy & Data
+
+Coastal.AI is built around a single principle: **your data never leaves your hardware.**
+
+| Component | Where it runs | Data sent externally? |
+|-----------|--------------|----------------------|
+| Language models | Ollama / vLLM / AirLLM — on your machine | ❌ Never |
+| Conversation memory | SQLite in `./data/` — on your machine | ❌ Never |
+| Vector search | Infinity DB — on your machine (optional) | ❌ Never |
+| Agent tools | Executed locally in a sandboxed workspace | ❌ Never |
+| Mem0 semantic memory | **Cloud service (opt-in only)** | ⚠️ Only if you enable it |
+
+### Cloud Features (Opt-In Only)
+
+Some optional features send data to external services. **None are enabled by default.** Each requires your explicit consent before activating:
+
+- **Mem0** — Sends conversation summaries to [Mem0's cloud API](https://mem0.ai) for long-term semantic memory. Requires setting `MEM0_API_KEY` AND granting consent in **Settings → Cloud Features**.
+
+> You will be shown a clear warning and asked to confirm before any data leaves your device.
+
+---
+
+## 🛡 Sandbox Mode
+
+Coastal.AI agents can run shell commands, write files, and execute code. The **trust level** controls how much isolation they have:
+
+| Level | What it means | When to use |
+|-------|--------------|-------------|
+| `trusted` *(default)* | Agents run in your user account — same access as you | Local single-user installs, development |
+| `sandboxed` | Agents run in a Linux namespace with overlayfs isolation | Linux servers, multi-user setups, production |
+| `autonomous` | Agents run without approval gates | Advanced automation only |
+
+### Default: Trusted
+
+The default trust level is `trusted`. This means:
+- ✅ All data stays on your device
+- ✅ No network calls to external services
+- ⚠️ Agents have the same filesystem access as your user account
+
+### Enabling Sandbox (Linux only)
+
+To enable full sandbox isolation on Linux:
+
+```bash
+# Option 1: environment variable
+CC_TRUST_LEVEL=sandboxed node packages/core/dist/main.js
+
+# Option 2: persistent file (survives restarts)
+echo "sandboxed" > ./data/.trust-level
+```
+
+> Sandbox mode uses Linux `unshare` + overlayfs. It is not available on macOS or Windows (falls back to `trusted` automatically).
+
+---
+
 ## 🚀 Quick Start
 
 ### Before you begin — what you need

@@ -145,7 +145,7 @@ if ($ollamaList -match "llama3\.2") {
 }
 
 # ── Launch ────────────────────────────────────────────────────
-Write-Step "8) Launching Coastal Claw"
+Write-Step "8) Launching Coastal.AI"
 Set-Location $InstallDir
 
 Write-Info "Starting core service on :4747..."

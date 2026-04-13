@@ -109,7 +109,7 @@ export function Settings({ onNav }: { onNav: (page: NavPage) => void }) {
               onClick={() => handleTrustToggle(trustLevel !== 'autonomous')}
               disabled={trustSaving}
               aria-pressed={trustLevel === 'autonomous'}
-              className={`relative flex-shrink-0 w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-40 ${
+              className={`relative z-50 flex-shrink-0 w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-40 ${
                 trustLevel === 'autonomous' ? 'bg-cyan-500' : 'bg-gray-600'
               }`}
             >

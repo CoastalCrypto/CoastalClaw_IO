@@ -34,7 +34,7 @@ export function CloudConsent() {
         headers: { 'Content-Type': 'application/json', ...adminHeaders() },
         body: JSON.stringify({ granted: grant }),
       })
-      const data = await res.json()
+      await res.json()
       setState(s => s ? { ...s, consentGranted: grant } : s)
       setConfirm(false)
     } finally {

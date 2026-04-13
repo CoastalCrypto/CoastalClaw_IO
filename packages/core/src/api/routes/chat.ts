@@ -20,7 +20,10 @@ import { randomUUID } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import { join as pathJoin } from 'node:path'
 
-export async function chatRoutes(fastify: FastifyInstance) {
+import { McpStore } from '../../tools/mcp/store.js'
+
+export async function chatRoutes(fastify: FastifyInstance, opts: { mcpStore: McpStore }) {
+  const { mcpStore } = opts
   const config = loadConfig()
 
   // Ensure data dir and workspace exist
@@ -43,27 +46,25 @@ export async function chatRoutes(fastify: FastifyInstance) {
   const contextStore = new ContextStore(db)
   const userModelStore = new UserModelStore(db)
 
-  // Pass all non-secret env vars to MCP subprocesses. On Windows, PATH alone
-  // is not enough — system vars like USERPROFILE, APPDATA, TEMP are needed for
-  // MCP servers to resolve home/temp directories. Block secret-pattern keys only.
+  // 1. Initialize Dynamic MCP Servers
   const SECRETS_RE = /key|token|secret|password|auth|credential/i
-  const mcpEnv: Record<string, string> = Object.fromEntries(
+  const baseEnv: Record<string, string> = Object.fromEntries(
     Object.entries(process.env).filter(([k, v]) => v !== undefined && !SECRETS_RE.test(k))
   ) as Record<string, string>
-  const mcpThinking = new McpAdapter(
-    process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    ['@modelcontextprotocol/server-sequential-thinking@2025.12.18'],
-    mcpEnv,
-    'logic'
-  )
-  const mcpMemory = new McpAdapter(
-    process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    ['@modelcontextprotocol/server-memory@2026.1.26'],
-    mcpEnv,
-    'memory'
-  )
-  mcpThinking.connect(toolRegistry).catch(e => console.error('MCP Thinking failed', e))
-  mcpMemory.connect(toolRegistry).catch(e => console.error('MCP Memory failed', e))
+
+  const activeAdapters: McpAdapter[] = []
+  const servers = mcpStore.list().filter(s => s.enabled)
+
+  for (const s of servers) {
+    const adapter = new McpAdapter(
+      s.command,
+      s.args,
+      { ...baseEnv, ...(s.env || {}) },
+      s.id
+    )
+    adapter.connect(toolRegistry).catch(e => console.error(`MCP Server [${s.name}] failed:`, e))
+    activeAdapters.push(adapter)
+  }
 
   fastify.addHook('onClose', async () => {
     await memory.close()
@@ -72,10 +73,10 @@ export async function chatRoutes(fastify: FastifyInstance) {
     personaMgr.close()
     db.close()
     skillGaps.close()
-    await mcpThinking.close()
-    await mcpMemory.close()
+    for (const a of activeAdapters) await a.close()
     await browserManager?.closeAll()
   })
+
 
   fastify.post<{
     Body: { sessionId?: string; message: string; model?: string; images?: string[] }

@@ -28,6 +28,7 @@ import { userRoutes } from './api/routes/users.js'
 import { cronRoutes } from './api/routes/crons.js'
 import { skillRoutes } from './api/routes/skills.js'
 import { skillPackRoutes } from './api/routes/skill-packs.js'
+import { mcpRoutes } from './api/routes/mcp.js'
 import { searchRoutes } from './api/routes/search.js'
 import { contextRoutes } from './api/routes/context.js'
 import { userModelRoutes } from './api/routes/user-model.js'
@@ -168,13 +169,34 @@ export async function buildServer() {
 
   const skillStore = new SkillStore(db)
   skillStore.seedDefaults()
+  const mcpStore = new McpStore(db)
+  // Seed default MCP servers if empty
+  if (mcpStore.list().length === 0) {
+    mcpStore.upsert({
+      id: 'logic',
+      name: 'Thinking',
+      command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
+      args: ['@modelcontextprotocol/server-sequential-thinking@2025.12.18'],
+      enabled: true
+    })
+    mcpStore.upsert({
+      id: 'memory',
+      name: 'Local Knowledge Graph',
+      command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
+      args: ['@modelcontextprotocol/server-memory@2026.1.26'],
+      enabled: true
+    })
+  }
+
   const skillGaps = new SkillGapsLog(config.dataDir)
   const contextStore = new ContextStore(db)
   const userModelStore = new UserModelStore(db)
   const searchMemory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey, cloudConsentGranted: config.cloudConsentGranted })
 
+  await fastify.register(chatRoutes, { mcpStore })
   await fastify.register(skillRoutes, { store: skillStore, router: pipelineRouter, gaps: skillGaps })
   await fastify.register(skillPackRoutes, { skillStore, agentRegistry })
+  await fastify.register(mcpRoutes, { store: mcpStore })
   await fastify.register(searchRoutes, { memory: searchMemory })
   await fastify.register(contextRoutes, { store: contextStore })
   await fastify.register(userModelRoutes, { store: userModelStore })

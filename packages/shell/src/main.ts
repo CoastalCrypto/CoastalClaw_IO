@@ -2,6 +2,7 @@
 import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } from 'electron'
 import { join } from 'path'
 import { autoUpdater } from 'electron-updater'
+import { registerInstallerHandlers } from './installer/installer'
 
 const isDev = process.env.CC_DEV === '1'
 const UI_URL = isDev ? 'http://localhost:5173' : (process.env.CC_SERVER_URL ?? 'http://localhost:4747')
@@ -44,6 +45,8 @@ function createWindow(): void {
   })
 
   mainWindow.on('closed', () => { mainWindow = null })
+
+  registerInstallerHandlers(mainWindow)
 }
 
 function createTray(): void {

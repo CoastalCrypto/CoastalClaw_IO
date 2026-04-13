@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { NavBar, type NavPage } from '../components/NavBar'
 import { coreClient } from '../api/client'
+import { EmptyState } from '../components/ui/EmptyState.js'
 
 interface ToolStat { toolName: string; callCount: number; avgDurationMs: number; successRate: number }
 interface DayStat  { date: string; calls: number; sessions: number }
@@ -111,7 +112,16 @@ export function Analytics({ onNav }: { onNav: (page: NavPage) => void }) {
 
         {loading && !data ? (
           <div className="text-cyan-500 font-mono text-sm animate-pulse">Loading analytics...</div>
-        ) : data ? (
+        ) : (!data || data.totalToolCalls === 0) ? (
+          <div className="pt-20">
+            <EmptyState
+              icon="📊"
+              title="No activity yet"
+              description="Analytics appear once your agents start running. Start a chat or trigger a pipeline to see metrics here."
+              action={{ label: '→ Start a Chat', onClick: () => onNav('chat') }}
+            />
+          </div>
+        ) : (
           <>
             {/* Stat cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
@@ -181,16 +191,8 @@ export function Analytics({ onNav }: { onNav: (page: NavPage) => void }) {
                 </div>
               </div>
             )}
-
-            {data.totalToolCalls === 0 && (
-              <div className="rounded-xl border border-white/8 surface-panel py-20 text-center">
-                <div className="text-4xl mb-4 opacity-30">📊</div>
-                <p className="text-gray-500 text-sm">No tool call data yet.</p>
-                <p className="text-gray-600 text-xs mt-2">Start a conversation to generate analytics.</p>
-              </div>
-            )}
           </>
-        ) : null}
+        )}
       </div>
     </div>
   )

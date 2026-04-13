@@ -19,6 +19,9 @@ export interface UserRecord {
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 
 export class UserStore {
+  /** Resolves when the initial admin seed (if needed) has completed. */
+  readonly ready: Promise<void>
+
   constructor(private db: Database.Database, private secret: string) {
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS users (
@@ -34,10 +37,12 @@ export class UserStore {
     // Migration: add must_change_password to existing installs
     try { this.db.exec('ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0') } catch {}
 
-    // First-run: seed default admin account if no users exist
-    if (!this.hasUsers) {
-      this.create('admin', 'admin', 'admin', true).catch(() => {})
-    }
+    // First-run: seed default admin account if no users exist.
+    // Expose a `ready` promise so the server can await seeding before
+    // accepting login requests (prevents "Invalid credentials" on cold start).
+    this.ready = this.hasUsers
+      ? Promise.resolve()
+      : this.create('admin', 'admin', 'admin', true).then(() => {})
   }
 
   get hasUsers(): boolean {

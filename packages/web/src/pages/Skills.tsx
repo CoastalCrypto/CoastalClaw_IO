@@ -85,8 +85,10 @@ export function Skills({ onNav }: { onNav: (page: NavPage) => void }) {
         body: JSON.stringify(form),
       })
       if (!res.ok) {
-        const d = await res.json() as any
-        throw new Error(d.error ?? 'Save failed')
+        const text = await res.text()
+        let msg = 'Save failed'
+        try { const j = JSON.parse(text); if (j.error) msg = j.error } catch {}
+        throw new Error(msg)
       }
       cancel()
       load()

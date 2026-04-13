@@ -80,6 +80,26 @@ export class CoreClient {
     // sessions set after module load are picked up automatically.
   }
 
+  /**
+   * Safely extracts an error message from a failed response.
+   * Reads body as text first to avoid "Unexpected end of JSON input" when
+   * the server returns an empty or non-JSON error body.
+   */
+  private async extractError(res: Response, fallback: string): Promise<never> {
+    let message = fallback
+    try {
+      const text = await res.text()
+      if (text) {
+        const json = JSON.parse(text)
+        if (json.error) message = json.error
+        else if (json.message) message = json.message
+      }
+    } catch {
+      // body was not JSON — use fallback
+    }
+    throw new Error(message)
+  }
+
   /** Exchange the raw admin token for a short-lived (24h) session token. */
   async login(adminToken: string): Promise<void> {
     const res = await fetch(`${this.baseUrl}/api/admin/login`, {
@@ -256,10 +276,7 @@ export class CoreClient {
     const form = new FormData()
     form.append('file', file)
     const res = await fetch(`${this.baseUrl}/api/upload`, { method: 'POST', body: form })
-    if (!res.ok) {
-      const { error } = await res.json() as { error: string }
-      throw new Error(error)
-    }
+    if (!res.ok) await this.extractError(res, `Upload failed (${res.status})`)
     return res.json()
   }
 
@@ -418,7 +435,7 @@ export class CoreClient {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     })
-    if (!res.ok) throw new Error((await res.json() as any).error ?? `Setup failed (${res.status})`)
+    if (!res.ok) await this.extractError(res, `Setup failed (${res.status})`)
     return res.json()
   }
 
@@ -428,7 +445,7 @@ export class CoreClient {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     })
-    if (!res.ok) throw new Error((await res.json() as any).error ?? `Login failed (${res.status})`)
+    if (!res.ok) await this.extractError(res, `Login failed (${res.status})`)
     return res.json()
   }
 
@@ -444,7 +461,7 @@ export class CoreClient {
       headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
       body: JSON.stringify({ currentPassword, newPassword }),
     })
-    if (!res.ok) throw new Error((await res.json() as any).error ?? `Failed (${res.status})`)
+    if (!res.ok) await this.extractError(res, `Failed (${res.status})`)
     return res.json()
   }
 
@@ -477,7 +494,7 @@ export class CoreClient {
       headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
       body: JSON.stringify({ username, password, role }),
     })
-    if (!res.ok) throw new Error((await res.json() as any).error ?? `Create user failed (${res.status})`)
+    if (!res.ok) await this.extractError(res, `Create user failed (${res.status})`)
     return res.json()
   }
 

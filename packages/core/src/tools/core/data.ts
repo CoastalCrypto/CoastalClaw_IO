@@ -10,6 +10,7 @@ import type { ToolDefinition } from '../../agents/types.js';
 export const dataTool: CoreTool = {
   definition: {
     name: 'analyze_dataset',
+    reversible: false,
     description: 'Perform high-performance data analysis (filter, sort, aggregate) on local CSV or JSON files using Polars.',
     parameters: {
       type: 'object',

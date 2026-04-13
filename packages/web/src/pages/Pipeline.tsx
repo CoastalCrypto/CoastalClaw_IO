@@ -92,8 +92,13 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
           pipelineName: pipelineName.trim() || 'Ad-hoc run',
         }),
       })
+      if (!res.ok) {
+        const text = await res.text()
+        let msg = `HTTP ${res.status}`
+        try { const j = JSON.parse(text); if (j.error) msg = j.error } catch {}
+        throw new Error(msg)
+      }
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
       if (data.runId) {
         setActiveStageCount(stagesArg.length)
         setActiveRunId(data.runId)
@@ -132,6 +137,7 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
           stages: stages.map(s => ({ agentId: s.agentId, type: 'agent', loopBack: s.loopBack })),
         }),
       })
+      if (!res.ok) throw new Error(`Save failed (${res.status})`)
       const saved = await res.json()
       setSavedPipelines(prev => [saved, ...prev])
     } catch (e: unknown) {

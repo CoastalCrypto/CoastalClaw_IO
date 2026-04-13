@@ -47,6 +47,7 @@ import { AgentRegistry } from './agents/registry.js'
 import { PermissionGate } from './agents/permission-gate.js'
 import { CustomToolLoader } from './tools/custom/loader.js'
 import { ChannelManager } from './channels/manager.js'
+import { McpStore } from './tools/mcp/store.js'
 import { loadConfig } from './config.js'
 import Database from 'better-sqlite3'
 import { join } from 'node:path'
@@ -200,6 +201,10 @@ export async function buildServer() {
   await fastify.register(searchRoutes, { memory: searchMemory })
   await fastify.register(contextRoutes, { store: contextStore })
   await fastify.register(userModelRoutes, { store: userModelStore })
+
+  // Ensure the default admin account is fully seeded before accepting requests.
+  // Without this, a login attempt during scrypt hashing would return "Invalid credentials".
+  await userStore.ready
 
   fastify.addHook('onReady', async () => {
     cronScheduler.start()

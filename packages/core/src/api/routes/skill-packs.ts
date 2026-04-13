@@ -49,17 +49,18 @@ export async function skillPackRoutes(
     // 2. Import Agents (optional)
     if (pack.agents && Array.isArray(pack.agents)) {
       for (const a of pack.agents) {
-        if (agentRegistry.getByName(a.name)) {
+        if (agentRegistry.list().find((ag) => ag.name === a.name)) {
           results.agentsSkipped++
           continue
         }
         try {
-          agentRegistry.register({
+          agentRegistry.create({
             name: a.name,
-            role: a.role,
-            soul: a.soul,
-            model: a.model,
-            voice: a.voice
+            role: a.role ?? 'AI Assistant',
+            soulPath: a.soul ?? '',
+            tools: [],
+            modelPref: a.model,
+            voice: a.voice,
           })
           results.agentsCreated++
         } catch (e: any) {

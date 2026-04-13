@@ -34,9 +34,11 @@ export function CloudConsent() {
         headers: { 'Content-Type': 'application/json', ...adminHeaders() },
         body: JSON.stringify({ granted: grant }),
       })
-      await res.json()
+      if (!res.ok) return
       setState(s => s ? { ...s, consentGranted: grant } : s)
       setConfirm(false)
+    } catch {
+      // silently ignore network errors
     } finally {
       setSaving(false)
     }

@@ -121,7 +121,6 @@ export async function buildServer() {
   await fastify.register(systemRoutes)
   await fastify.register(sessionRoutes)
   await fastify.register(uploadRoutes)
-  await fastify.register(chatRoutes)
   await fastify.register(streamRoutes)
 
   // Pipeline: needs its own instances of shared infrastructure

@@ -105,20 +105,16 @@ export function Settings({ onNav }: { onNav: (page: NavPage) => void }) {
                 <p className="text-xs text-yellow-400 mt-1">Saved — restart the server for the change to take effect.</p>
               )}
             </div>
-            <button
-              onClick={() => handleTrustToggle(trustLevel !== 'autonomous')}
-              disabled={trustSaving}
-              aria-pressed={trustLevel === 'autonomous'}
-              className={`relative z-50 flex-shrink-0 w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-40 ${
-                trustLevel === 'autonomous' ? 'bg-cyan-500' : 'bg-gray-600'
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${
-                  trustLevel === 'autonomous' ? 'translate-x-6' : 'translate-x-0'
-                }`}
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                className="sr-only peer" 
+                checked={trustLevel === 'autonomous'}
+                onChange={() => handleTrustToggle(trustLevel !== 'autonomous')}
+                disabled={trustSaving}
               />
-            </button>
+              <div className="w-12 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
+            </label>
           </div>
         </div>
 

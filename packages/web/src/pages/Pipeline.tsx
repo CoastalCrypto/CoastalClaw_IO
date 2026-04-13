@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavBar } from '../components/NavBar'
 import type { NavPage } from '../components/NavBar'
 import { PipelineRun } from './PipelineRun.js'
+import { PipelineCanvas } from '../components/PipelineCanvas.js'
 import { PANEL, BTN_CYAN, INPUT_STYLE, PAGE_BG, SECTION_LABEL } from '../styles/tokens.js'
 
 function adminHeaders(): Record<string, string> {
@@ -13,6 +14,7 @@ interface Agent {
   id: string
   name: string
   active: boolean
+  role?: string
 }
 
 interface Stage {
@@ -30,6 +32,7 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
     { id: uid(), agentId: '' },
   ])
   const [input, setInput] = useState('')
+  const [viewMode, setViewMode] = useState<'list' | 'visual'>('list')
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'builder' | 'run'>('builder')
@@ -71,10 +74,12 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
     })
   }
 
-  const run = async () => {
-    const filled = stages.filter(s => s.agentId)
-    if (filled.length < 1) { setError('Add at least one agent stage'); return }
-    if (!input.trim()) { setError('Enter an initial prompt'); return }
+  const runWithStages = async (
+    stagesArg: Array<{ agentId: string; type: 'agent'; loopBack?: Stage['loopBack'] }>,
+    promptArg: string,
+  ) => {
+    if (stagesArg.length < 1) { setError('Add at least one agent stage'); return }
+    if (!promptArg.trim()) { setError('Enter an initial prompt'); return }
     setError(null)
     setRunning(true)
     try {
@@ -82,15 +87,15 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...adminHeaders() },
         body: JSON.stringify({
-          stages: filled.map(s => ({ agentId: s.agentId, type: 'agent' as const, loopBack: s.loopBack })),
-          input: input.trim(),
+          stages: stagesArg,
+          input: promptArg.trim(),
           pipelineName: pipelineName.trim() || 'Ad-hoc run',
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
       if (data.runId) {
-        setActiveStageCount(filled.length)
+        setActiveStageCount(stagesArg.length)
         setActiveRunId(data.runId)
         setView('run')
       }
@@ -99,6 +104,20 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
     } finally {
       setRunning(false)
     }
+  }
+
+  const run = async () => {
+    const filled = stages.filter(s => s.agentId)
+    return runWithStages(
+      filled.map(s => ({ agentId: s.agentId, type: 'agent' as const, loopBack: s.loopBack })),
+      input,
+    )
+  }
+
+  const runFromCanvas = async (
+    canvasStages: Array<{ agentId: string; type: 'agent' }>,
+  ) => {
+    return runWithStages(canvasStages, input)
   }
 
   const save = async () => {
@@ -174,6 +193,32 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
           >🕐 Runs</button>
         </div>
 
+        {/* View mode toggle */}
+        <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+          {(['list', 'visual'] as const).map(mode => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              style={{
+                padding: '5px 14px',
+                borderRadius: 6,
+                fontSize: 11,
+                fontFamily: 'JetBrains Mono, monospace',
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                background: viewMode === mode ? 'rgba(0,229,255,0.15)' : 'rgba(0,229,255,0.04)',
+                border: viewMode === mode ? '1px solid rgba(0,229,255,0.5)' : '1px solid rgba(0,229,255,0.15)',
+                color: viewMode === mode ? '#00e5ff' : '#94adc4',
+                transition: 'all 0.15s',
+              }}
+            >
+              {mode === 'list' ? 'List' : 'Visual'}
+            </button>
+          ))}
+        </div>
+
         {/* Library panel */}
         {showLibrary && (
           <div style={{ ...PANEL, marginBottom: 16 }}>
@@ -231,103 +276,119 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
           </div>
         )}
 
-        {/* Stage list */}
-        <div style={PANEL} className="mb-4">
-          <p className="mb-4" style={SECTION_LABEL}>STAGES</p>
-
-          {stages.map((stage, idx) => (
-            <div key={stage.id} className="mb-4">
-              <div className="flex items-center gap-3">
-                <div className="text-xs font-mono w-5 text-center shrink-0" style={{ color: '#94adc4' }}>
-                  {idx + 1}
-                </div>
-
-                <select
-                  value={stage.agentId}
-                  onChange={e => updateStage(stage.id, { agentId: e.target.value })}
-                  className="flex-1 rounded-lg px-3 py-2 text-sm font-mono"
-                  style={{ background: 'rgba(5,10,15,0.8)', border: '1px solid rgba(0,229,255,0.20)', color: stage.agentId ? '#e2e8f0' : '#94adc4' }}
-                >
-                  <option value="">— select agent —</option>
-                  {agents.map(a => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
-                  ))}
-                </select>
-
-                {/* Loop-back toggle */}
-                <button
-                  onClick={() => updateStage(stage.id, { loopBack: stage.loopBack ? undefined : { toStageIdx: Math.max(0, idx - 1), condition: 'DONE', maxIterations: 3 } })}
-                  style={{ ...BTN_CYAN, padding: '4px 8px', fontSize: '10px', opacity: stage.loopBack ? 1 : 0.4 }}
-                  title="Add loop-back to earlier stage"
-                >↩</button>
-
-                <div className="flex gap-1 shrink-0">
-                  <button onClick={() => moveStage(idx, -1)} disabled={idx === 0} className="text-gray-600 hover:text-gray-300 disabled:opacity-20 text-xs px-1" aria-label="Move stage up">↑</button>
-                  <button onClick={() => moveStage(idx, 1)} disabled={idx === stages.length - 1} className="text-gray-600 hover:text-gray-300 disabled:opacity-20 text-xs px-1" aria-label="Move stage down">↓</button>
-                  <button onClick={() => removeStage(stage.id)} className="text-red-700 hover:text-red-400 text-xs px-1" aria-label="Remove stage">✕</button>
-                </div>
-              </div>
-
-              {/* Loop-back config row */}
-              {stage.loopBack && (
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 6, marginLeft: 32, flexWrap: 'wrap' }}>
-                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: '#ffb300' }}>loop if not contains:</span>
-                  <input
-                    value={stage.loopBack.condition}
-                    onChange={e => updateStage(stage.id, { loopBack: { ...stage.loopBack!, condition: e.target.value } })}
-                    style={{ width: 80, ...INPUT_STYLE, padding: '2px 6px', fontSize: '10px' }}
-                  />
-                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: '#94adc4' }}>→ stage</span>
-                  <input
-                    type="number" min={1} max={idx + 1}
-                    value={stage.loopBack.toStageIdx + 1}
-                    onChange={e => updateStage(stage.id, { loopBack: { ...stage.loopBack!, toStageIdx: Number(e.target.value) - 1 } })}
-                    style={{ width: 40, ...INPUT_STYLE, padding: '2px 6px', fontSize: '10px' }}
-                  />
-                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: '#94adc4' }}>max</span>
-                  <input
-                    type="number" min={1} max={10}
-                    value={stage.loopBack.maxIterations}
-                    onChange={e => updateStage(stage.id, { loopBack: { ...stage.loopBack!, maxIterations: Number(e.target.value) } })}
-                    style={{ width: 40, ...INPUT_STYLE, padding: '2px 6px', fontSize: '10px' }}
-                  />
-                </div>
-              )}
-            </div>
-          ))}
-
-          <button onClick={addStage} style={BTN_CYAN} className="mt-2">+ Add Stage</button>
-        </div>
-
-        {/* Input prompt */}
-        <div style={PANEL} className="mb-4">
-          <p className="mb-3" style={SECTION_LABEL}>INITIAL PROMPT</p>
-          <textarea
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            rows={4}
-            placeholder="The prompt that kicks off the pipeline..."
-            className="w-full rounded-lg px-4 py-3 text-sm font-mono resize-none focus:outline-none"
-            style={{ background: 'rgba(5,10,15,0.8)', border: '1px solid rgba(0,229,255,0.20)', color: '#e2e8f0', fontSize: '14px' }}
-          />
-        </div>
-
         {error && (
           <div className="mb-4 text-sm font-mono px-4 py-2 rounded-lg" style={{ background: 'rgba(255,82,82,0.08)', border: '1px solid rgba(255,82,82,0.25)', color: '#ff6b6b' }}>
             ⚠ {error}
           </div>
         )}
 
-        <button
-          onClick={run}
-          disabled={running}
-          className="w-full py-3 font-bold font-mono tracking-widest rounded-xl transition-all text-sm"
-          style={running
-            ? { background: 'rgba(0,229,255,0.06)', border: '1px solid rgba(0,229,255,0.15)', color: '#94adc4' }
-            : { background: '#00e5ff', color: '#050a0f' }}
-        >
-          {running ? 'Starting pipeline…' : '▶ Run Pipeline'}
-        </button>
+        {viewMode === 'visual' ? (
+          /* ── Visual canvas view ── */
+          <div style={{ height: 'calc(100vh - 200px)', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(0,229,255,0.12)' }}>
+            <PipelineCanvas
+              agents={agents}
+              onRunPipeline={runFromCanvas}
+              running={running}
+              prompt={input}
+              onPromptChange={setInput}
+            />
+          </div>
+        ) : (
+          /* ── List view ── */
+          <>
+            {/* Stage list */}
+            <div style={PANEL} className="mb-4">
+              <p className="mb-4" style={SECTION_LABEL}>STAGES</p>
+
+              {stages.map((stage, idx) => (
+                <div key={stage.id} className="mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="text-xs font-mono w-5 text-center shrink-0" style={{ color: '#94adc4' }}>
+                      {idx + 1}
+                    </div>
+
+                    <select
+                      value={stage.agentId}
+                      onChange={e => updateStage(stage.id, { agentId: e.target.value })}
+                      className="flex-1 rounded-lg px-3 py-2 text-sm font-mono"
+                      style={{ background: 'rgba(5,10,15,0.8)', border: '1px solid rgba(0,229,255,0.20)', color: stage.agentId ? '#e2e8f0' : '#94adc4' }}
+                    >
+                      <option value="">— select agent —</option>
+                      {agents.map(a => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
+                      ))}
+                    </select>
+
+                    {/* Loop-back toggle */}
+                    <button
+                      onClick={() => updateStage(stage.id, { loopBack: stage.loopBack ? undefined : { toStageIdx: Math.max(0, idx - 1), condition: 'DONE', maxIterations: 3 } })}
+                      style={{ ...BTN_CYAN, padding: '4px 8px', fontSize: '10px', opacity: stage.loopBack ? 1 : 0.4 }}
+                      title="Add loop-back to earlier stage"
+                    >↩</button>
+
+                    <div className="flex gap-1 shrink-0">
+                      <button onClick={() => moveStage(idx, -1)} disabled={idx === 0} className="text-gray-600 hover:text-gray-300 disabled:opacity-20 text-xs px-1" aria-label="Move stage up">↑</button>
+                      <button onClick={() => moveStage(idx, 1)} disabled={idx === stages.length - 1} className="text-gray-600 hover:text-gray-300 disabled:opacity-20 text-xs px-1" aria-label="Move stage down">↓</button>
+                      <button onClick={() => removeStage(stage.id)} className="text-red-700 hover:text-red-400 text-xs px-1" aria-label="Remove stage">✕</button>
+                    </div>
+                  </div>
+
+                  {/* Loop-back config row */}
+                  {stage.loopBack && (
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 6, marginLeft: 32, flexWrap: 'wrap' }}>
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: '#ffb300' }}>loop if not contains:</span>
+                      <input
+                        value={stage.loopBack.condition}
+                        onChange={e => updateStage(stage.id, { loopBack: { ...stage.loopBack!, condition: e.target.value } })}
+                        style={{ width: 80, ...INPUT_STYLE, padding: '2px 6px', fontSize: '10px' }}
+                      />
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: '#94adc4' }}>→ stage</span>
+                      <input
+                        type="number" min={1} max={idx + 1}
+                        value={stage.loopBack.toStageIdx + 1}
+                        onChange={e => updateStage(stage.id, { loopBack: { ...stage.loopBack!, toStageIdx: Number(e.target.value) - 1 } })}
+                        style={{ width: 40, ...INPUT_STYLE, padding: '2px 6px', fontSize: '10px' }}
+                      />
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: '#94adc4' }}>max</span>
+                      <input
+                        type="number" min={1} max={10}
+                        value={stage.loopBack.maxIterations}
+                        onChange={e => updateStage(stage.id, { loopBack: { ...stage.loopBack!, maxIterations: Number(e.target.value) } })}
+                        style={{ width: 40, ...INPUT_STYLE, padding: '2px 6px', fontSize: '10px' }}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              <button onClick={addStage} style={BTN_CYAN} className="mt-2">+ Add Stage</button>
+            </div>
+
+            {/* Input prompt */}
+            <div style={PANEL} className="mb-4">
+              <p className="mb-3" style={SECTION_LABEL}>INITIAL PROMPT</p>
+              <textarea
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                rows={4}
+                placeholder="The prompt that kicks off the pipeline..."
+                className="w-full rounded-lg px-4 py-3 text-sm font-mono resize-none focus:outline-none"
+                style={{ background: 'rgba(5,10,15,0.8)', border: '1px solid rgba(0,229,255,0.20)', color: '#e2e8f0', fontSize: '14px' }}
+              />
+            </div>
+
+            <button
+              onClick={run}
+              disabled={running}
+              className="w-full py-3 font-bold font-mono tracking-widest rounded-xl transition-all text-sm"
+              style={running
+                ? { background: 'rgba(0,229,255,0.06)', border: '1px solid rgba(0,229,255,0.15)', color: '#94adc4' }
+                : { background: '#00e5ff', color: '#050a0f' }}
+            >
+              {running ? 'Starting pipeline...' : '▶ Run Pipeline'}
+            </button>
+          </>
+        )}
       </div>
     </div>
   )

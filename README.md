@@ -866,9 +866,49 @@ GET  /api/admin/logs?service=...&lines=100
 POST /api/admin/update             (async: git pull → build → restart)
 ```
 
+## 📖 Usage Examples
+
+### 🛠 System Self-Repair
+If the system becomes inconsistent due to multi-source updates, use the self-repair utility:
+
+```bash
+# In the packages/core directory
+pnpm repair
+```
+*This validates your filesystem and syncs your agent registry.*
+
+### 🚀 Data Analysis (CFO Agent)
+Analyze large financial datasets using the high-performance Polars tool.
+
+**Prompt for CFO Agent:**
+> "Analyze `ledgers.csv`. Provide a summary of transactions by category."
+
+*The agent will automatically call `analyze_dataset` using the Rust-based Polars engine for high-speed processing.*
+
+### 🔌 Dynamic MCP Marketplace
+Connect custom tools (e.g., Postgres, Google Drive) without code changes.
+
+1. Add a server via API:
+```bash
+curl -X POST http://localhost:4747/api/admin/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"id": "sql-server", "name": "Postgres", "command": "npx", "args": ["-y", "@modelcontextprotocol/server-postgres", "postgres://user:pass@localhost/db"], "enabled": true}'
+```
+2. Restart or reload the system — your agent now sees new tools with the `sql-server_` prefix.
+
+### 📦 Skill Packs (Bundling)
+Package your custom agent configurations and prompts for easy sharing.
+
+**Export:**
+```bash
+curl -X POST http://localhost:4747/api/admin/skill-packs/export \
+  -H "Content-Type: application/json" \
+  -d '{"metadata": {"id": "finance-pack", "name": "CFO Pack", "author": "John"}, "skillIds": ["tax-calc", "q2-forecasting"]}'
+```
+*Saves your configuration as a shareable JSON file.*
+
 ---
 
-## 🧪 Testing
 
 ```bash
 pnpm test                          # all packages

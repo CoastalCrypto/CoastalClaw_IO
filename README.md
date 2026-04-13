@@ -78,6 +78,7 @@ Flash a bootable USB drive. Plug it into any UEFI machine and boot — no instal
 | **Chat** | Talk to AI agents that know your organisation, remember past conversations, and can use tools |
 | **Persistent Sessions** | Chat history survives page navigation — your conversation stays intact as you move around the UI |
 | **Agent Voice** | Each agent speaks responses aloud — choose from browser voices or the built-in VibeVoice engine |
+| **Hardware-Aware Tiers** | On boot, Coastal.AI probes your VRAM and RAM to automatically assign a performance tier (Lite, Standard, or Apex) and optimize model selection |
 | **Ollama Auto-Scan** | On startup, Coastal.AI scans your local Ollama install, imports every model it finds, and auto-assigns them to routing domains — no manual configuration needed |
 | **Model Routing** | Messages are automatically routed to the right model (high / medium / low priority) based on domain (COO, CFO, CTO, general) — hot-reloads if you change the registry |
 | **Ollama Pull** | Pull any model from the Ollama library directly from the Models page with live progress |

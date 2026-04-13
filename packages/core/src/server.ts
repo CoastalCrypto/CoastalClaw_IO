@@ -27,6 +27,7 @@ import { channelRoutes } from './api/routes/channels.js'
 import { userRoutes } from './api/routes/users.js'
 import { cronRoutes } from './api/routes/crons.js'
 import { skillRoutes } from './api/routes/skills.js'
+import { skillPackRoutes } from './api/routes/skill-packs.js'
 import { searchRoutes } from './api/routes/search.js'
 import { contextRoutes } from './api/routes/context.js'
 import { userModelRoutes } from './api/routes/user-model.js'
@@ -173,6 +174,7 @@ export async function buildServer() {
   const searchMemory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey, cloudConsentGranted: config.cloudConsentGranted })
 
   await fastify.register(skillRoutes, { store: skillStore, router: pipelineRouter, gaps: skillGaps })
+  await fastify.register(skillPackRoutes, { skillStore, agentRegistry })
   await fastify.register(searchRoutes, { memory: searchMemory })
   await fastify.register(contextRoutes, { store: contextStore })
   await fastify.register(userModelRoutes, { store: userModelStore })

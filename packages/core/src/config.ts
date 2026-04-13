@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { HardwareProbe } from './system/hardware.js'
 
 export type TrustLevel = 'sandboxed' | 'trusted' | 'autonomous'
 
@@ -26,9 +27,12 @@ export interface Config {
   airllmUrl: string
   infinityUrl: string
   vibeVoiceUrl: string
+  tier: 'lite' | 'standard' | 'apex'
 }
 
 export function loadConfig(): Config {
+  const hardware = HardwareProbe.getStats()
+  
   return {
     port: (() => {
       const raw = process.env.CC_PORT
@@ -54,7 +58,7 @@ export function loadConfig(): Config {
       return url
     })(),
     mem0ApiKey: process.env.MEM0_API_KEY,
-    vramBudgetGb: Number(process.env.CC_VRAM_BUDGET_GB ?? '24'),
+    vramBudgetGb: Number(process.env.CC_VRAM_BUDGET_GB ?? Math.floor(hardware.vramTotalGb || hardware.ramTotalGb * 0.5).toString()),
     routerConfidence: Number(process.env.CC_ROUTER_CONFIDENCE ?? '0.7'),
     tinyRouterModel: process.env.CC_TINY_ROUTER_MODEL ?? './data/tiny-router.onnx',
     quantRouterModel: process.env.CC_QUANT_ROUTER_MODEL ?? 'qwen2.5:0.5b',
@@ -64,11 +68,12 @@ export function loadConfig(): Config {
     agentMaxTurns: Number(process.env.CC_AGENT_MAX_TURNS ?? '10'),
     toolResultMaxChars: Number(process.env.CC_TOOL_RESULT_MAX_CHARS ?? '4000'),
     approvalTimeoutMs: Number(process.env.CC_APPROVAL_TIMEOUT_MS ?? '300000'),
-    defaultModel: process.env.CC_DEFAULT_MODEL ?? 'llama3.2',
+    defaultModel: process.env.CC_DEFAULT_MODEL ?? (hardware.tier === 'lite' ? 'llama3.2:1b' : 'llama3.2'),
     vllmUrl: process.env.CC_VLLM_URL ?? 'http://127.0.0.1:8000',
     airllmUrl: process.env.CC_AIRLLM_URL ?? 'http://127.0.0.1:8002',
     infinityUrl: process.env.CC_INFINITY_URL ?? 'http://127.0.0.1:23817',
     vibeVoiceUrl: process.env.CC_VIBEVOICE_URL ?? 'http://127.0.0.1:8001',
+    tier: hardware.tier,
     agentTrustLevel: (() => {
       // File-based override takes precedence over env var
       const dataDir = process.env.CC_DATA_DIR ?? './data'
@@ -88,3 +93,4 @@ export function loadConfig(): Config {
     })(),
   }
 }
+

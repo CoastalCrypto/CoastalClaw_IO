@@ -4,6 +4,7 @@ import { execSync } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadConfig } from '../../config.js'
+import { HardwareProbe } from '../../system/hardware.js'
 import { VibeVoiceClient } from '../../voice/vibevoice.js'
 import { restartServer } from './system-restart.js'
 
@@ -54,33 +55,6 @@ function gitCommit(): string {
 
 interface DiskStat { path: string; total: number; used: number; free: number }
 
-function cpuPercent(): number {
-  try {
-    const a = readFileSync('/proc/stat', 'utf8').split('\n')[0].split(/\s+/).slice(1).map(Number)
-    const [user, nice, system, idle, iowait = 0, irq = 0, softirq = 0] = a
-    const total = user + nice + system + idle + iowait + irq + softirq
-    const busy  = total - idle - iowait
-    return Math.round((busy / total) * 100)
-  } catch { return 0 }
-}
-
-function memInfo(): { total: number; used: number; free: number; cached: number } {
-  try {
-    const raw = readFileSync('/proc/meminfo', 'utf8')
-    const parse = (key: string) => {
-      const m = raw.match(new RegExp(`${key}:\\s+(\\d+)`))
-      return m ? Number(m[1]) * 1024 : 0
-    }
-    const total    = parse('MemTotal')
-    const free     = parse('MemFree')
-    const buffers  = parse('Buffers')
-    const cached   = parse('Cached')
-    const sreclaimable = parse('SReclaimable')
-    const used = total - free - buffers - cached - sreclaimable
-    return { total, used, free: free + buffers + cached + sreclaimable, cached }
-  } catch { return { total: 0, used: 0, free: 0, cached: 0 } }
-}
-
 function diskStats(paths: string[]): DiskStat[] {
   if (process.platform === 'win32') {
     return paths.map(p => ({ path: p, total: 0, used: 0, free: 0 }))
@@ -92,22 +66,6 @@ function diskStats(paths: string[]): DiskStat[] {
       return { path: p, total, used, free }
     } catch { return { path: p, total: 0, used: 0, free: 0 } }
   })
-}
-
-function gpuStats(): { name: string; vramUsed: number; vramTotal: number; utilPercent: number } | null {
-  try {
-    const out = execSync(
-      'nvidia-smi --query-gpu=name,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits',
-      { timeout: 2000 }
-    ).toString().trim()
-    const [name, vramUsed, vramTotal, util] = out.split(',').map(s => s.trim())
-    return {
-      name,
-      vramUsed: Number(vramUsed) * 1024 * 1024,
-      vramTotal: Number(vramTotal) * 1024 * 1024,
-      utilPercent: Number(util),
-    }
-  } catch { return null }
 }
 
 function loadedModels(): string[] {
@@ -122,20 +80,28 @@ export async function systemRoutes(fastify: FastifyInstance) {
 
   // GET /api/system/stats — live hardware metrics
   fastify.get('/api/system/stats', async (_req, reply) => {
-    const [mem, disk, gpu] = await Promise.all([
-      Promise.resolve(memInfo()),
-      Promise.resolve(diskStats([config.dataDir, '/'])),
-      Promise.resolve(gpuStats()),
-    ])
+    const hardware = HardwareProbe.getStats()
+    const disk = diskStats([config.dataDir, '/'])
+    
     return reply.send({
-      cpu: { percent: cpuPercent() },
-      mem,
+      cpu: { percent: Math.round(hardware.cpuUsagePct) },
+      mem: {
+        total: Math.round(hardware.ramTotalGb * 1024 * 1024 * 1024),
+        used: Math.round(hardware.ramUsedGb * 1024 * 1024 * 1024),
+        free: Math.round((hardware.ramTotalGb - hardware.ramUsedGb) * 1024 * 1024 * 1024)
+      },
       disk,
-      gpu,
+      gpu: hardware.vramTotalGb > 0 ? {
+        vramUsed: Math.round(hardware.vramUsedGb * 1024 * 1024 * 1024),
+        vramTotal: Math.round(hardware.vramTotalGb * 1024 * 1024 * 1024),
+        utilPercent: 0 // HardwareProbe doesn't track GPU util yet
+      } : null,
+      tier: hardware.tier,
       models: loadedModels(),
       uptime: Math.floor(process.uptime()),
     })
   })
+
 
   // GET /api/admin/logs?service=server&lines=100
   fastify.get<{ Querystring: { service?: string; lines?: string } }>(

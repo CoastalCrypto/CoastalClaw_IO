@@ -21,6 +21,7 @@
     "dotenv": "^16.4.0",
     "fastify": "^4.28.0",
     "mem0ai": "^2.4.2",
+    "nodejs-polars": "^0.24.1",
     "onnxruntime-node": "^1.24.3",
     "playwright": "^1.59.1"
   },

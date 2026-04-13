@@ -84,6 +84,7 @@ Flash a bootable USB drive. Plug it into any UEFI machine and boot — no instal
 | **Ollama Pull** | Pull any model from the Ollama library directly from the Models page with live progress |
 | **HuggingFace Install** | Download and quantize HuggingFace models (Q4, Q5, Q8) directly from the web UI |
 | **Skills Library** | Save reusable prompt templates with fill-in variables, triggered with `/command` shortcuts in chat |
+| **Skill Packs** | Bundle, export, and import curated sets of skills and agents via the Skill Pack API — the foundation of the local AI marketplace |
 | **Scheduled Agents** | Set agents to run automatically on a cron schedule — daily briefings, alerts, reports |
 | **Multi-Agent Swarm** | Send complex tasks to a team of specialist agents (COO, CFO, CTO) that work in parallel |
 | **Pipeline Builder** | Chain agents in sequence — each agent's output becomes the next agent's input. Save pipelines to a library and reload them instantly |
@@ -97,6 +98,8 @@ Flash a bootable USB drive. Plug it into any UEFI machine and boot — no instal
 | **Analytics** | Tool call stats, success rates, cost tracking, 7-day trends |
 | **Custom Tools** | Write JavaScript tools in the browser — agents call them automatically |
 | **Output Channels** | Push agent messages to Telegram, Discord, Slack, or Zapier |
+| **Dynamic MCP Host** | Connect Coastal.AI to any Model Context Protocol (MCP) server — instantly give agents access to Google Drive, Postgres, Slack, and more |
+| **High-Performance Data** | Ultra-fast local analysis of million-row CSV/JSON datasets via the CFO agent, powered by the Rust-based Polars engine |
 | **Multi-User Auth** | Username + password login with three roles: admin, operator, viewer |
 | **Self-Build Loop** | The system can read its own code, propose improvements, and open pull requests |
 | **Privacy First** | Entirely local inference — no external API keys or cloud accounts required |

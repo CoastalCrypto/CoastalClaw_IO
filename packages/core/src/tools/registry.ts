@@ -3,6 +3,7 @@ import { createShellTools, shellTools } from './core/shell.js'
 import { gitTools } from './core/git.js'
 import { sqliteTools } from './core/sqlite.js'
 import { webTools } from './core/web.js'
+import { dataTool } from './core/data.js'
 import { createBrowserTools } from './browser/browser-tools.js'
 import type { CoreTool } from './core/file.js'
 import type { ToolDefinition } from '../agents/types.js'
@@ -19,7 +20,7 @@ export class ToolRegistry {
       ? createShellTools(backend, process.env.CC_AGENT_WORKDIR ?? './data/workspace')
       : shellTools
     const browser = browserManager ? createBrowserTools(browserManager) : []
-    for (const t of [...fileTools, ...shell, ...gitTools, ...sqliteTools, ...webTools, ...browser]) {
+    for (const t of [...fileTools, ...shell, ...gitTools, ...sqliteTools, ...webTools, ...browser, dataTool]) {
       this.tools.set(t.definition.name, t)
     }
   }

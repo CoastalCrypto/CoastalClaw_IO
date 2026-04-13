@@ -22,7 +22,7 @@ const BUILT_IN_AGENTS: Omit<AgentConfig, 'createdAt'>[] = [
     name: 'Chief Financial Officer',
     role: 'Finance, budgets, forecasting, financial reporting',
     soulPath: '',
-    tools: ['read_file', 'list_dir', 'query_db', 'http_get'],
+    tools: ['read_file', 'list_dir', 'query_db', 'http_get', 'analyze_dataset'],
     builtIn: true,
     active: true,
   },

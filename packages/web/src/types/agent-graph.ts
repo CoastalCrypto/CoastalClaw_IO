@@ -32,6 +32,7 @@ export type AgentGraphEvent =
   | { type: 'edge_added'; edge: GraphEdge }
   | { type: 'edge_removed'; edgeId: string }
   | { type: 'edge_active'; edgeId: string; active: boolean }
+  | { type: 'graph_edge'; ts: number; source: string; target: string; edgeType: 'agent-tool' | 'agent-model' | 'agent-channel' }
   | { type: 'ping' }
 
 // React Flow node data type — index signature required for React Flow compatibility

@@ -3,6 +3,15 @@ import type { AgentGraphState, AgentGraphEvent } from '../types/agent-graph'
 
 const INITIAL_STATE: AgentGraphState = { nodes: [], edges: [], lastUpdated: 0 }
 
+const ROLE_LABEL: Record<string, string> = {
+  'agent-tool': 'Tool',
+  'agent-model': 'Model',
+  'agent-channel': 'Channel',
+}
+
+// How long an edge stays "active" (glowing) after a graph_edge event fires
+const EDGE_ACTIVE_TTL_MS = 2500
+
 // Pure reducer — exported for unit testing
 export function applyEvent(state: AgentGraphState, event: AgentGraphEvent): AgentGraphState {
   switch (event.type) {
@@ -28,6 +37,32 @@ export function applyEvent(state: AgentGraphState, event: AgentGraphEvent): Agen
         edges: state.edges.map(e => e.id === event.edgeId ? { ...e, active: event.active } : e),
         lastUpdated: Date.now(),
       }
+    case 'graph_edge': {
+      const edgeId = `${event.source}->${event.target}`
+      const now = Date.now()
+
+      // Upsert source node (the agent)
+      const sourceExists = state.nodes.some(n => n.id === event.source)
+      let nodes = sourceExists
+        ? state.nodes.map(n => n.id === event.source
+            ? { ...n, status: 'executing' as const, lastActivity: now }
+            : n)
+        : [...state.nodes, { id: event.source, label: event.source, status: 'executing' as const, role: 'Agent', toolsCount: 0, lastActivity: now }]
+
+      // Upsert target node (tool / model / channel)
+      const targetExists = nodes.some(n => n.id === event.target)
+      if (!targetExists) {
+        nodes = [...nodes, { id: event.target, label: event.target, status: 'idle' as const, role: ROLE_LABEL[event.edgeType] ?? 'Tool', toolsCount: 0, lastActivity: now }]
+      }
+
+      // Upsert edge — mark active so React Flow animates it
+      const edgeExists = state.edges.some(e => e.id === edgeId)
+      const edges = edgeExists
+        ? state.edges.map(e => e.id === edgeId ? { ...e, active: true } : e)
+        : [...state.edges, { id: edgeId, source: event.source, target: event.target, label: event.edgeType, active: true }]
+
+      return { nodes, edges, lastUpdated: now }
+    }
     case 'ping':
       return state
     default:
@@ -56,6 +91,21 @@ export function useAgentGraph() {
       try {
         const event: AgentGraphEvent = JSON.parse(e.data as string)
         setState(prev => applyEvent(prev, event))
+
+        // After a graph_edge fires, de-activate the edge so the glow fades out
+        if (event.type === 'graph_edge') {
+          const edgeId = `${event.source}->${event.target}`
+          setTimeout(() => {
+            setState(prev => ({
+              ...prev,
+              nodes: prev.nodes.map(n => n.id === event.source && n.status === 'executing'
+                ? { ...n, status: 'idle' }
+                : n),
+              edges: prev.edges.map(e => e.id === edgeId ? { ...e, active: false } : e),
+              lastUpdated: Date.now(),
+            }))
+          }, EDGE_ACTIVE_TTL_MS)
+        }
       } catch { /* ignore malformed */ }
     }
 

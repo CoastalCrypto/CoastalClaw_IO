@@ -196,7 +196,19 @@ echo "sandboxed" > ./data/.trust-level
 curl -fsSL https://raw.githubusercontent.com/CoastalCrypto/Coastal.AI/master/install.sh | bash
 ```
 
-**Windows** — open **PowerShell as Administrator** (`Right-click Start → Windows PowerShell (Admin)`) and run these three commands one at a time:
+**Windows** — open **PowerShell** (regular or Administrator) and paste:
+
+```powershell
+iex (irm https://raw.githubusercontent.com/CoastalCrypto/Coastal.AI/master/install-windows.ps1)
+```
+
+For detailed Windows setup and troubleshooting, see [INSTALL-WINDOWS.md](INSTALL-WINDOWS.md).
+
+---
+
+### Step 2 — Start the application
+
+After installation completes, start Coastal.AI by running in PowerShell:
 
 ```powershell
 # 1. Download the installer

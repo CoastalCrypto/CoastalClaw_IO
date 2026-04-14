@@ -177,6 +177,26 @@ export async function systemRoutes(fastify: FastifyInstance) {
     }
   })
 
+  // GET /api/admin/trust-level — read current agent trust level
+  fastify.get('/api/admin/trust-level', async (_req, reply) => {
+    const trustFile = join(config.dataDir, '.trust-level')
+    const level = existsSync(trustFile)
+      ? (readFileSync(trustFile, 'utf8').trim() as 'sandboxed' | 'trusted' | 'autonomous')
+      : 'trusted'
+    return reply.send({ level })
+  })
+
+  // PATCH /api/admin/trust-level — update agent trust level (takes effect on restart)
+  fastify.patch<{ Body: { level: string } }>('/api/admin/trust-level', async (req, reply) => {
+    const { level } = req.body ?? {}
+    const valid = ['sandboxed', 'trusted', 'autonomous']
+    if (!level || !valid.includes(level)) {
+      return reply.status(400).send({ error: 'level must be sandboxed, trusted, or autonomous' })
+    }
+    writeFileSync(join(config.dataDir, '.trust-level'), level, 'utf8')
+    return reply.send({ level })
+  })
+
   // POST /api/admin/update — pull latest + rebuild + restart
   fastify.post('/api/admin/update', async (_req, reply) => {
     const installDir = process.cwd()

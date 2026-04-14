@@ -18,6 +18,9 @@ function toGraphEvent(event: AgentEvent): Record<string, unknown> | null {
   if (event.type === 'tool_call_end') {
     return { type: 'node_status', nodeId: event.agentId, status: 'idle' }
   }
+  if (event.type === 'graph_edge') {
+    return { type: 'graph_edge', source: event.source, target: event.target, edgeType: event.edgeType }
+  }
   return null
 }
 

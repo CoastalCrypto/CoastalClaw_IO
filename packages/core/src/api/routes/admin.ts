@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify'
-import { loadConfig } from '../../config.js'
+import { loadConfig, invalidateConfig } from '../../config.js'
 import { ModelRegistry } from '../../models/registry.js'
 import { QuantizationPipeline } from '../../models/quantizer.js'
 import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync, unlinkSync } from 'node:fs'
@@ -56,6 +56,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // POST /api/admin/login — validates admin token, returns a 24h session token
   // This route is intentionally exempt from the auth hook below
   fastify.post<{ Body: { token: string } }>('/api/admin/login', {
+    config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
     schema: {
       body: {
         type: 'object',
@@ -409,6 +410,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
       const trustFile = join(config.dataDir, '.trust-level')
       mkdirSync(config.dataDir, { recursive: true })
       writeFileSync(trustFile, level, { encoding: 'utf8', mode: 0o600 })
+      invalidateConfig()
       return reply.send({ ok: true, level, note: 'Restart the server for the new trust level to take effect.' })
     },
   )

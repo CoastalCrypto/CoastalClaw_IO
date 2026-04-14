@@ -13,7 +13,9 @@ export interface TTSOptions {
   mockMode?: boolean
 }
 
-const DEFAULT_VOICES_DIR = '/opt/coastal/voices'
+const DEFAULT_VOICES_DIR = process.platform === 'win32'
+  ? 'C:\\coastal\\voices'
+  : '/opt/coastal/voices'
 const DEFAULT_PIPER_BIN = 'piper'
 
 /**

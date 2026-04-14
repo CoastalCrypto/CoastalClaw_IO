@@ -30,10 +30,13 @@ export interface Config {
   tier: 'lite' | 'standard' | 'apex'
 }
 
+let _cachedConfig: Config | null = null
+
 export function loadConfig(): Config {
+  if (_cachedConfig) return _cachedConfig
   const hardware = HardwareProbe.getStats()
-  
-  return {
+
+  const config: Config = {
     port: (() => {
       const raw = process.env.CC_PORT
       if (!raw) return 4747
@@ -92,5 +95,12 @@ export function loadConfig(): Config {
       return existsSync(consentFile)
     })(),
   }
+  _cachedConfig = config
+  return config
+}
+
+/** Invalidate the config cache — call after trust-level or consent files change. */
+export function invalidateConfig(): void {
+  _cachedConfig = null
 }
 

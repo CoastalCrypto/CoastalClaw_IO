@@ -23,7 +23,9 @@ export async function userRoutes(fastify: FastifyInstance, opts: { store: UserSt
   })
 
   /** Username + password login */
-  fastify.post<{ Body: { username: string; password: string } }>('/api/auth/login', async (req, reply) => {
+  fastify.post<{ Body: { username: string; password: string } }>('/api/auth/login', {
+    config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+  }, async (req, reply) => {
     const { username, password } = req.body ?? {}
     if (!username || !password) return reply.status(400).send({ error: 'username and password required' })
     const user = await store.verifyPassword(username, password)

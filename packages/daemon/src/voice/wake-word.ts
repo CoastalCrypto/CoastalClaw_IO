@@ -31,8 +31,9 @@ export class WakeWordDetector extends EventEmitter {
       return
     }
 
-    // Launch the Python bridge script
-    this.proc = spawn('python3', ['-c', this.getPythonScript()], {
+    // Launch the Python bridge script (python3 on Linux/macOS, python on Windows)
+    const pythonBin = process.platform === 'win32' ? 'python' : 'python3'
+    this.proc = spawn(pythonBin, ['-c', this.getPythonScript()], {
       stdio: ['pipe', 'pipe', 'pipe'],
     })
 

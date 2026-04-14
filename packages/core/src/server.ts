@@ -1,5 +1,6 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import rateLimit from '@fastify/rate-limit'
 import websocket from '@fastify/websocket'
 import { healthRoutes } from './api/routes/health.js'
 import { wsRoutes } from './api/routes/ws.js'
@@ -101,6 +102,9 @@ export async function buildServer() {
   const allowedOrigins = process.env.CC_CORS_ORIGINS?.split(',').map(o => o.trim())
     ?? ['http://localhost:5173', 'http://127.0.0.1:5173']
   await fastify.register(cors, { origin: allowedOrigins })
+  await fastify.register(rateLimit, {
+    global: false, // opt-in per route
+  })
   await fastify.register(websocket)
   await fastify.register(healthRoutes)
   await fastify.register(wsRoutes)

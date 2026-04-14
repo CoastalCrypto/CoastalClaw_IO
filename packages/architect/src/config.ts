@@ -10,7 +10,7 @@ export const LOCKED_PATHS: ReadonlySet<string> = new Set([
   'packages/core/src/agents/permission-gate.ts',
   'packages/core/src/agents/action-log.ts',
   'packages/core/src/api/routes/admin.ts',
-])
+].map(p => p.toLowerCase()))
 
 /** Returns true if the normalized relative path is in the locked set. */
 export function isLockedPath(relPath: string): boolean {

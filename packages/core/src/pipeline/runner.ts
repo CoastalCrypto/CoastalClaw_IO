@@ -26,6 +26,9 @@ export interface ActiveRun {
   startedAt: number
 }
 
+const COMPLETED_RUN_TTL_MS = 60 * 60 * 1000 // 1 hour
+const MAX_COMPLETED_RUNS = 200
+
 export class AsyncPipelineRunner {
   private runs = new Map<string, ActiveRun>()
 
@@ -146,6 +149,25 @@ export class AsyncPipelineRunner {
       await this.store?.finalizeRun(runId, 'error', { error, totalDurationMs: Date.now() - startedAt })
     } finally {
       this.steerQueue.cleanup(runId)
+      this._evictStaleRuns()
+    }
+  }
+
+  private _evictStaleRuns(): void {
+    const cutoff = Date.now() - COMPLETED_RUN_TTL_MS
+    for (const [id, run] of this.runs) {
+      if (run.status !== 'running' && run.startedAt < cutoff) {
+        this.runs.delete(id)
+      }
+    }
+    // Cap total completed entries as a hard backstop
+    if (this.runs.size > MAX_COMPLETED_RUNS) {
+      const sorted = [...this.runs.entries()]
+        .filter(([, r]) => r.status !== 'running')
+        .sort((a, b) => a[1].startedAt - b[1].startedAt)
+      for (const [id] of sorted.slice(0, this.runs.size - MAX_COMPLETED_RUNS)) {
+        this.runs.delete(id)
+      }
     }
   }
 }

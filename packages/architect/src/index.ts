@@ -92,7 +92,11 @@ async function runCycle(): Promise<void> {
       } catch { /* Non-fatal — server may be restarting */ }
       // Signal coastal-server to restart gracefully
       if (process.env.CC_SERVER_PID) {
-        process.kill(Number(process.env.CC_SERVER_PID), 'SIGUSR2')
+        if (process.platform === 'win32') {
+          console.log('[coastal-architect] Restart signal not supported on Windows — restart the server manually.')
+        } else {
+          process.kill(Number(process.env.CC_SERVER_PID), 'SIGUSR2')
+        }
       }
     } else {
       await patcher.checkoutMain()

@@ -3,6 +3,7 @@ import type { SocketStream } from '@fastify/websocket'
 import { eventBus } from '../../events/bus.js'
 import type { AgentEvent } from '../../events/types.js'
 import type { AgentRegistry } from '../../agents/registry.js'
+import type { ChannelManager } from '../../channels/manager.js'
 
 // Translate internal agent events to graph events
 function toGraphEvent(event: AgentEvent): Record<string, unknown> | null {
@@ -24,14 +25,111 @@ function toGraphEvent(event: AgentEvent): Record<string, unknown> | null {
   return null
 }
 
+function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager) {
+  const allAgents = registry.listAll()
+  const channels = channelManager.list()
+
+  // Collect unique tools and models across all active agents
+  const toolSet = new Map<string, { label: string; category: string }>()
+  const modelSet = new Map<string, string>() // id → display name
+
+  for (const a of allAgents) {
+    for (const t of a.tools) {
+      if (!toolSet.has(t)) {
+        const cat = t.startsWith('memory_') ? 'Memory'
+          : t.startsWith('git_') ? 'Git'
+          : t === 'run_command' ? 'Shell'
+          : t === 'query_db' ? 'Database'
+          : t === 'http_get' ? 'Web'
+          : t.includes('_') ? 'MCP' : 'File'
+        toolSet.set(t, { label: t, category: cat })
+      }
+    }
+    if (a.modelPref) modelSet.set(a.modelPref, a.modelPref)
+  }
+  if (modelSet.size === 0) modelSet.set('ollama:default', 'Ollama (default)')
+
+  // Layout constants
+  const AGENT_Y = 240
+  const TOOL_Y  = 440
+  const CHAN_Y  = 40
+  const COL_W   = 160
+
+  // Build nodes
+  const agentNodes = allAgents.map((a, i) => ({
+    id: a.id,
+    label: a.name,
+    role: a.role,
+    status: a.active ? 'idle' : 'offline',
+    toolsCount: a.tools.length,
+    nodeType: 'agent' as const,
+    position: { x: i * COL_W + 80, y: AGENT_Y },
+  }))
+
+  const toolNodes = Array.from(toolSet.entries()).map(([id, t], i) => ({
+    id: `tool:${id}`,
+    label: t.label,
+    role: t.category,
+    status: 'idle' as const,
+    toolsCount: 0,
+    nodeType: 'tool' as const,
+    position: { x: i * 140 + 40, y: TOOL_Y },
+  }))
+
+  const modelNodes = Array.from(modelSet.entries()).map(([id, name], i) => ({
+    id: `model:${id}`,
+    label: name,
+    role: 'Model',
+    status: 'idle' as const,
+    toolsCount: 0,
+    nodeType: 'model' as const,
+    position: { x: toolNodes.length * 140 + 40 + i * 160, y: TOOL_Y },
+  }))
+
+  const channelNodes = channels.map((c, i) => ({
+    id: `channel:${c.id}`,
+    label: c.name,
+    role: c.type,
+    status: (c.enabled ? 'idle' : 'offline') as 'idle' | 'offline',
+    toolsCount: 0,
+    nodeType: 'channel' as const,
+    position: { x: i * COL_W + 80, y: CHAN_Y },
+  }))
+
+  // Build static edges
+  const edges: Array<{ id: string; source: string; target: string; label: string; active: boolean; edgeType: string }> = []
+
+  for (const a of allAgents) {
+    // Agent → tools
+    for (const t of a.tools) {
+      edges.push({ id: `${a.id}->tool:${t}`, source: a.id, target: `tool:${t}`, label: 'uses', active: false, edgeType: 'agent-tool' })
+    }
+    // Agent → model
+    const modelId = a.modelPref ? `model:${a.modelPref}` : 'model:ollama:default'
+    if (modelSet.has(a.modelPref ?? '') || !a.modelPref) {
+      edges.push({ id: `${a.id}->${modelId}`, source: a.id, target: modelId, label: 'runs on', active: false, edgeType: 'agent-model' })
+    }
+    // Agent → channels (active agents broadcast to all enabled channels)
+    if (a.active) {
+      for (const c of channels) {
+        if (c.enabled) {
+          edges.push({ id: `${a.id}->channel:${c.id}`, source: a.id, target: `channel:${c.id}`, label: 'outputs to', active: false, edgeType: 'agent-channel' })
+        }
+      }
+    }
+  }
+
+  return {
+    nodes: [...agentNodes, ...toolNodes, ...modelNodes, ...channelNodes],
+    edges,
+  }
+}
+
 export async function agentEventsRoute(
   app: FastifyInstance,
-  opts: { registry: AgentRegistry; validateSession: (token: string) => boolean }
+  opts: { registry: AgentRegistry; channelManager: ChannelManager; validateSession: (token: string) => boolean }
 ) {
   app.get('/ws/agent-events', { websocket: true }, (connection: SocketStream, req) => {
-    // Browsers cannot set custom headers on WebSocket upgrades, so the session
-    // token is accepted either via the x-admin-session header (server-side clients)
-    // or via the ?token= query parameter (browser clients).
     const sessionHeader = req.headers['x-admin-session']
     const headerToken = typeof sessionHeader === 'string' ? sessionHeader : (Array.isArray(sessionHeader) ? sessionHeader[0] : '')
     const queryToken = (req.query as Record<string, string>)?.token ?? ''
@@ -43,20 +141,10 @@ export async function agentEventsRoute(
     }
     const socket = connection.socket
 
-    // Send initial state
-    const allAgents = opts.registry.listAll()
+    // Send initial state with full graph
     if (socket.readyState === socket.OPEN) {
-      socket.send(JSON.stringify({
-        type: 'snapshot',
-        nodes: allAgents.map(a => ({
-          id: a.id,
-          label: a.name,
-          role: a.role,
-          status: a.active ? 'idle' : 'offline',
-          toolsCount: a.tools.length,
-        })),
-        edges: [],
-      }))
+      const snapshot = buildSnapshot(opts.registry, opts.channelManager)
+      socket.send(JSON.stringify({ type: 'snapshot', ...snapshot }))
     }
 
     // Ping-pong keepalive

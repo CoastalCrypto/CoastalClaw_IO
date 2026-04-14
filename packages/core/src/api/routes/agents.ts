@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { AgentRegistry } from '../../agents/registry.js'
 import { PermissionGate } from '../../agents/permission-gate.js'
-import { writeFileSync, mkdirSync } from 'node:fs'
+import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { loadConfig } from '../../config.js'
 
@@ -56,6 +56,14 @@ export async function agentRoutes(
     if (soul !== undefined) writeFileSync(agent.soulPath, soul, 'utf8')
     opts.registry.update(req.params.id, rest)
     return opts.registry.get(req.params.id)
+  })
+
+  // GET /api/admin/agents/:id/soul — returns raw soul markdown
+  fastify.get<{ Params: { id: string } }>('/api/admin/agents/:id/soul', async (req, reply) => {
+    const agent = opts.registry.get(req.params.id)
+    if (!agent) return reply.status(404).send({ error: 'Agent not found' })
+    if (!agent.soulPath || !existsSync(agent.soulPath)) return reply.send({ soul: '' })
+    return reply.send({ soul: readFileSync(agent.soulPath, 'utf8') })
   })
 
   // GET /api/admin/agents/:id/credentials

@@ -27,35 +27,49 @@ export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
   const { nodes: rawNodes, edges: rawEdges, connected } = useAgentGraph()
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
+  // Edge color by type (active always wins with cyan glow)
+  const edgeStroke = useCallback((e: (typeof rawEdges)[number]) => {
+    if (e.active) return '#00e5ff'
+    if (e.edgeType === 'agent-tool') return '#10b981'
+    if (e.edgeType === 'agent-model') return '#8b5cf6'
+    if (e.edgeType === 'agent-channel') return '#f59e0b'
+    return '#1a3a5c'
+  }, [])
+
   // Convert to React Flow node/edge format
   const rfNodes: Node<AgentNodeData>[] = useMemo(() =>
     rawNodes.map((n, i) => ({
       id: n.id,
       type: 'agent',
-      position: { x: (i % 4) * 180 + 60, y: Math.floor(i / 4) * 160 + 60 },
+      // Use server-provided position when available, fall back to grid layout
+      position: n.position ?? { x: (i % 4) * 180 + 60, y: Math.floor(i / 4) * 160 + 60 },
       data: {
         label: n.label,
         status: n.status,
         role: n.role,
         toolsCount: n.toolsCount,
+        nodeType: n.nodeType,
         lastActivity: n.lastActivity,
       },
       selected: n.id === selectedId,
     })), [rawNodes, selectedId])
 
   const rfEdges: Edge[] = useMemo(() =>
-    rawEdges.map(e => ({
-      id: e.id,
-      source: e.source,
-      target: e.target,
-      label: e.label,
-      style: {
-        stroke: e.active ? '#00e5ff' : '#1a3a5c',
-        strokeWidth: e.active ? 2 : 1,
-        strokeDasharray: e.active ? undefined : '4 3',
-      },
-      animated: e.active,
-    })), [rawEdges])
+    rawEdges.map(e => {
+      const stroke = edgeStroke(e)
+      return {
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        label: e.label,
+        style: {
+          stroke,
+          strokeWidth: e.active ? 2 : 1,
+          strokeDasharray: e.active ? undefined : '4 3',
+        },
+        animated: e.active,
+      }
+    }), [rawEdges, edgeStroke])
 
   const onNodeClick = useCallback((_: unknown, node: Node) => {
     setSelectedId(id => id === node.id ? null : node.id)
@@ -123,7 +137,7 @@ export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#00e5ff', letterSpacing: '0.08em' }}>
-                AGENT DETAILS
+                {(selectedNode.nodeType ?? 'agent').toUpperCase()} DETAILS
               </span>
               <button onClick={() => setSelectedId(null)} style={{ color: '#4a6a8a', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>✕</button>
             </div>
@@ -134,9 +148,11 @@ export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
               {selectedNode.role}
             </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 9, fontFamily: 'JetBrains Mono, monospace', color: '#94adc4', border: '1px solid rgba(26,58,92,0.8)', background: 'rgba(10,22,40,0.6)', borderRadius: 4, padding: '2px 6px' }}>
-                {selectedNode.toolsCount} TOOLS
-              </span>
+              {selectedNode.nodeType === 'agent' && (
+                <span style={{ fontSize: 9, fontFamily: 'JetBrains Mono, monospace', color: '#94adc4', border: '1px solid rgba(26,58,92,0.8)', background: 'rgba(10,22,40,0.6)', borderRadius: 4, padding: '2px 6px' }}>
+                  {selectedNode.toolsCount} TOOLS
+                </span>
+              )}
               <span style={{ fontSize: 9, fontFamily: 'JetBrains Mono, monospace', color: selectedNode.status === 'offline' ? '#ef4444' : '#10b981', border: `1px solid ${selectedNode.status === 'offline' ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}`, background: selectedNode.status === 'offline' ? 'rgba(239,68,68,0.08)' : 'rgba(16,185,129,0.08)', borderRadius: 4, padding: '2px 6px' }}>
                 {selectedNode.status.toUpperCase()}
               </span>

@@ -242,6 +242,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   const [pendingImage, setPendingImage] = useState<string | null>(null) // base64 data URL
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
   const [agentList, setAgentList] = useState<Array<{ id: string; name: string; active: boolean }>>([])
+  const [personaAgentId, setPersonaAgentId] = useState<string | null>(null)
   const [agentDrawerOpen, setAgentDrawerOpen] = useState(false)
   const isMobile = useIsMobile()
   const [paneCount, setPaneCount] = useState(1)
@@ -307,6 +308,22 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   useEffect(() => {
     coreClient.listAgents()
       .then(agents => setAgentList(agents.map(a => ({ id: a.id, name: a.name, active: a.active }))))
+      .catch(() => {})
+  }, [])
+
+  // Fetch persona to pin the personal agent at top of the agent rail
+  useEffect(() => {
+    const session = sessionStorage.getItem('cc_admin_session') ?? ''
+    const headers: Record<string, string> = session ? { 'x-admin-session': session } : {}
+    fetch('/api/persona', { headers })
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { personaAgentId?: string } | null) => {
+        if (data?.personaAgentId) {
+          setPersonaAgentId(data.personaAgentId)
+          // Auto-select the personal agent on first load
+          setSelectedAgentId(id => id ?? data.personaAgentId ?? null)
+        }
+      })
       .catch(() => {})
   }, [])
 
@@ -974,6 +991,36 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
             backdropFilter: 'blur(12px)',
           }}
         >
+          {/* Personal agent pin — always shown if onboarding created one */}
+          {personaAgentId && (() => {
+            const persona = agentList.find(a => a.id === personaAgentId)
+            if (!persona) return null
+            const isSelected = selectedAgentId === personaAgentId
+            return (
+              <>
+                <button
+                  onClick={() => setSelectedAgentId(isSelected ? null : personaAgentId)}
+                  title={persona.name}
+                  className="flex flex-col items-center gap-1 transition-all duration-200"
+                  style={{ opacity: isSelected ? 1 : 0.55, transform: isSelected ? 'scale(1.12)' : 'scale(1)' }}
+                >
+                  <div
+                    className="w-12 h-12 rounded-full border-2 flex items-center justify-center text-base transition-all"
+                    style={isSelected
+                      ? { borderColor: '#00e5ff', background: 'rgba(0,229,255,0.15)', color: '#00e5ff', boxShadow: '0 0 16px rgba(0,229,255,0.45)' }
+                      : { borderColor: 'rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#6b7280' }
+                    }
+                  >
+                    ✦
+                  </div>
+                  <span className="text-[8px] font-mono" style={{ color: isSelected ? '#00e5ff' : '#4b5563' }}>
+                    YOU
+                  </span>
+                </button>
+                <div className="w-8 h-px bg-white/5 my-1 shrink-0" />
+              </>
+            )
+          })()}
           <AgentCharacters
             agents={agentList}
             selected={selectedAgentId}
@@ -1072,7 +1119,33 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
                 onClick={e => e.stopPropagation()}
               >
                 <p className="text-xs font-mono text-center mb-4" style={{ color: '#94adc4' }}>Select Agent</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', alignItems: 'flex-end' }}>
+                  {personaAgentId && (() => {
+                    const persona = agentList.find(a => a.id === personaAgentId)
+                    if (!persona) return null
+                    const isSelected = selectedAgentId === personaAgentId
+                    return (
+                      <button
+                        onClick={() => { setSelectedAgentId(isSelected ? null : personaAgentId); setAgentDrawerOpen(false) }}
+                        title={persona.name}
+                        className="shrink-0 flex flex-col items-center gap-1 transition-all duration-200"
+                        style={{ opacity: isSelected ? 1 : 0.55 }}
+                      >
+                        <div
+                          className="w-14 h-14 rounded-full border-2 flex items-center justify-center text-xl transition-all"
+                          style={isSelected
+                            ? { borderColor: '#00e5ff', background: 'rgba(0,229,255,0.15)', color: '#00e5ff', boxShadow: '0 0 16px rgba(0,229,255,0.45)' }
+                            : { borderColor: 'rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#6b7280' }
+                          }
+                        >
+                          ✦
+                        </div>
+                        <span className="text-[9px] font-mono" style={{ color: isSelected ? '#00e5ff' : '#374151' }}>
+                          {persona.name}
+                        </span>
+                      </button>
+                    )
+                  })()}
                   <AgentCharacters
                     agents={agentList}
                     selected={selectedAgentId}

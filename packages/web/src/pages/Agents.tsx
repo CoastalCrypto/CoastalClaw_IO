@@ -230,6 +230,7 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
   const [agents, setAgents] = useState<Agent[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Agent | null>(null)
+  const [editSoul, setEditSoul] = useState('')
   const [adding, setAdding] = useState(false)
   const [credAgentId, setCredAgentId] = useState<string | null>(null)
   const [bindAgentId, setBindAgentId] = useState<string | null>(null)
@@ -248,6 +249,18 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
 
   useEffect(() => { load() }, [])
 
+  const handleEdit = async (a: Agent) => {
+    setAdding(false)
+    try {
+      const res = await fetch(`/api/admin/agents/${a.id}/soul`, { headers: adminHeaders() })
+      const data = res.ok ? await res.json() as { soul: string } : { soul: '' }
+      setEditSoul(data.soul ?? '')
+    } catch {
+      setEditSoul('')
+    }
+    setEditing(a)
+  }
+
   const handleSave = async (data: { name: string; role: string; soul: string; tools: string[]; voice: string }) => {
     if (editing) {
       await fetch(`/api/admin/agents/${editing.id}`, {
@@ -263,6 +276,7 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
       })
     }
     setEditing(null)
+    setEditSoul('')
     setAdding(false)
     load()
   }
@@ -333,9 +347,9 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
             </div>
             <div className="p-6">
               <AgentEditor
-                initial={editing ? { ...editing, soul: '', voice: editing.voice ?? '' } : undefined}
+                initial={editing ? { ...editing, soul: editSoul, voice: editing.voice ?? '' } : undefined}
                 onSave={handleSave}
-                onCancel={() => { setAdding(false); setEditing(null) }}
+                onCancel={() => { setAdding(false); setEditing(null); setEditSoul('') }}
               />
             </div>
           </div>
@@ -358,7 +372,7 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
               <AgentCard
                 key={agent.id}
                 agent={agent}
-                onEdit={a => { setEditing(a); setAdding(false) }}
+                onEdit={handleEdit}
                 onDelete={handleDelete}
                 onToggle={handleToggle}
                 onCredentials={id => setCredAgentId(id)}

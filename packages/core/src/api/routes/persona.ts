@@ -11,11 +11,12 @@ export async function personaRoutes(fastify: FastifyInstance, opts: { registry: 
 
   fastify.addHook('onClose', async () => mgr.close())
 
-  /** GET /api/persona — returns current persona + configured flag */
+  /** GET /api/persona — returns current persona + configured flag + persona agent id */
   fastify.get('/api/persona', async (_req, reply) => {
     return reply.send({
       persona: mgr.get(),
       configured: mgr.isConfigured(),
+      personaAgentId: mgr.getPersonaAgentId(),
     })
   })
 

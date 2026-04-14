@@ -1,4 +1,5 @@
 export type AgentStatus = 'idle' | 'thinking' | 'executing' | 'error' | 'offline'
+export type NodeType = 'agent' | 'tool' | 'model' | 'channel'
 
 export interface GraphNode {
   id: string
@@ -6,7 +7,9 @@ export interface GraphNode {
   status: AgentStatus
   role: string
   toolsCount: number
+  nodeType?: NodeType
   lastActivity?: number
+  position?: { x: number; y: number }
 }
 
 export interface GraphEdge {
@@ -15,6 +18,7 @@ export interface GraphEdge {
   target: string
   label?: string
   active: boolean
+  edgeType?: 'agent-tool' | 'agent-model' | 'agent-channel'
 }
 
 export interface AgentGraphState {
@@ -41,5 +45,6 @@ export interface AgentNodeData extends Record<string, unknown> {
   status: AgentStatus
   role: string
   toolsCount: number
+  nodeType?: NodeType
   lastActivity?: number
 }

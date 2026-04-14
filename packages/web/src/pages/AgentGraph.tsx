@@ -13,6 +13,7 @@ import '@xyflow/react/dist/style.css'
 import { NavBar, type NavPage } from '../components/NavBar'
 import { AgentNode } from '../components/AgentNode'
 import { useAgentGraph } from '../hooks/useAgentGraph'
+import { useAgentDependencies } from '../hooks/useAgentDependencies'
 import type { AgentNodeData } from '../types/agent-graph'
 
 const NODE_TYPES = { agent: AgentNode }
@@ -26,6 +27,7 @@ const MINIMAP_STYLE = {
 export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
   const { nodes: rawNodes, edges: rawEdges, connected } = useAgentGraph()
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const { dependencies, impact, isLoading } = useAgentDependencies(selectedId)
 
   // Edge color by type (active always wins with cyan glow)
   const edgeStroke = useCallback((e: (typeof rawEdges)[number]) => {
@@ -126,28 +128,31 @@ export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
           </ReactFlow>
         </ReactFlowProvider>
 
-        {/* Side panel */}
+        {/* Side panel with dependency analysis */}
         {selectedNode && (
           <div style={{
-            position: 'absolute', top: 16, right: 16, width: 260,
+            position: 'absolute', top: 16, right: 16, width: 320, maxHeight: 'calc(100vh - 100px)',
             background: 'rgba(13,31,51,0.95)', backdropFilter: 'blur(12px)',
             border: '1px solid rgba(0,229,255,0.20)', borderRadius: 12,
             padding: '16px', zIndex: 10,
             fontFamily: 'Space Grotesk, sans-serif',
+            overflowY: 'auto',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#00e5ff', letterSpacing: '0.08em' }}>
-                {(selectedNode.nodeType ?? 'agent').toUpperCase()} DETAILS
+                {(selectedNode.nodeType ?? 'agent').toUpperCase()} ANALYSIS
               </span>
               <button onClick={() => setSelectedId(null)} style={{ color: '#4a6a8a', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>✕</button>
             </div>
+
+            {/* Node details */}
             <div style={{ fontSize: 14, fontWeight: 700, color: '#e2f4ff', marginBottom: 4 }}>
               {selectedNode.label.toUpperCase()}
             </div>
             <div style={{ fontSize: 11, color: '#94adc4', marginBottom: 10, lineHeight: 1.5 }}>
               {selectedNode.role}
             </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
               {selectedNode.nodeType === 'agent' && (
                 <span style={{ fontSize: 9, fontFamily: 'JetBrains Mono, monospace', color: '#94adc4', border: '1px solid rgba(26,58,92,0.8)', background: 'rgba(10,22,40,0.6)', borderRadius: 4, padding: '2px 6px' }}>
                   {selectedNode.toolsCount} TOOLS
@@ -157,6 +162,83 @@ export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
                 {selectedNode.status.toUpperCase()}
               </span>
             </div>
+
+            {/* Dependency analysis */}
+            {isLoading && (
+              <div style={{ fontSize: 11, color: '#94adc4', fontStyle: 'italic' }}>Loading analysis…</div>
+            )}
+
+            {dependencies && (
+              <>
+                {/* Direct dependencies */}
+                {dependencies.directDependencies && dependencies.directDependencies.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#00e5ff', marginBottom: 6, letterSpacing: '0.05em' }}>
+                      DEPENDS ON ({dependencies.directDependencies.length})
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {dependencies.directDependencies.map((dep: any) => (
+                        <div key={dep.id} style={{ fontSize: 9, color: '#94adc4', padding: '4px 8px', background: 'rgba(0,229,255,0.05)', borderRadius: 4 }}>
+                          {dep.label}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Dependents */}
+                {dependencies.dependents && dependencies.dependents.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#10b981', marginBottom: 6, letterSpacing: '0.05em' }}>
+                      DEPENDED ON BY ({dependencies.dependents.length})
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {dependencies.dependents.map((dep: any) => (
+                        <div key={dep.id} style={{ fontSize: 9, color: '#94adc4', padding: '4px 8px', background: 'rgba(16,185,129,0.05)', borderRadius: 4 }}>
+                          {dep.label}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Depth to leaf */}
+                {dependencies.depthToLeaf !== undefined && (
+                  <div style={{ marginBottom: 14, padding: '8px', background: 'rgba(139,92,246,0.1)', borderRadius: 4, border: '1px solid rgba(139,92,246,0.2)' }}>
+                    <div style={{ fontSize: 9, color: '#8b5cf6', fontWeight: 700 }}>DEPTH TO LEAF</div>
+                    <div style={{ fontSize: 14, color: '#8b5cf6', fontWeight: 700 }}>{dependencies.depthToLeaf}</div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {impact && (
+              <>
+                {/* Impact radius */}
+                {impact.totalAffected !== undefined && (
+                  <div style={{ marginBottom: 14, padding: '8px', background: 'rgba(239,68,68,0.1)', borderRadius: 4, border: '1px solid rgba(239,68,68,0.2)' }}>
+                    <div style={{ fontSize: 9, color: '#ef4444', fontWeight: 700 }}>IMPACT RADIUS</div>
+                    <div style={{ fontSize: 14, color: '#ef4444', fontWeight: 700 }}>{impact.totalAffected} agent{impact.totalAffected !== 1 ? 's' : ''}</div>
+                  </div>
+                )}
+
+                {/* Direct dependents */}
+                {impact.directDependents && impact.directDependents.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#f59e0b', marginBottom: 6, letterSpacing: '0.05em' }}>
+                      DIRECT IMPACT ({impact.directDependents.length})
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {impact.directDependents.map((dep: any) => (
+                        <div key={dep.id} style={{ fontSize: 9, color: '#94adc4', padding: '4px 8px', background: 'rgba(245,158,11,0.05)', borderRadius: 4 }}>
+                          {dep.label}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>

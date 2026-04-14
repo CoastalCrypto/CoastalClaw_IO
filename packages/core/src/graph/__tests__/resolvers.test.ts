@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import type { AgentGraphState } from '../../types/agent-graph.js'
 import {
-  analyzeDependenciesResolver,
-  computeImpactRadiusResolver,
-  detectCyclesResolver,
-  findPathResolver
-} from '../resolvers.js'
+  analyzeDependencies,
+  computeImpactRadius,
+  detectCycles,
+  findPath
+} from '../algorithms.js'
+import { createGraphQLContext } from '../context.js'
 
 // Helper to create test graph state
 function createTestGraph(): AgentGraphState {
@@ -30,8 +31,8 @@ describe('GraphQL Resolvers', () => {
     graphState = createTestGraph()
   })
 
-  it('analyzeDependenciesResolver returns DependencyAnalysis', () => {
-    const result = analyzeDependenciesResolver(null, { agentId: 'agent-a' }, { graphState })
+  it('analyzeDependencies returns DependencyAnalysis', () => {
+    const result = analyzeDependencies('agent-a', graphState)
 
     expect(result).toHaveProperty('agent')
     expect(result).toHaveProperty('directDependencies')
@@ -43,8 +44,8 @@ describe('GraphQL Resolvers', () => {
     expect(result.agent.id).toBe('agent-a')
   })
 
-  it('computeImpactRadiusResolver returns ImpactReport', () => {
-    const result = computeImpactRadiusResolver(null, { agentId: 'agent-a' }, { graphState })
+  it('computeImpactRadius returns ImpactReport', () => {
+    const result = computeImpactRadius('agent-a', graphState)
 
     expect(result).toHaveProperty('agent')
     expect(result).toHaveProperty('directDependents')
@@ -55,8 +56,8 @@ describe('GraphQL Resolvers', () => {
     expect(result.totalAffected).toBeGreaterThanOrEqual(0)
   })
 
-  it('detectCyclesResolver returns CycleReport', () => {
-    const result = detectCyclesResolver(null, {}, { graphState })
+  it('detectCycles returns CycleReport', () => {
+    const result = detectCycles(graphState)
 
     expect(result).toHaveProperty('cycles')
     expect(result).toHaveProperty('agentsCaught')
@@ -66,25 +67,25 @@ describe('GraphQL Resolvers', () => {
     expect(['none', 'warning', 'critical']).toContain(result.severity)
   })
 
-  it('findPathResolver returns path between agents', () => {
-    const result = findPathResolver(null, { from: 'agent-a', to: 'agent-c' }, { graphState })
+  it('findPath returns path between agents', () => {
+    const result = findPath('agent-a', 'agent-c', graphState)
 
     expect(Array.isArray(result) || result === null).toBe(true)
     if (result !== null) {
-      expect(result[0].id).toBe('agent-a')
-      expect(result[result.length - 1].id).toBe('agent-c')
+      expect(result[0]).toBe('agent-a')
+      expect(result[result.length - 1]).toBe('agent-c')
     }
   })
 
-  it('analyzeDependenciesResolver throws on missing agent', () => {
+  it('analyzeDependencies throws on missing agent', () => {
     expect(() => {
-      analyzeDependenciesResolver(null, { agentId: 'nonexistent' }, { graphState })
+      analyzeDependencies('nonexistent', graphState)
     }).toThrow()
   })
 
-  it('computeImpactRadiusResolver throws on missing agent', () => {
+  it('computeImpactRadius throws on missing agent', () => {
     expect(() => {
-      computeImpactRadiusResolver(null, { agentId: 'nonexistent' }, { graphState })
+      computeImpactRadius('nonexistent', graphState)
     }).toThrow()
   })
 })

@@ -25,11 +25,11 @@ export const analyzeDependenciesResolver: QueryResolvers['analyzeDependencies'] 
   const analysis = analyzeDependencies(agentId, graphState)
 
   return {
-    agent: analysis.agent,
-    directDependencies: analysis.directDependencies,
-    transitiveDependencies: analysis.transitiveDependencies,
-    dependents: analysis.dependents,
-    cycles: analysis.cycles,
+    agent: analysis.agent as any,
+    directDependencies: analysis.directDependencies as any,
+    transitiveDependencies: analysis.transitiveDependencies as any,
+    dependents: analysis.dependents as any,
+    cycles: analysis.cycles as any,
     impactRadius: analysis.impactRadius,
     depthToLeaf: analysis.depthToLeaf
   }
@@ -47,11 +47,11 @@ export const computeImpactRadiusResolver: QueryResolvers['impactAnalysis'] = (
   const impact = computeImpactRadius(agentId, graphState)
 
   return {
-    agent: impact.agent,
-    directDependents: impact.directDependents,
-    indirectDependents: impact.indirectDependents,
+    agent: impact.agent as any,
+    directDependents: impact.directDependents as any,
+    indirectDependents: impact.indirectDependents as any,
     totalAffected: impact.totalAffected,
-    criticalPath: impact.criticalPath
+    criticalPath: impact.criticalPath as any
   }
 }
 
@@ -67,8 +67,8 @@ export const detectCyclesResolver: QueryResolvers['findCycles'] = (
   const report = detectCycles(graphState)
 
   return {
-    cycles: report.cycles,
-    agentsCaught: report.agentsCaught,
+    cycles: report.cycles as any,
+    agentsCaught: report.agentsCaught as any,
     severity: report.severity as 'none' | 'warning' | 'critical'
   }
 }
@@ -92,6 +92,7 @@ export const findPathResolver: QueryResolvers['findPath'] = (
   return path
     .map(id => graphState.nodes.find(n => n.id === id))
     .filter((n): n is GraphNode => n !== undefined)
+    .map(node => node as any)
 }
 
 /**

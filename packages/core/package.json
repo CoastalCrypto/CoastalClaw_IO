@@ -13,6 +13,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@apollo/server": "^4.10.0",
+    "@dagrejs/graphlib": "^2.2.2",
     "@fastify/cors": "^9.0.0",
     "@fastify/multipart": "^8.3.1",
     "@fastify/rate-limit": "^9.1.0",
@@ -22,6 +24,7 @@
     "croner": "^10.0.1",
     "dotenv": "^16.4.0",
     "fastify": "^4.28.0",
+    "graphql": "^16.8.0",
     "mem0ai": "^2.4.2",
     "nodejs-polars": "^0.24.1",
     "onnxruntime-node": "^1.24.3",

@@ -1,0 +1,10 @@
+schema: packages/core/src/graph/schema.ts
+
+generates:
+  packages/core/src/graph/types.ts:
+    plugins:
+      - typescript
+      - typescript-resolvers
+    config:
+      useIndexSignature: true
+      contextType: './context#GraphQLContext'

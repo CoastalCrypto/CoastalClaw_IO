@@ -53,17 +53,20 @@ export async function chatRoutes(fastify: FastifyInstance, opts: { mcpStore: Mcp
   ) as Record<string, string>
 
   const activeAdapters: McpAdapter[] = []
-  const servers = mcpStore.list().filter(s => s.enabled)
-
-  for (const s of servers) {
-    const adapter = new McpAdapter(
-      s.command,
-      s.args,
-      { ...baseEnv, ...(s.env || {}) },
-      s.id
-    )
-    adapter.connect(toolRegistry).catch(e => console.error(`MCP Server [${s.name}] failed:`, e))
-    activeAdapters.push(adapter)
+  
+  // Only connect MCP servers if NOT running tests
+  if (process.env.NODE_ENV !== 'test') {
+    const servers = mcpStore.list().filter(s => s.enabled)
+    for (const s of servers) {
+      const adapter = new McpAdapter(
+        s.command,
+        s.args,
+        { ...baseEnv, ...(s.env || {}) },
+        s.id
+      )
+      adapter.connect(toolRegistry).catch(e => console.error(`MCP Server [${s.name}] failed:`, e))
+      activeAdapters.push(adapter)
+    }
   }
 
   fastify.addHook('onClose', async () => {

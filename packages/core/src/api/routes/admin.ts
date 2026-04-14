@@ -330,9 +330,13 @@ export async function adminRoutes(fastify: FastifyInstance) {
   })
 
   // GET /api/admin/registry — returns current registry file contents
-  fastify.get('/api/admin/registry', async () => {
-    if (!existsSync(registryPath)) return {}
-    try { return JSON.parse(readFileSync(registryPath, 'utf8')) } catch { return {} }
+  fastify.get('/api/admin/registry', async (_req, reply) => {
+    if (!existsSync(registryPath)) return reply.send({})
+    try { 
+      return reply.send(JSON.parse(readFileSync(registryPath, 'utf8'))) 
+    } catch { 
+      return reply.send({}) 
+    }
   })
 
   // PATCH /api/admin/registry

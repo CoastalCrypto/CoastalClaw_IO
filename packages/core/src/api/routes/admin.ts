@@ -135,9 +135,11 @@ export async function adminRoutes(fastify: FastifyInstance) {
   }
 
   // Auto-sync Ollama models into registry on startup (best-effort)
-  fetchOllamaModels()
-    .then(models => { syncOllamaToRegistry(models); bootstrapDomainRegistry(models) })
-    .catch((err: Error) => console.warn(`[coastal-ai] Ollama auto-sync skipped: ${err.message}`))
+  if (process.env.NODE_ENV !== 'test') {
+    fetchOllamaModels()
+      .then(models => { syncOllamaToRegistry(models); bootstrapDomainRegistry(models) })
+      .catch((err: Error) => console.warn(`[coastal-ai] Ollama auto-sync skipped: ${err.message}`))
+  }
 
   // GET /api/admin/ollama/models — list models currently pulled in Ollama
   fastify.get('/api/admin/ollama/models', async (_req, reply) => {

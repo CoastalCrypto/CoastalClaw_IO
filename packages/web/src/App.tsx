@@ -1,4 +1,5 @@
 import { useState, lazy, Suspense, useEffect } from 'react'
+import { ApolloProvider } from '@apollo/client'
 import { AuthContext, type AuthUser } from './context/AuthContext'
 import { Onboarding } from './pages/Onboarding'
 import { Login } from './pages/Login'
@@ -20,6 +21,7 @@ import { NavBar, type NavPage } from './components/NavBar'
 import { TitleBar } from './components/TitleBar'
 import { CommandPalette } from './components/CommandPalette'
 import { coreClient } from './api/client'
+import { apolloClient } from './api/apolloClient'
 import './index.css'
 
 // Three.js is large — load it async so the onboarding form renders immediately
@@ -140,34 +142,36 @@ export default function App() {
   )
 
   return (
-    <AuthContext.Provider value={{ currentUser, onLogout: handleLogout }}>
-      <TitleBar />
-      {paletteOpen && currentUser && (
-        <CommandPalette onNav={(p) => { setPage(p); setPaletteOpen(false) }} onClose={() => setPaletteOpen(false)} />
-      )}
-      {page === 'dashboard' && <Dashboard onNav={nav} />}
-      {page === 'analytics' && <Analytics onNav={nav} />}
-      {page === 'tools'     && <Tools onNav={nav} />}
-      {page === 'skills'    && <Skills onNav={nav} />}
-      {page === 'channels'  && <Channels onNav={nav} />}
-      {page === 'agents'    && <Agents onNav={nav} />}
-      {page === 'pipeline'  && <Pipeline onNav={nav} />}
-      {page === 'agent-graph' && <AgentGraph onNav={nav} />}
-      {page === 'settings'  && <Settings onNav={nav} />}
-      {page === 'system'    && <System onNav={nav} />}
-      {page === 'users'     && <Users onNav={nav} currentUserId={currentUser.id} />}
-      {page === 'models'    && (
-        <div className="min-h-screen" style={{ background: '#050a0f', color: '#e2f4ff' }}>
-          <NavBar page="models" onNav={nav} />
-          <div className="pt-20 px-4 sm:px-6 max-w-4xl mx-auto pb-12">
-            <Models />
+    <ApolloProvider client={apolloClient}>
+      <AuthContext.Provider value={{ currentUser, onLogout: handleLogout }}>
+        <TitleBar />
+        {paletteOpen && currentUser && (
+          <CommandPalette onNav={(p) => { setPage(p); setPaletteOpen(false) }} onClose={() => setPaletteOpen(false)} />
+        )}
+        {page === 'dashboard' && <Dashboard onNav={nav} />}
+        {page === 'analytics' && <Analytics onNav={nav} />}
+        {page === 'tools'     && <Tools onNav={nav} />}
+        {page === 'skills'    && <Skills onNav={nav} />}
+        {page === 'channels'  && <Channels onNav={nav} />}
+        {page === 'agents'    && <Agents onNav={nav} />}
+        {page === 'pipeline'  && <Pipeline onNav={nav} />}
+        {page === 'agent-graph' && <AgentGraph onNav={nav} />}
+        {page === 'settings'  && <Settings onNav={nav} />}
+        {page === 'system'    && <System onNav={nav} />}
+        {page === 'users'     && <Users onNav={nav} currentUserId={currentUser.id} />}
+        {page === 'models'    && (
+          <div className="min-h-screen" style={{ background: '#050a0f', color: '#e2f4ff' }}>
+            <NavBar page="models" onNav={nav} />
+            <div className="pt-20 px-4 sm:px-6 max-w-4xl mx-auto pb-12">
+              <Models />
+            </div>
           </div>
+        )}
+        {/* Always mounted so chat history and session survive page navigation */}
+        <div style={{ display: page === 'chat' ? 'block' : 'none' }}>
+          <Chat sessionId={sessionId} onNav={p => nav(p as NavPage)} />
         </div>
-      )}
-      {/* Always mounted so chat history and session survive page navigation */}
-      <div style={{ display: page === 'chat' ? 'block' : 'none' }}>
-        <Chat sessionId={sessionId} onNav={p => nav(p as NavPage)} />
-      </div>
-    </AuthContext.Provider>
+      </AuthContext.Provider>
+    </ApolloProvider>
   )
 }

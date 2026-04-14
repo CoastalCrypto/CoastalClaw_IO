@@ -78,13 +78,13 @@ $Branch = "master"
 
 if (Test-Path "$InstallDir\.git") {
     Write-Info "Updating existing installation..."
-    git -C $InstallDir fetch origin $Branch 2>$null
-    git -C $InstallDir checkout $Branch 2>$null
-    git -C $InstallDir reset --hard "origin/$Branch" 2>$null
+    & git -C $InstallDir fetch origin $Branch -ErrorAction SilentlyContinue | Out-Null
+    & git -C $InstallDir checkout $Branch -ErrorAction SilentlyContinue | Out-Null
+    & git -C $InstallDir reset --hard "origin/$Branch" -ErrorAction SilentlyContinue | Out-Null
 } else {
     Write-Info "Cloning repository..."
     if (Test-Path $InstallDir) { Remove-Item -Recurse -Force $InstallDir }
-    git clone --depth=1 --branch $Branch $RepoUrl $InstallDir 2>$null
+    & git clone --depth=1 --branch $Branch $RepoUrl $InstallDir -ErrorAction Stop | Out-Null
 }
 Write-Ok "Repository ready"
 

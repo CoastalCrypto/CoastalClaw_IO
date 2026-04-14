@@ -532,5 +532,7 @@ export class CoreClient {
   }
 }
 
-export const coreClient = new CoreClient('')
-export const adminClient = new CoreClient('')
+// Development: use explicit core API URL. Production: relative URLs work via proxy
+const coreBaseUrl = import.meta.env.VITE_CORE_API_URL || 'http://127.0.0.1:4747'
+export const coreClient = new CoreClient(coreBaseUrl)
+export const adminClient = new CoreClient(coreBaseUrl)

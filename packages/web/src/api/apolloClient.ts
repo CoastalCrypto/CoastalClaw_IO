@@ -16,8 +16,10 @@ const authLink = new ApolloLink((operation, forward) => {
   return forward(operation)
 })
 
+// Development: use explicit core API URL. Production: relative URLs work via proxy
+const coreBaseUrl = import.meta.env.VITE_CORE_API_URL || 'http://127.0.0.1:4747'
 const httpLink = new HttpLink({
-  uri: `${window.location.origin}/graphql`,
+  uri: `${coreBaseUrl}/graphql`,
   credentials: 'same-origin',
 })
 

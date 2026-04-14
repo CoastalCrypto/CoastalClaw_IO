@@ -7,4 +7,4 @@ generates:
       - typescript-resolvers
     config:
       useIndexSignature: true
-      contextType: './context#GraphQLContext'
+      contextType: './context.js#GraphQLContext'

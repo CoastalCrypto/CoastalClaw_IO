@@ -5,6 +5,7 @@ import websocket from '@fastify/websocket'
 import { healthRoutes } from './api/routes/health.js'
 import { wsRoutes } from './api/routes/ws.js'
 import { agentEventsRoute } from './api/routes/agent-events.js'
+import { graphQLRoutes } from './api/routes/graphql.js'
 import { chatRoutes } from './api/routes/chat.js'
 import { adminActionsRoutes } from './api/routes/admin-actions.js'
 import { adminRoutes, getOrCreateAdminToken, validateSessionToken } from './api/routes/admin.js'
@@ -124,6 +125,8 @@ export async function buildServer() {
       return claims !== null
     }
   })
+  // Register GraphQL endpoint for agent dependency analysis
+  await fastify.register(graphQLRoutes, { registry: agentRegistry })
   await fastify.register(agentRoutes, { registry: agentRegistry, gate })
   await fastify.register(adminActionsRoutes)
   await fastify.register(teamRoutes)

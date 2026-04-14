@@ -93,15 +93,15 @@ $RepoBranch = "master"
 
 if (Test-Path "$InstallDir\.git") {
     Write-Info "Updating existing installation..."
-    git -C $InstallDir fetch origin $RepoBranch
-    git -C $InstallDir checkout $RepoBranch
-    git -C $InstallDir reset --hard "origin/$RepoBranch"
+    & git -C $InstallDir fetch origin $RepoBranch -ErrorAction SilentlyContinue | Out-Null
+    & git -C $InstallDir checkout $RepoBranch -ErrorAction SilentlyContinue | Out-Null
+    & git -C $InstallDir reset --hard "origin/$RepoBranch" -ErrorAction SilentlyContinue | Out-Null
 } elseif (Test-Path $InstallDir) {
     Write-Warn "Found $InstallDir but it is not a git repo. Removing and re-cloning..."
     Remove-Item -Recurse -Force $InstallDir
-    git clone --depth=1 --branch $RepoBranch $RepoUrl $InstallDir
+    & git clone --depth=1 --branch $RepoBranch $RepoUrl $InstallDir -ErrorAction Stop | Out-Null
 } else {
-    git clone --depth=1 --branch $RepoBranch $RepoUrl $InstallDir
+    & git clone --depth=1 --branch $RepoBranch $RepoUrl $InstallDir -ErrorAction Stop | Out-Null
 }
 Write-Ok "Repository at $InstallDir"
 

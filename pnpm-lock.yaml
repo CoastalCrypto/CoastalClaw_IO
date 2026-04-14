@@ -19,7 +19,7 @@ importers:
         specifier: ^2.0.0
         version: 2.8.20
       typescript:
-        specifier: ^5.4.0
+        specifier: ~5.9.3
         version: 5.9.3
 
   packages/architect:
@@ -41,7 +41,7 @@ importers:
         specifier: ^10.9.0
         version: 10.9.2(@types/node@22.19.15)(typescript@5.9.3)
       typescript:
-        specifier: ^5.4.0
+        specifier: ~5.9.3
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
@@ -99,7 +99,7 @@ importers:
         specifier: ^10.9.0
         version: 10.9.2(@types/node@22.19.15)(typescript@5.9.3)
       typescript:
-        specifier: ^5.4.0
+        specifier: ~5.9.3
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
@@ -136,7 +136,7 @@ importers:
         specifier: ^10.9.0
         version: 10.9.2(@types/node@22.19.15)(typescript@5.9.3)
       typescript:
-        specifier: ^5.4.0
+        specifier: ~5.9.3
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
@@ -158,7 +158,7 @@ importers:
         specifier: ^24.0.0
         version: 24.13.3(electron-builder-squirrel-windows@24.13.3)
       typescript:
-        specifier: ^5.4.0
+        specifier: ~5.9.3
         version: 5.9.3
 
   packages/video:

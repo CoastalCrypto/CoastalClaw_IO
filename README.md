@@ -167,12 +167,15 @@ echo "sandboxed" > ./data/.trust-level
 
 | Requirement | Why |
 |-------------|-----|
-| Mac or Linux computer | Windows users: use [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) |
+| Mac, Linux, or Windows | All three are fully supported |
 | Terminal / command line | To run the install script |
 | ~3 GB free disk space | For the AI model and app |
 | Internet connection | For first-time setup only — downloads the AI model |
 
-> **New to terminals?** On Mac, press `Cmd + Space`, type "Terminal", and press Enter. On Linux, press `Ctrl + Alt + T`.
+> **New to terminals?**
+> - **Mac:** Press `Cmd + Space`, type "Terminal", press Enter
+> - **Linux:** Press `Ctrl + Alt + T`
+> - **Windows:** Press `Win + R`, type "powershell", press Enter
 
 ---
 
@@ -206,45 +209,51 @@ For detailed Windows setup and troubleshooting, see [INSTALL-WINDOWS.md](INSTALL
 
 ---
 
-### Step 2 — Start the application
-
-After installation completes, start Coastal.AI by running in PowerShell:
-
-```powershell
-# 1. Download the installer
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/CoastalCrypto/Coastal.AI/master/install.ps1" -OutFile "$env:USERPROFILE\Downloads\Coastal.AI-install.ps1"
-
-# 2. Unblock it (Windows flags downloaded scripts by default)
-Unblock-File "$env:USERPROFILE\Downloads\Coastal.AI-install.ps1"
-
-# 3. Run it
-& "$env:USERPROFILE\Downloads\Coastal.AI-install.ps1"
-```
-
-> **Why not `curl` or `irm | iex`?** PowerShell's `curl` is a different tool that doesn't understand Unix flags. The `irm | iex` one-liner gets blocked by antivirus. Downloading first and running separately lets your AV scan the file before it runs.
-
 The installer will automatically:
-- Install Git (if needed)
-- Install Node.js (if needed)
-- Install Ollama (the local AI engine)
-- Download the AI model (~2 GB — this takes a few minutes on first run)
+- Check prerequisites (Git, Node.js, Ollama)
+- Download the AI model (~2 GB — takes a few minutes on first run)
 - Install Coastal.AI and its dependencies
-- Start the app
+- Start both the Core API and Web UI
 
-When it finishes you'll see:
+When complete, you'll see:
 
 ```
-  ✔  Coastal.AI is running!
+✓ COASTAL.AI INSTALLED SUCCESSFULLY
 
-  Web portal:  http://127.0.0.1:5173
-  Core API:    http://127.0.0.1:4747
+Next steps:
+  1. Start services:
+     .\coastal-ai.ps1 start   # PowerShell
+     coastal-ai.cmd start      # Command Prompt
+
+  2. Open in browser:
+     http://127.0.0.1:5173
 ```
 
 Your browser will open automatically. If it doesn't, go to **http://127.0.0.1:5173** manually.
 
 ---
 
-### Step 2 — Create your admin account
+### Step 2 — Start services
+
+After installation:
+
+**Mac / Linux:**
+```bash
+bash $HOME/coastal-ai/install.sh
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:USERPROFILE\coastal-ai\coastal-ai.ps1 start
+```
+
+Or create a shortcut and click it whenever you want to start Coastal.AI.
+
+See [INSTALL-WINDOWS.md](INSTALL-WINDOWS.md) for detailed service management commands.
+
+---
+
+### Step 3 — Create your admin account
 
 The first time you open Coastal.AI you'll see a setup screen. Choose a username and password — this creates your admin account.
 
@@ -252,7 +261,7 @@ The first time you open Coastal.AI you'll see a setup screen. Choose a username 
 
 ---
 
-### Step 3 — Set up your persona
+### Step 4 — Set up your persona
 
 After logging in, the **Persona Setup** wizard will appear. Fill in:
 
@@ -509,18 +518,22 @@ sudo dd if=~/Downloads/coastalos-1.0.0.iso of=/dev/sdb bs=4M status=progress ofl
 kill $(cat /tmp/coastal-ai-core.pid /tmp/coastal-ai-web.pid) 2>/dev/null
 
 # Start again
-bash install.sh
+bash $HOME/coastal-ai/install.sh
 ```
 
 **Windows (PowerShell):**
 ```powershell
 # Stop
-Stop-Process -Id (Get-Content $env:TEMP\coastal-ai-core.pid) -ErrorAction SilentlyContinue
-Stop-Process -Id (Get-Content $env:TEMP\coastal-ai-web.pid)  -ErrorAction SilentlyContinue
+$env:USERPROFILE\coastal-ai\coastal-ai.ps1 stop
 
-# Start again (re-run the installer you downloaded)
-& "$env:USERPROFILE\Downloads\Coastal.AI-install.ps1"
+# Start
+$env:USERPROFILE\coastal-ai\coastal-ai.ps1 start
+
+# Check status
+$env:USERPROFILE\coastal-ai\coastal-ai.ps1 status
 ```
+
+See [INSTALL-WINDOWS.md](INSTALL-WINDOWS.md) for all service management commands.
 
 ### If you installed via APT (Ubuntu/Debian)
 

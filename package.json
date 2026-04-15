@@ -12,7 +12,12 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "test": "turbo test",
-    "lint": "turbo lint"
+    "lint": "turbo lint",
+    "test:sandbox:start": "node scripts/sandbox-cli.js start",
+    "test:sandbox:stop": "node scripts/sandbox-cli.js stop",
+    "test:sandbox:clean": "node scripts/sandbox-cli.js clean",
+    "test:sandbox:logs": "node scripts/sandbox-cli.js logs",
+    "test:sandbox:status": "node scripts/sandbox-cli.js status"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^5.0.0",

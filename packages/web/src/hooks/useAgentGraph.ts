@@ -81,11 +81,14 @@ export function useAgentGraph() {
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const token = sessionStorage.getItem('cc_admin_session') ?? ''
-    const query = token ? `?token=${encodeURIComponent(token)}` : ''
-    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/agent-events${query}`)
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/agent-events`)
     wsRef.current = ws
 
-    ws.onopen = () => setConnected(true)
+    ws.onopen = () => {
+      // Send auth token as first message instead of query string (avoids token in server logs)
+      if (token) ws.send(JSON.stringify({ type: 'auth', token }))
+      setConnected(true)
+    }
 
     ws.onmessage = (e) => {
       try {

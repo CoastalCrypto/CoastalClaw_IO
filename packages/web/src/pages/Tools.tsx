@@ -105,7 +105,7 @@ export function Tools({ onNav }: { onNav: (page: NavPage) => void }) {
   }
 
   const handleToggle = async (t: CustomTool) => {
-    await coreClient.updateTool(t.id, { enabled: !t.enabled })
+    await coreClient.updateTool(t.id, { enabled: t.enabled ? 0 : 1 })
     load()
   }
 

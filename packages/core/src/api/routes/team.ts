@@ -13,7 +13,11 @@ export async function teamRoutes(fastify: FastifyInstance) {
   const router = new ModelRouter({ ollamaUrl: config.ollamaUrl, vllmUrl: config.vllmUrl, airllmUrl: config.airllmUrl, defaultModel: config.defaultModel })
   const agentRegistry = new AgentRegistry(`${config.dataDir}/agents.db`)
   const backend = await createBackend(config.agentTrustLevel, [config.agentWorkdir])
-  const toolRegistry = new ToolRegistry(backend)
+  const toolRegistry = new ToolRegistry({
+    backend,
+    trustLevel: config.agentTrustLevel,
+    workdir: config.agentWorkdir,
+  })
   const channel = new TeamChannel()
 
   fastify.post<{

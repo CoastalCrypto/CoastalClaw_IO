@@ -184,25 +184,25 @@ export function computeImpactRadius(
     throw new Error(`Agent ${agentId} not found`)
   }
 
-  // Direct dependents: agents that immediately depend on this one (successors in the graph)
-  const directSuccessors = dag.successors(agentId) || []
-  const directDependents = directSuccessors
+  // Direct dependents: agents that immediately depend on this one (predecessors — they call this agent)
+  const directPredecessors = dag.predecessors(agentId) || []
+  const directDependents = directPredecessors
     .map(id => graphState.nodes.find(n => n.id === id))
     .filter((n): n is GraphNode => n !== undefined)
 
   // Indirect dependents: all agents that transitively depend on this one (excluding direct)
   const visited = new Set<string>()
-  const queue = [...directSuccessors]
+  const queue = [...directPredecessors]
   while (queue.length > 0) {
     const current = queue.shift()!
     if (visited.has(current)) continue
     visited.add(current)
-    const successors = dag.successors(current) || []
-    queue.push(...successors)
+    const predecessors = dag.predecessors(current) || []
+    queue.push(...predecessors)
   }
 
   const indirectDependents = Array.from(visited)
-    .filter(id => !directSuccessors.includes(id))  // Exclude direct dependents
+    .filter(id => !directPredecessors.includes(id))  // Exclude direct dependents
     .map(id => graphState.nodes.find(n => n.id === id))
     .filter((n): n is GraphNode => n !== undefined)
 
@@ -299,7 +299,11 @@ function detectCyclesForAgent(agentId: string, dag: Graph): GraphNode[][] {
     dfs(agentId, [])
   }
 
-  return cycles.map(() => []) // Return empty for now, caller will map to GraphNode[]
+  return cycles.map(cycle =>
+    cycle
+      .map(id => dag.node(id) as GraphNode | undefined)
+      .filter((n): n is GraphNode => n !== undefined)
+  )
 }
 
 function computeDepthToLeaf(agentId: string, dag: Graph): number {

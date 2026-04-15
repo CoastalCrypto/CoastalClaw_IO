@@ -530,8 +530,7 @@ export function AgentCharacters({ agents, selected, onSelect, vertical = false }
       </button>
       <div className="w-px h-12 bg-gray-800 shrink-0" />
       {active.map(agent => {
-        const meta = AGENT_META[agent.id as AgentId]
-        if (!meta) return null
+        const meta = getAgentMeta(agent.id)
         const isSelected = selected === agent.id
         return (
           <button key={agent.id} onClick={() => onSelect(isSelected ? null : agent.id)}

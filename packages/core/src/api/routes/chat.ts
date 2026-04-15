@@ -38,7 +38,12 @@ export async function chatRoutes(fastify: FastifyInstance, opts: { mcpStore: Mcp
   const browserManager = config.agentTrustLevel !== 'sandboxed'
     ? new BrowserSessionManager()
     : undefined
-  const toolRegistry = new ToolRegistry(backend, browserManager)
+  const toolRegistry = new ToolRegistry({
+    backend,
+    browserManager,
+    trustLevel: config.agentTrustLevel,
+    workdir: config.agentWorkdir,
+  })
   const gate = new PermissionGate(db)
   const log = new ActionLog(db)
   const skillGaps = new SkillGapsLog(config.dataDir)

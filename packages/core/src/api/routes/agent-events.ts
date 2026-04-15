@@ -20,7 +20,7 @@ function toGraphEvent(event: AgentEvent): Record<string, unknown> | null {
     return { type: 'node_status', nodeId: event.agentId, status: 'idle' }
   }
   if (event.type === 'graph_edge') {
-    return { type: 'graph_edge', source: event.source, target: event.target, edgeType: event.edgeType }
+    return { type: 'graph_edge', ts: Date.now(), source: event.source, target: event.target, edgeType: event.edgeType }
   }
   return null
 }
@@ -120,21 +120,55 @@ export async function agentEventsRoute(
   opts: { registry: AgentRegistry; channelManager: ChannelManager; validateSession: (token: string) => boolean }
 ) {
   app.get('/ws/agent-events', { websocket: true }, (connection: SocketStream, req) => {
+    const socket = connection.socket
+    let authenticated = false
+
+    // Check header/query auth (backwards compat)
     const sessionHeader = req.headers['x-admin-session']
     const headerToken = typeof sessionHeader === 'string' ? sessionHeader : (Array.isArray(sessionHeader) ? sessionHeader[0] : '')
     const queryToken = (req.query as Record<string, string>)?.token ?? ''
-    const token = headerToken || queryToken
-    if (!token || !opts.validateSession(token)) {
-      console.warn(`[ws/agent-events] 1008 Unauthorized — token ${token ? `present (prefix=${token.slice(0,3)}, len=${token.length})` : 'missing'}`)
-      connection.socket.close(1008, 'Unauthorized')
-      return
-    }
-    const socket = connection.socket
+    const immediateToken = headerToken || queryToken
 
-    // Send initial state with full graph
-    if (socket.readyState === socket.OPEN) {
-      const snapshot = buildSnapshot(opts.registry, opts.channelManager)
-      socket.send(JSON.stringify({ type: 'snapshot', ...snapshot }))
+    if (immediateToken && opts.validateSession(immediateToken)) {
+      authenticated = true
+    }
+
+    // Accept auth via first message (preferred — avoids token in server logs)
+    const authTimeout = setTimeout(() => {
+      if (!authenticated) {
+        console.warn('[ws/agent-events] 1008 Unauthorized — no auth received within timeout')
+        socket.close(1008, 'Unauthorized')
+      }
+    }, 5000)
+
+    const initConnection = () => {
+      clearTimeout(authTimeout)
+      // Send initial state with full graph
+      if (socket.readyState === socket.OPEN) {
+        const snapshot = buildSnapshot(opts.registry, opts.channelManager)
+        socket.send(JSON.stringify({ type: 'snapshot', ...snapshot }))
+      }
+    }
+
+    // Handle first-message auth
+    socket.once('message', (raw: Buffer | string) => {
+      if (authenticated) return // already authed via header/query
+      try {
+        const msg = JSON.parse(typeof raw === 'string' ? raw : raw.toString())
+        if (msg.type === 'auth' && msg.token && opts.validateSession(msg.token)) {
+          authenticated = true
+          initConnection()
+        } else {
+          socket.close(1008, 'Unauthorized')
+        }
+      } catch {
+        socket.close(1008, 'Unauthorized')
+      }
+    })
+
+    // If already authenticated via header/query, init immediately
+    if (authenticated) {
+      initConnection()
     }
 
     // Ping-pong keepalive

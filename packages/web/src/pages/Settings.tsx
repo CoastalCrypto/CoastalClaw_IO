@@ -53,17 +53,17 @@ export function Settings({ onNav }: { onNav: (page: NavPage) => void }) {
     if (id !== 'custom') setPersona((p) => ({ ...p, personality: PERSONALITY_TEXT[id] ?? '' }))
   }
 
-  const handleTrustToggle = async (enabled: boolean) => {
-    const next: TrustLevel = enabled ? 'autonomous' : 'trusted'
+  const handleTrustLevelChange = async (next: TrustLevel) => {
     setTrustSaving(true)
     setTrustSaved(false)
+    setError('')
     try {
       await coreClient.setTrustLevel(next)
       setTrustLevel(next)
       setTrustSaved(true)
       setTimeout(() => setTrustSaved(false), 3000)
-    } catch {
-      // silently revert on error
+    } catch (e: any) {
+      setError(`Failed to update trust level: ${e.message ?? 'unknown error'}`)
     } finally {
       setTrustSaving(false)
     }
@@ -91,30 +91,35 @@ export function Settings({ onNav }: { onNav: (page: NavPage) => void }) {
 
       <div className="pt-20 px-4 sm:px-6 max-w-xl mx-auto py-12">
 
-        {/* System File Access */}
         <div className="mb-10 p-5 rounded-xl border border-gray-700 bg-gray-900/50">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-4">
             <div>
               <p className="font-semibold text-white">System File Access</p>
               <p className="text-sm text-gray-400 mt-1">
                 {trustLevel === 'autonomous'
                   ? 'Agents can read and write anywhere on your system.'
-                  : 'Agents are restricted to their workspace folder.'}
+                  : trustLevel === 'trusted'
+                  ? 'Agents are restricted to their workspace folder.'
+                  : 'Agents are heavily restricted and cannot access the filesystem.'}
               </p>
               {trustSaved && (
                 <p className="text-xs text-yellow-400 mt-1">Saved — restart the server for the change to take effect.</p>
               )}
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input 
-                type="checkbox" 
-                className="sr-only peer" 
-                checked={trustLevel === 'autonomous'}
-                onChange={() => handleTrustToggle(trustLevel !== 'autonomous')}
+            <div className="flex items-center gap-3">
+              <label htmlFor="trust-level-select" className="text-sm text-gray-400">Trust Level:</label>
+              <select
+                id="trust-level-select"
+                className={`${input} w-auto`}
+                value={trustLevel}
+                onChange={(e) => handleTrustLevelChange(e.target.value as TrustLevel)}
                 disabled={trustSaving}
-              />
-              <div className="w-12 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
-            </label>
+              >
+                <option value="sandboxed">Sandboxed</option>
+                <option value="trusted">Trusted</option>
+                <option value="autonomous">Autonomous</option>
+              </select>
+            </div>
           </div>
         </div>
 

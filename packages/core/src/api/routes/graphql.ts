@@ -60,22 +60,25 @@ export async function graphQLRoutes(
         const graphState = buildCurrentGraphState()
         const context: GraphQLContext = createGraphQLContext(graphState)
 
+        // buildSchema() + rootValue calls resolvers as (args, context, info)
+        // but our resolvers expect (parent, args, context) — bridge the gap
+        const rootValue = {
+          analyzeDependencies: (args: Record<string, unknown>) =>
+            queryResolvers.analyzeDependencies(null, args as any, context),
+          impactAnalysis: (args: Record<string, unknown>) =>
+            queryResolvers.impactAnalysis(null, args as any, context),
+          findCycles: (args: Record<string, unknown>) =>
+            queryResolvers.findCycles(null, args as any, context),
+          findPath: (args: Record<string, unknown>) =>
+            queryResolvers.findPath(null, args as any, context),
+        }
+
         const result = await graphql({
           schema,
           source: query,
           variableValues: variables,
-          rootValue: {},
+          rootValue,
           contextValue: context,
-          fieldResolver: (obj, field, args, ctx) => {
-            // Route to appropriate resolver based on field name
-            const resolvers: Record<string, any> = {
-              analyzeDependencies: queryResolvers.analyzeDependencies,
-              impactAnalysis: queryResolvers.impactAnalysis,
-              findCycles: queryResolvers.findCycles,
-              findPath: queryResolvers.findPath
-            }
-            return resolvers[field]?.(obj, args as any, ctx)
-          }
         })
 
         return reply.send(result)

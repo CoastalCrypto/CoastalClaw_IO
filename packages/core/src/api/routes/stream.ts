@@ -25,7 +25,11 @@ export async function streamRoutes(fastify: FastifyInstance) {
   const memory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey, cloudConsentGranted: config.cloudConsentGranted })
   const agentRegistry = new AgentRegistry(join(config.dataDir, 'agents.db'))
   const backend = await createBackend(config.agentTrustLevel, [config.agentWorkdir])
-  const toolRegistry = new ToolRegistry(backend)
+  const toolRegistry = new ToolRegistry({
+    backend,
+    trustLevel: config.agentTrustLevel,
+    workdir: config.agentWorkdir,
+  })
   const gate = new PermissionGate(db)
   const log = new ActionLog(db)
   const personaMgr = new PersonaManager(join(config.dataDir, 'persona.db'))

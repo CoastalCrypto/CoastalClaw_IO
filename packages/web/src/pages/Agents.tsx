@@ -262,32 +262,39 @@ export function Agents({ onNav }: { onNav: (page: NavPage) => void }) {
   }
 
   const handleSave = async (data: { name: string; role: string; soul: string; tools: string[]; voice: string }) => {
-    if (editing) {
-      await fetch(`/api/admin/agents/${editing.id}`, {
-        method: 'PATCH',
+    try {
+      const url = editing ? `/api/admin/agents/${editing.id}` : '/api/admin/agents'
+      const method = editing ? 'PATCH' : 'POST'
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json', ...adminHeaders() },
         body: JSON.stringify(data),
       })
-    } else {
-      await fetch('/api/admin/agents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
-        body: JSON.stringify(data),
-      })
+      if (!res.ok) {
+        const text = await res.text().catch(() => '')
+        throw new Error(`Server returned ${res.status}: ${text}`)
+      }
+      setEditing(null)
+      setEditSoul('')
+      setAdding(false)
+      load()
+    } catch (e: any) {
+      alert(`Failed to save agent: ${e.message}`)
     }
-    setEditing(null)
-    setEditSoul('')
-    setAdding(false)
-    load()
   }
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this agent?')) return
-    await fetch(`/api/admin/agents/${id}`, {
-      method: 'DELETE',
-      headers: adminHeaders(),
-    })
-    load()
+    try {
+      const res = await fetch(`/api/admin/agents/${id}`, {
+        method: 'DELETE',
+        headers: adminHeaders(),
+      })
+      if (!res.ok) throw new Error(`Server returned ${res.status}`)
+      load()
+    } catch (e: any) {
+      alert(`Failed to delete agent: ${e.message}`)
+    }
   }
 
   const handleToggle = async (id: string, active: boolean) => {

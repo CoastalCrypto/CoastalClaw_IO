@@ -98,8 +98,12 @@ function CronSection() {
   const [expandedOutput, setExpandedOutput] = useState<string | null>(null)
 
   const load = async () => {
-    const res = await fetch('/api/admin/crons', { headers: adminHeaders() })
-    if (res.ok) setJobs(await res.json())
+    try {
+      const res = await fetch('/api/admin/crons', { headers: adminHeaders() })
+      if (res.ok) setJobs(await res.json())
+    } catch (e) {
+      console.warn('[Dashboard] Failed to load cron jobs:', e)
+    }
   }
 
   useEffect(() => { load() }, [])
@@ -120,43 +124,58 @@ function CronSection() {
 
   const save = async () => {
     if (!form.name || !form.schedule || !form.task) return
-    if (editingId) {
-      await fetch(`/api/admin/crons/${editingId}`, {
-        method: 'PATCH',
+    try {
+      const url = editingId ? `/api/admin/crons/${editingId}` : '/api/admin/crons'
+      const method = editingId ? 'PATCH' : 'POST'
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json', ...adminHeaders() },
         body: JSON.stringify(form),
       })
-    } else {
-      await fetch('/api/admin/crons', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
-        body: JSON.stringify(form),
-      })
+      if (!res.ok) throw new Error(`Server returned ${res.status}`)
+      cancel()
+      load()
+    } catch (e: any) {
+      alert(`Failed to save cron job: ${e.message}`)
     }
-    cancel()
-    load()
   }
 
   const toggle = async (job: CronJob) => {
-    await fetch(`/api/admin/crons/${job.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...adminHeaders() },
-      body: JSON.stringify({ enabled: !job.enabled }),
-    })
-    load()
+    try {
+      const res = await fetch(`/api/admin/crons/${job.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+        body: JSON.stringify({ enabled: !job.enabled }),
+      })
+      if (!res.ok) throw new Error(`Server returned ${res.status}`)
+      load()
+    } catch (e: any) {
+      console.warn('[Dashboard] Failed to toggle cron job:', e)
+    }
   }
 
   const remove = async (id: string) => {
     if (!confirm('Delete this cron job?')) return
-    await fetch(`/api/admin/crons/${id}`, { method: 'DELETE', headers: adminHeaders() })
-    load()
+    try {
+      const res = await fetch(`/api/admin/crons/${id}`, { method: 'DELETE', headers: adminHeaders() })
+      if (!res.ok) throw new Error(`Server returned ${res.status}`)
+      load()
+    } catch (e: any) {
+      alert(`Failed to delete cron job: ${e.message}`)
+    }
   }
 
   const trigger = async (id: string) => {
     setTriggering(id)
-    await fetch(`/api/admin/crons/${id}/trigger`, { method: 'POST', headers: adminHeaders() })
-    setTriggering(null)
-    load()
+    try {
+      const res = await fetch(`/api/admin/crons/${id}/trigger`, { method: 'POST', headers: adminHeaders() })
+      if (!res.ok) throw new Error(`Server returned ${res.status}`)
+    } catch (e: any) {
+      console.warn('[Dashboard] Failed to trigger cron job:', e)
+    } finally {
+      setTriggering(null)
+      load()
+    }
   }
 
   return (

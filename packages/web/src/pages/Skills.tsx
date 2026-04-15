@@ -44,9 +44,14 @@ export function Skills({ onNav }: { onNav: (page: NavPage) => void }) {
 
   const load = async () => {
     setLoading(true)
-    const res = await fetch('/api/admin/skills', { headers: adminHeaders() })
-    if (res.ok) setSkills(await res.json())
-    setLoading(false)
+    try {
+      const res = await fetch('/api/admin/skills', { headers: adminHeaders() })
+      if (res.ok) setSkills(await res.json())
+    } catch (e) {
+      console.warn('[Skills] Failed to load skills:', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { load() }, [])
@@ -122,7 +127,7 @@ export function Skills({ onNav }: { onNav: (page: NavPage) => void }) {
 
   return (
     <div className="min-h-screen text-white" style={{ background: '#050a0f' }}>
-      <NavBar page="tools" onNav={onNav} />
+      <NavBar page="skills" onNav={onNav} />
 
       <div className="pt-20 pb-12 px-4 sm:px-6 max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-8">

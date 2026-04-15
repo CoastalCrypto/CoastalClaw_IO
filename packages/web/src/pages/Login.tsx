@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { coreClient } from '../api/client'
 
 interface Props {
@@ -69,7 +69,7 @@ export function Login({ onLogin }: Props) {
         </form>
 
         <p className="text-center text-xs text-gray-600 mt-6 font-mono">
-          Default credentials: <span className="text-gray-400">admin / admin</span>
+          See the README for first-login instructions.
         </p>
       </div>
     </div>

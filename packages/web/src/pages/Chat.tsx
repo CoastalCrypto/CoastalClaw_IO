@@ -15,6 +15,7 @@ interface Message {
   domain?: AgentDomain
   // approval fields
   approvalId?: string
+  agentId?: string
   agentName?: string
   toolName?: string
   cmd?: string
@@ -248,6 +249,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   const [pendingImage, setPendingImage] = useState<string | null>(null) // base64 data URL
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
   const [agentList, setAgentList] = useState<Array<{ id: string; name: string; active: boolean }>>([])
+  const [agentListError, setAgentListError] = useState(false)
   const [personaAgentId, setPersonaAgentId] = useState<string | null>(null)
   const [agentDrawerOpen, setAgentDrawerOpen] = useState(false)
   const isMobile = useIsMobile()
@@ -273,12 +275,14 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   const [bgPickerOpen, setBgPickerOpen] = useState(false)
   const [bgCustomDraft, setBgCustomDraft] = useState(savedBg.customUrl)
 
-  // Validate URL to prevent CSS injection
+  // Validate URL to prevent CSS injection — only allow http(s) and sanitize quotes
   const isValidUrl = (url: string): boolean => {
     if (!url) return false
+    // Block characters that can break out of CSS url('...')
+    if (/['")\\]/.test(url)) return false
     try {
       const parsed = new URL(url, window.location.href)
-      return parsed.protocol === 'http:' || parsed.protocol === 'https:' || parsed.protocol === 'data:'
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:'
     } catch {
       // Allow relative paths that start with /
       return url.startsWith('/')
@@ -337,11 +341,22 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   useEffect(() => { if (sidebarOpen) loadSessions() }, [sidebarOpen, loadSessions])
 
   useEffect(() => {
-    coreClient.listAgents()
-      .then(agents => setAgentList(agents.map(a => ({ id: a.id, name: a.name, active: a.active }))))
-      .catch((err) => {
-        console.warn('[Chat] Failed to load agents list:', err)
-      })
+    const loadAgents = () =>
+      coreClient.listAgents()
+        .then(agents => {
+          setAgentList(agents.map(a => ({ id: a.id, name: a.name, active: a.active })))
+          setAgentListError(false)
+        })
+        .catch((err) => {
+          console.warn('[Chat] Failed to load agents list:', err)
+          setAgentListError(true)
+        })
+    loadAgents()
+    // Retry once after 2s in case session was still loading
+    const retryTimer = setTimeout(() => {
+      if (agentList.length === 0) loadAgents()
+    }, 2000)
+    return () => clearTimeout(retryTimer)
   }, [])
 
   // Fetch persona to pin the personal agent at top of the agent rail
@@ -504,8 +519,9 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
     if (data.type === 'approval_request') {
       setMessages(prev => [...prev, {
         role: 'approval', content: '',
-        approvalId: data.approvalId, agentName: data.agentName,
-        toolName: data.toolName, cmd: data.cmd, resolved: false,
+        approvalId: data.approvalId, agentId: data.agentId ?? 'general',
+        agentName: data.agentName, toolName: data.toolName,
+        cmd: data.cmd, resolved: false,
       }])
     }
     if (data.type === 'architect_proposal') {
@@ -521,9 +537,9 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
 
   const wsUrl = (() => {
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const host = window.location.hostname || 'localhost'
-    const port = window.location.port || '3000'
-    return `${proto}//${host}:${port}/ws/session`
+    // Use window.location.host (includes port when non-standard) to avoid
+    // hardcoding port 3000 which breaks production TLS on port 443
+    return `${proto}//${window.location.host}/ws/session`
   })()
   useReconnectingWs(wsUrl, handleWsMessage)
 
@@ -978,8 +994,13 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
             </div>
             <div className="flex gap-2 shrink-0">
               <button
-                onClick={() => {
-                  fetch('/api/admin/architect/veto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ proposalId: architectToast.proposalId }) })
+                onClick={async () => {
+                  try {
+                    const res = await fetch('/api/admin/architect/veto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ proposalId: architectToast.proposalId }) })
+                    if (!res.ok) console.warn('[Chat] Veto request failed:', res.status)
+                  } catch (e) {
+                    console.warn('[Chat] Veto request failed:', e)
+                  }
                   setArchitectToast(null)
                 }}
                 className="px-3 py-1.5 text-xs font-mono bg-red-900/60 border border-red-700 text-red-300 hover:bg-red-800 rounded transition-colors"
@@ -1021,7 +1042,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
       <div className="flex flex-1 min-h-0" style={{ display: paneCount > 1 ? 'none' : 'flex' }}>
 
       {/* ── Character rail (desktop only) ──────────────────────── */}
-      {!isMobile && agentList.length > 0 && (
+      {!isMobile && (agentList.length > 0 || agentListError) && (
         <div
           className="flex flex-col items-center gap-1 py-4 overflow-y-auto shrink-0 z-10"
           style={{
@@ -1087,7 +1108,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
                 agentName={m.agentName!}
                 toolName={m.toolName!}
                 cmd={m.cmd!}
-                agentId="general"
+                agentId={m.agentId ?? 'general'}
                 onResolved={() => resolveApproval(m.approvalId!)}
               />
             )
@@ -1131,7 +1152,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
       </div>
 
       {/* Mobile agent drawer toggle */}
-      {isMobile && agentList.length > 0 && (
+      {isMobile && (agentList.length > 0 || agentListError) && (
         <>
           <button
             onClick={() => setAgentDrawerOpen(o => !o)}

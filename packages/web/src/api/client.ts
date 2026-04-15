@@ -174,6 +174,10 @@ export class CoreClient {
       headers: this.adminHeaders(),
     })
     this.checkAuth(res)
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      throw new Error(`Failed to list Ollama models (${res.status}): ${text}`)
+    }
     const data = await res.json() as { ollamaUrl: string; models: OllamaModel[]; error?: string }
     return data
   }
@@ -291,9 +295,13 @@ export class CoreClient {
   }
 
   async deleteSession(id: string): Promise<void> {
-    await fetch(`${this.baseUrl}/api/sessions/${encodeURIComponent(id)}`, {
+    const res = await fetch(`${this.baseUrl}/api/sessions/${encodeURIComponent(id)}`, {
       method: 'DELETE',
     })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      throw new Error(`Delete session failed (${res.status}): ${text}`)
+    }
   }
 
   async setPersona(updates: Partial<Persona>): Promise<{ persona: Persona; configured: boolean }> {
@@ -312,11 +320,16 @@ export class CoreClient {
     agentId: string,
     toolName: string,
   ): Promise<void> {
-    await fetch(`${this.baseUrl}/api/admin/approvals/${approvalId}`, {
+    const res = await fetch(`${this.baseUrl}/api/admin/approvals/${approvalId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
       body: JSON.stringify({ decision, agentId, toolName }),
     })
+    this.checkAuth(res)
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      throw new Error(`Resolve approval failed (${res.status}): ${text}`)
+    }
   }
 
   async getAnalytics(): Promise<any> {
@@ -352,10 +365,15 @@ export class CoreClient {
   }
 
   async deleteTool(id: string): Promise<void> {
-    await fetch(`${this.baseUrl}/api/admin/tools/${id}`, {
+    const res = await fetch(`${this.baseUrl}/api/admin/tools/${id}`, {
       method: 'DELETE',
       headers: this.adminHeaders(),
     })
+    this.checkAuth(res)
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      throw new Error(`Delete tool failed (${res.status}): ${text}`)
+    }
   }
 
   async testTool(data: { implBody: string; parameters?: string; args?: Record<string, unknown> }): Promise<{ output: string; success: boolean }> {
@@ -395,10 +413,15 @@ export class CoreClient {
   }
 
   async deleteChannel(id: string): Promise<void> {
-    await fetch(`${this.baseUrl}/api/admin/channels/${id}`, {
+    const res = await fetch(`${this.baseUrl}/api/admin/channels/${id}`, {
       method: 'DELETE',
       headers: this.adminHeaders(),
     })
+    this.checkAuth(res)
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      throw new Error(`Delete channel failed (${res.status}): ${text}`)
+    }
   }
 
   async testChannel(id: string, message?: string): Promise<{ success: boolean; error?: string }> {
@@ -509,10 +532,15 @@ export class CoreClient {
   }
 
   async deleteUser(id: string): Promise<void> {
-    await fetch(`${this.baseUrl}/api/admin/users/${id}`, {
+    const res = await fetch(`${this.baseUrl}/api/admin/users/${id}`, {
       method: 'DELETE',
       headers: this.adminHeaders(),
     })
+    this.checkAuth(res)
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      throw new Error(`Delete user failed (${res.status}): ${text}`)
+    }
   }
 
   async getTrustLevel(): Promise<'sandboxed' | 'trusted' | 'autonomous'> {

@@ -141,7 +141,11 @@ export async function buildServer() {
   mkdirSync(config.agentWorkdir, { recursive: true })
   const pipelineRouter = new ModelRouter({ ollamaUrl: config.ollamaUrl, vllmUrl: config.vllmUrl, airllmUrl: config.airllmUrl, defaultModel: config.defaultModel })
   const pipelineBackend = await createBackend(config.agentTrustLevel, [config.agentWorkdir])
-  const pipelineToolRegistry = new ToolRegistry(pipelineBackend)
+  const pipelineToolRegistry = new ToolRegistry({
+    backend: pipelineBackend,
+    trustLevel: config.agentTrustLevel,
+    workdir: config.agentWorkdir,
+  })
   const pipelineLog = new ActionLog(db)
   const pipelinePersonaMgr = new PersonaManager(join(config.dataDir, 'persona.db'))
   const pipelineStore = new PipelineStore(db)

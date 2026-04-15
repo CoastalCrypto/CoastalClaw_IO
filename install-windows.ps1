@@ -10,8 +10,6 @@
   ============================================================
 #>
 
-$ErrorActionPreference = 'Stop'
-
 # ── Colors ────────────────────────────────────────────────
 function Write-Title  { param($msg) Write-Host "`n$msg" -ForegroundColor Cyan -BackgroundColor Black }
 function Write-Step   { param($msg) Write-Host "`n► $msg" -ForegroundColor White }
@@ -89,14 +87,20 @@ $Branch = "master"
 
 if (Test-Path "$InstallDir\.git") {
     Write-Info "Updating existing installation..."
-    & git -C $InstallDir fetch origin $Branch 2>$null | Out-Null
-    & git -C $InstallDir checkout $Branch 2>$null | Out-Null
-    & git -C $InstallDir reset --hard "origin/$Branch" 2>$null | Out-Null
+    & git -C $InstallDir fetch origin $Branch
+    & git -C $InstallDir checkout $Branch
+    & git -C $InstallDir reset --hard "origin/$Branch"
 } else {
     Write-Info "Cloning repository..."
     if (Test-Path $InstallDir) { Remove-Item -Recurse -Force $InstallDir }
-    & git clone --depth=1 --branch $Branch $RepoUrl $InstallDir 2>$null | Out-Null
+    & git clone --depth=1 --branch $Branch $RepoUrl $InstallDir
 }
+
+if (-not (Test-Path $InstallDir)) {
+    Write-Err "Repository directory not found at $InstallDir. Check git clone output for errors."
+    exit 1
+}
+
 Write-Ok "Repository ready"
 
 # ── Install dependencies ───────────────────────────────
@@ -133,7 +137,7 @@ CC_DEFAULT_MODEL=llama3.2
 
 # ── Pull default model ────────────────────────────────
 Write-Step "Verifying default model (llama3.2)"
-$hasModel = (ollama list 2>$null) -match "llama3\.2"
+$hasModel = (ollama list) -match "llama3\.2"
 if ($hasModel) {
     Write-Ok "llama3.2 already available"
 } else {

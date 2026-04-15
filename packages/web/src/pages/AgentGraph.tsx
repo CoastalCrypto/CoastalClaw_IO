@@ -83,7 +83,7 @@ export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
       target: e.target,
       label: e.label,
       style: {
-        stroke: getEdgeStroke(e.edgeType, e.active),
+        stroke: getEdgeStroke(e.edgeType ?? '', e.active),
         strokeWidth: e.active ? 2 : 1,
         strokeDasharray: e.active ? undefined : '4 3',
       },
@@ -98,6 +98,11 @@ export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
   useEffect(() => {
     if (nodes.length === 0) return
 
+    // Get viewport dimensions for responsive layout
+    const centerX = typeof window !== 'undefined' ? window.innerWidth / 2 : 400
+    const centerY = typeof window !== 'undefined' ? window.innerHeight / 2 : 300
+
+    // Create force simulation
     const simulationNodes: any[] = nodes.map((n) => ({
       id: n.id,
       x: n.position.x,
@@ -108,9 +113,6 @@ export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
       source: e.source,
       target: e.target,
     }))
-
-    const centerX = 400
-    const centerY = 300
 
     const sim = forceSimulation(simulationNodes)
       .force('link', forceLink(simulationLinks).id((d: any) => d.id).distance(100).strength(0.7))
@@ -135,12 +137,13 @@ export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
       })
 
     simulationRef.current = sim
+
     return () => {
       if (simulationRef.current) {
         simulationRef.current.stop()
       }
     }
-  }, [nodes.length, edges.length])
+  }, [nodes, edges])
 
   const onNodeClick = useCallback((_: unknown, node: Node) => {
     setSelectedId(id => id === node.id ? null : node.id)

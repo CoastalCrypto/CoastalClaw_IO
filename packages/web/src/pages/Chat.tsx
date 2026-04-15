@@ -195,13 +195,19 @@ function useReconnectingWs(url: string, onMessage: (data: any) => void) {
   const wsRef = useRef<WebSocket | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const delayRef = useRef(1000)
+  const onMessageRef = useRef(onMessage)
+
+  // Update the callback ref when it changes, without triggering reconnection
+  useEffect(() => {
+    onMessageRef.current = onMessage
+  }, [onMessage])
 
   const connect = useCallback(() => {
     const ws = new WebSocket(url)
     wsRef.current = ws
     ws.onopen = () => { delayRef.current = 1000 }
     ws.onmessage = (e) => {
-      try { onMessage(JSON.parse(e.data)) } catch {}
+      try { onMessageRef.current(JSON.parse(e.data)) } catch {}
     }
     ws.onclose = () => {
       timerRef.current = setTimeout(() => {
@@ -210,7 +216,7 @@ function useReconnectingWs(url: string, onMessage: (data: any) => void) {
       }, delayRef.current)
     }
     ws.onerror = () => ws.close()
-  }, [url, onMessage])
+  }, [url])
 
   useEffect(() => {
     connect()
@@ -267,11 +273,28 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   const [bgPickerOpen, setBgPickerOpen] = useState(false)
   const [bgCustomDraft, setBgCustomDraft] = useState(savedBg.customUrl)
 
-  const activeBg = bgCustomUrl
+  // Validate URL to prevent CSS injection
+  const isValidUrl = (url: string): boolean => {
+    if (!url) return false
+    try {
+      const parsed = new URL(url, window.location.href)
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:' || parsed.protocol === 'data:'
+    } catch {
+      // Allow relative paths that start with /
+      return url.startsWith('/')
+    }
+  }
+
+  const activeBg = bgCustomUrl && isValidUrl(bgCustomUrl)
     ? { css: `url('${bgCustomUrl}') center/cover fixed`, overlay: 'rgba(5,10,15,0.80)' }
     : (BG_PRESETS.find(p => p.id === bgPresetId) ?? BG_PRESETS[0])
 
   const applyBg = (presetId: string, customUrl = '') => {
+    // Only apply custom URL if it passes validation
+    if (customUrl && !isValidUrl(customUrl)) {
+      console.warn('[Chat] Invalid background URL rejected:', customUrl)
+      return
+    }
     setBgPresetId(presetId)
     setBgCustomUrl(customUrl)
     localStorage.setItem(LS_BG_KEY, JSON.stringify({ presetId, customUrl }))
@@ -282,10 +305,12 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
     fetch('/api/skills')
       .then(r => r.ok ? r.json() : [])
       .then(setSkills)
-      .catch(() => {})
+      .catch((err) => {
+        console.warn('[Chat] Failed to load skills:', err)
+      })
   }, [])
 
-  // Load agent voices once on mount
+  // Load agent voices on mount and when agent list changes
   useEffect(() => {
     const session = sessionStorage.getItem('cc_admin_session') ?? ''
     const headers: Record<string, string> = session ? { 'x-admin-session': session } : {}
@@ -296,19 +321,27 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
         for (const a of agents) if (a.voice) map.set(a.id, a.voice)
         agentVoicesRef.current = map
       })
-      .catch(() => {})
-  }, [])
+      .catch((err) => {
+        console.warn('[Chat] Failed to load agent voices:', err)
+      })
+  }, [agentList.length])
 
   // Load session history
   const loadSessions = useCallback(() => {
-    coreClient.listSessions(30).then(({ sessions: s }) => setSessions(s)).catch(() => {})
+    coreClient.listSessions(30)
+      .then(({ sessions: s }) => setSessions(s))
+      .catch((err) => {
+        console.warn('[Chat] Failed to load session history:', err)
+      })
   }, [])
   useEffect(() => { if (sidebarOpen) loadSessions() }, [sidebarOpen, loadSessions])
 
   useEffect(() => {
     coreClient.listAgents()
       .then(agents => setAgentList(agents.map(a => ({ id: a.id, name: a.name, active: a.active }))))
-      .catch(() => {})
+      .catch((err) => {
+        console.warn('[Chat] Failed to load agents list:', err)
+      })
   }, [])
 
   // Fetch persona to pin the personal agent at top of the agent rail
@@ -324,7 +357,9 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
           setSelectedAgentId(id => id ?? data.personaAgentId ?? null)
         }
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.warn('[Chat] Failed to load persona:', err)
+      })
   }, [])
 
   // Speech recognition
@@ -565,6 +600,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
             if (eventType === 'token') {
               fullReply += data.token
               setMessages(m => {
+                if (m.length === 0) return m
                 const copy = [...m]
                 copy[copy.length - 1] = { ...copy[copy.length - 1], content: fullReply }
                 return copy
@@ -572,6 +608,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
             } else if (eventType === 'domain') {
               setActiveDomain((data.domain as AgentDomain | undefined) ?? 'general')
               setMessages(m => {
+                if (m.length === 0) return m
                 const copy = [...m]
                 copy[copy.length - 1] = { ...copy[copy.length - 1], domain: data.domain }
                 return copy
@@ -580,6 +617,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
               // Non-streamed fallback (tool-use path returned full reply)
               fullReply = data.reply
               setMessages(m => {
+                if (m.length === 0) return m
                 const copy = [...m]
                 copy[copy.length - 1] = { ...copy[copy.length - 1], content: fullReply, domain: data.domain }
                 return copy
@@ -590,6 +628,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
             } else if (eventType === 'error') {
               const errMsg = data.message ?? 'The agent encountered an error.'
               setMessages(m => {
+                if (m.length === 0) return m
                 const copy = [...m]
                 copy[copy.length - 1] = { ...copy[copy.length - 1], content: `⚠ ${errMsg}` }
                 return copy
@@ -605,6 +644,7 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
       // Stream ended with no content — Ollama timed out or returned nothing
       if (!fullReply) {
         setMessages(m => {
+          if (m.length === 0) return m
           const copy = [...m]
           const last = copy[copy.length - 1]
           if (last?.role === 'assistant' && !last.content) {

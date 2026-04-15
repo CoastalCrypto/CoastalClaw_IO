@@ -1,20 +1,37 @@
 import type { CSSProperties, ReactElement } from 'react'
 
-export type AgentId =
-  | 'general'
-  | 'cfo'
-  | 'cto'
-  | 'coo'
-  | 'product_manager'
-  | 'frontend_wizard'
-  | 'ux_architect'
-  | 'qa_lead'
-  | 'system_integrator'
+export type AgentId = string
 
 interface AgentMeta {
   label: string
   color: string
   svg: () => ReactElement
+}
+
+// Default SVG for custom agents
+const DefaultAgent = () => (
+  <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="40" cy="40" r="38" fill="#0a1628" stroke="#94adc4" strokeWidth="1.5"/>
+    <circle cx="40" cy="40" r="32" fill="#051420" opacity="0.6"/>
+    <text x="40" y="46" fontSize="18" fill="#94adc4" fontWeight="bold" textAnchor="middle" fontFamily="monospace">?</text>
+  </svg>
+)
+
+// Generate fallback metadata for unknown agents using a color hash
+function getDefaultAgentMeta(agentId: string): AgentMeta {
+  const colors = ['#00e5ff', '#4ade80', '#a78bfa', '#f59e0b', '#f472b6', '#38bdf8', '#a855f7', '#fbbf24', '#fb923c', '#ec4899']
+  const hash = agentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  const color = colors[hash % colors.length]
+
+  return {
+    label: agentId
+      .split(/[-_]/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+      .substring(0, 8),
+    color,
+    svg: DefaultAgent,
+  }
 }
 
 // ─── SVG characters ──────────────────────────────────────────────────────────
@@ -401,7 +418,7 @@ const SystemIntegrator = () => (
 
 // ─── Registry ─────────────────────────────────────────────────────────────────
 
-export const AGENT_META: Record<AgentId, AgentMeta> = {
+const AGENT_META_KNOWN: Record<string, AgentMeta> = {
   general:           { label: 'General',   color: '#00e5ff', svg: General },
   cfo:               { label: 'CFO',       color: '#4ade80', svg: CFO },
   cto:               { label: 'CTO',       color: '#a78bfa', svg: CTO },
@@ -412,6 +429,13 @@ export const AGENT_META: Record<AgentId, AgentMeta> = {
   qa_lead:           { label: 'QA',        color: '#fbbf24', svg: QALead },
   system_integrator: { label: 'SysInt',    color: '#fb923c', svg: SystemIntegrator },
 }
+
+export function getAgentMeta(agentId: string): AgentMeta {
+  return AGENT_META_KNOWN[agentId] ?? getDefaultAgentMeta(agentId)
+}
+
+// Backward compatibility export
+export const AGENT_META = AGENT_META_KNOWN
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -452,8 +476,7 @@ export function AgentCharacters({ agents, selected, onSelect, vertical = false }
         <div className="w-8 h-px bg-white/5 my-1 shrink-0" />
 
         {active.map(agent => {
-          const meta = AGENT_META[agent.id as AgentId]
-          if (!meta) return null
+          const meta = getAgentMeta(agent.id)
           const isSelected = selected === agent.id
           const glowColor = meta.color
 

@@ -106,7 +106,7 @@ Write-Ok "Repository ready"
 # ── Install dependencies ───────────────────────────────
 Write-Step "Installing dependencies (this may take a minute)"
 Set-Location $InstallDir
-& pnpm install --frozen-lockfile
+& pnpm install
 Write-Ok "Dependencies installed"
 
 # ── Build ──────────────────────────────────────────────

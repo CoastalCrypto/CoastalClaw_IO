@@ -1,0 +1,62 @@
+FROM node:22-alpine
+
+# Install minimal runtime dependencies
+RUN apk add --no-cache bash curl
+
+WORKDIR /app
+
+# Copy entire project
+COPY . .
+
+# Install dependencies
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
+
+# Build packages
+RUN pnpm build
+
+# Create results directory
+RUN mkdir -p /results
+
+# Create entrypoint script
+RUN cat > /entrypoint.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "Starting Coastal.AI sandbox..."
+mkdir -p /results
+
+# Start Core API and redirect logs to /results
+cd /app
+echo "$(date): Starting Core API on port 5173..." > /results/core.log
+node packages/core/dist/main.js >> /results/core.log 2>&1 &
+CORE_PID=$!
+
+# Wait for Core API to be ready (max 30s)
+echo "$(date): Waiting for Core API to be ready..."
+for i in {1..30}; do
+  if curl -s http://localhost:5173/api/version > /dev/null 2>&1; then
+    echo "$(date): Core API ready!" >> /results/core.log
+    break
+  fi
+  sleep 1
+done
+
+# Start Web UI and redirect logs
+echo "$(date): Starting Web UI on port 5173..." > /results/web.log
+cd /app/packages/web
+pnpm preview --port 5173 --host 0.0.0.0 >> /results/web.log 2>&1 &
+WEB_PID=$!
+
+echo "$(date): Sandbox ready at http://localhost:5173" > /results/status.log
+echo "Core API PID: $CORE_PID" >> /results/status.log
+echo "Web UI PID: $WEB_PID" >> /results/status.log
+
+# Keep container alive and trap signals
+wait $CORE_PID $WEB_PID
+EOF
+
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 5173
+
+ENTRYPOINT ["/entrypoint.sh"]

@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  coastal-ai-sandbox:
+    build:
+      context: .
+      dockerfile: packages/core/Dockerfile.test
+    container_name: coastal-ai-sandbox-${SANDBOX_ID}
+    ports:
+      - "${SANDBOX_PORT}:5173"
+    environment:
+      - CC_PORT=5173
+      - CC_HOST=0.0.0.0
+      - CC_DATA_DIR=/app/data
+      - CC_OLLAMA_URL=${CC_OLLAMA_URL:-http://host.docker.internal:11434}
+      - CC_TRUST_LEVEL=trusted
+      - NODE_ENV=test
+    volumes:
+      - ${SANDBOX_RESULTS_DIR}:/results
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - sandbox-network
+
+networks:
+  sandbox-network:
+    driver: bridge

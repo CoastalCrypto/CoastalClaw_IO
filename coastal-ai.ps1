@@ -155,6 +155,9 @@ function Show-Status {
 function Show-Logs {
     Write-Host ""
     Write-Host "Core API Logs (last 20 lines):" -ForegroundColor Cyan
+    if (-not (Test-Path $LogDir)) {
+        New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
+    }
     if (Test-Path "$LogDir\core.log") {
         Get-Content "$LogDir\core.log" -Tail 20 | Write-Host -ForegroundColor Gray
     } else {

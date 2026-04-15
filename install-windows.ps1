@@ -60,7 +60,19 @@ if ($needNode) {
 if (-not (Has-Command pnpm)) {
     Write-Info "Installing pnpm..."
     npm install -g pnpm@latest | Out-Null
+    # Update PATH for the current session
     $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('PATH', 'User')
+}
+
+# If pnpm still not found by command name, try to find it in the AppData/Roaming/npm folder
+if (-not (Has-Command pnpm)) {
+    $pnpmPath = "$env:APPDATA\npm\pnpm.ps1"
+    if (Test-Path $pnpmPath) {
+        function pnpm { & $pnpmPath @args }
+    } else {
+        Write-Err "pnpm installed but not found in PATH. Please restart PowerShell and re-run."
+        exit 1
+    }
 }
 Write-Ok "pnpm $(pnpm --version)"
 
@@ -91,12 +103,12 @@ Write-Ok "Repository ready"
 # ── Install dependencies ───────────────────────────────
 Write-Step "Installing dependencies (this may take a minute)"
 Set-Location $InstallDir
-pnpm install --frozen-lockfile 2>&1 | Select-Object -Last 3
+& pnpm install --frozen-lockfile 2>&1 | Select-Object -Last 3
 Write-Ok "Dependencies installed"
 
 # ── Build ──────────────────────────────────────────────
 Write-Step "Building packages"
-pnpm build 2>&1 | Select-Object -Last 2
+& pnpm build 2>&1 | Select-Object -Last 2
 Write-Ok "Build complete"
 
 # ── Configuration ──────────────────────────────────────
@@ -132,13 +144,11 @@ Write-Step "Creating launcher"
 $LauncherDir = "$env:USERPROFILE\AppData\Local\coastal-ai"
 New-Item -ItemType Directory -Path $LauncherDir -Force | Out-Null
 
-# Batch file for one-click start
-$BatchFile = "$LauncherDir\coastal-ai.cmd"
-@"
-@echo off
-cd /d "$InstallDir" && node packages\core\dist\main.js %*
-"@ | Set-Content $BatchFile
-Write-Ok "Launcher created"
+# Copy scripts to launcher directory
+Copy-Item "$InstallDir\coastal-ai.ps1" "$LauncherDir\coastal-ai.ps1" -Force
+Copy-Item "$InstallDir\coastal-ai.cmd" "$LauncherDir\coastal-ai.cmd" -Force
+
+Write-Ok "Launcher scripts created in $LauncherDir"
 
 # ── Save installation info ──────────────────────────────
 $InfoFile = "$LauncherDir\install.json"
@@ -155,7 +165,7 @@ Write-Host ("=" * 60) -ForegroundColor Cyan
 
 Write-Host "`nNext steps:" -ForegroundColor White
 Write-Host "  1. Start services:" -ForegroundColor White
-Write-Host "     powershell -NoProfile -ExecutionPolicy Bypass -File `"$LauncherDir\start.ps1`"" -ForegroundColor Gray
+Write-Host "     powershell -NoProfile -ExecutionPolicy Bypass -File `"$LauncherDir\coastal-ai.ps1`"" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  2. Open in browser:" -ForegroundColor White
 Write-Host "     http://127.0.0.1:5173" -ForegroundColor Gray

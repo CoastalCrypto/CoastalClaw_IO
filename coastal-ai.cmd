@@ -25,16 +25,24 @@ echo Starting Coastal.AI...
 echo   Core API:  http://127.0.0.1:4747
 echo   Web UI:    http://127.0.0.1:5173
 cd /d "%INSTALL_DIR%"
-start "Coastal.AI Core" /min node packages\core\dist\main.js
+
+if not exist "%TEMP%\coastal-ai" mkdir "%TEMP%\coastal-ai"
+
+REM Start Core API
+powershell -Command "Start-Process node -ArgumentList 'packages/core/dist/main.js' -WorkingDirectory '%INSTALL_DIR%' -RedirectStandardOutput '%TEMP%\coastal-ai\core.log' -RedirectStandardError '%TEMP%\coastal-ai\core-err.log' -WindowStyle Minimized"
 timeout /t 2 /nobreak
-start "Coastal.AI Web" /min cmd /c "cd packages\web && pnpm preview --port 5173 --host 127.0.0.1"
-timeout /t 1 /nobreak
+
+REM Start Web UI
+powershell -Command "Start-Process cmd -ArgumentList '/c', 'cd packages/web && pnpm preview --port 5173 --host 127.0.0.1' -WorkingDirectory '%INSTALL_DIR%' -RedirectStandardOutput '%TEMP%\coastal-ai\web.log' -RedirectStandardError '%TEMP%\coastal-ai\web-err.log' -WindowStyle Minimized"
+
+timeout /t 2 /nobreak
 start http://127.0.0.1:5173
 exit /b 0
 
 :stop
 echo Stopping Coastal.AI...
-taskkill /FI "WINDOWTITLE eq Coastal.AI*" /T /F >nul 2>&1
+powershell -Command "Get-Process node -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like '*coastal*' -or $_.CommandLine -like '*packages/core*' } | Stop-Process -Force -ErrorAction SilentlyContinue"
+powershell -Command "Get-Process cmd -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like '*pnpm preview*' } | Stop-Process -Force -ErrorAction SilentlyContinue"
 echo Stopped.
 exit /b 0
 

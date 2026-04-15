@@ -56,7 +56,7 @@ if ($needNode) {
 # pnpm
 if (-not (Has-Command pnpm)) {
     Write-Info "Installing pnpm..."
-    npm install -g pnpm@latest | Out-Null
+    npm install -g pnpm@latest
     # Update PATH for the current session
     $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('PATH', 'User')
 }
@@ -166,10 +166,11 @@ $InfoFile = "$LauncherDir\install.json"
 } | ConvertTo-Json | Set-Content $InfoFile
 
 # ── Show completion info ────────────────────────────────
+$Line = "=" * 60
 Write-Host ""
-Write-Host ("=" * 60) -ForegroundColor Cyan
+Write-Host $Line -ForegroundColor Cyan
 Write-Host "✓ COASTAL.AI INSTALLED SUCCESSFULLY" -ForegroundColor Green
-Write-Host ("=" * 60) -ForegroundColor Cyan
+Write-Host $Line -ForegroundColor Cyan
 
 Write-Host "`nNext steps:" -ForegroundColor White
 Write-Host "  1. Start services:" -ForegroundColor White

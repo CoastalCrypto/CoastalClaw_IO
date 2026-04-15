@@ -21,11 +21,11 @@ $InstallDir = if ($env:CC_INSTALL_DIR) { $env:CC_INSTALL_DIR } else { "$env:USER
 $DataDir = "$InstallDir\packages\core\data"
 $LogDir = "$env:TEMP\coastal-ai"
 
-# Colors
-function Write-Success { param($msg) Write-Host "✓ $msg" -ForegroundColor Green }
-function Write-Info    { param($msg) Write-Host "→ $msg" -ForegroundColor Cyan }
-function Write-Warn    { param($msg) Write-Host "! $msg" -ForegroundColor Yellow }
-function Write-Error   { param($msg) Write-Host "✗ $msg" -ForegroundColor Red }
+# Colors (using ASCII for maximum compatibility)
+function Write-Success { param($msg) Write-Host "[OK] $msg" -ForegroundColor Green }
+function Write-Info    { param($msg) Write-Host "--> $msg" -ForegroundColor Cyan }
+function Write-Warn    { param($msg) Write-Host "[!] $msg" -ForegroundColor Yellow }
+function Write-Error   { param($msg) Write-Host "[X] $msg" -ForegroundColor Red }
 
 if (-not (Test-Path $InstallDir)) {
     Write-Error "Coastal.AI not found at $InstallDir"
@@ -91,9 +91,9 @@ function Start-Services {
     Start-Process "http://127.0.0.1:5173"
 
     Write-Host ""
-    Write-Host "═══════════════════════════════════════════" -ForegroundColor Cyan
+    Write-Host "===========================================" -ForegroundColor Cyan
     Write-Success "COASTAL.AI IS RUNNING"
-    Write-Host "═══════════════════════════════════════════" -ForegroundColor Cyan
+    Write-Host "===========================================" -ForegroundColor Cyan
     Write-Host ""
     Write-Info "Web UI:       http://127.0.0.1:5173"
     Write-Info "Core API:     http://127.0.0.1:4747"

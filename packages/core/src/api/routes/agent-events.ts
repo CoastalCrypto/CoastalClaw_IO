@@ -49,51 +49,41 @@ function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager) 
   }
   if (modelSet.size === 0) modelSet.set('ollama:default', 'Ollama (default)')
 
-  // Layout constants
-  const AGENT_Y = 240
-  const TOOL_Y  = 440
-  const CHAN_Y  = 40
-  const COL_W   = 160
-
-  // Build nodes
-  const agentNodes = allAgents.map((a, i) => ({
+  // Build nodes (without positions, let frontend handle layout)
+  const agentNodes = allAgents.map((a) => ({
     id: a.id,
     label: a.name,
     role: a.role,
     status: a.active ? 'idle' : 'offline',
     toolsCount: a.tools.length,
     nodeType: 'agent' as const,
-    position: { x: i * COL_W + 80, y: AGENT_Y },
   }))
 
-  const toolNodes = Array.from(toolSet.entries()).map(([id, t], i) => ({
+  const toolNodes = Array.from(toolSet.entries()).map(([id, t]) => ({
     id: `tool:${id}`,
     label: t.label,
     role: t.category,
     status: 'idle' as const,
     toolsCount: 0,
     nodeType: 'tool' as const,
-    position: { x: i * 140 + 40, y: TOOL_Y },
   }))
 
-  const modelNodes = Array.from(modelSet.entries()).map(([id, name], i) => ({
+  const modelNodes = Array.from(modelSet.entries()).map(([id, name]) => ({
     id: `model:${id}`,
     label: name,
     role: 'Model',
     status: 'idle' as const,
     toolsCount: 0,
     nodeType: 'model' as const,
-    position: { x: toolNodes.length * 140 + 40 + i * 160, y: TOOL_Y },
   }))
 
-  const channelNodes = channels.map((c, i) => ({
+  const channelNodes = channels.map((c) => ({
     id: `channel:${c.id}`,
     label: c.name,
     role: c.type,
     status: (c.enabled ? 'idle' : 'offline') as 'idle' | 'offline',
     toolsCount: 0,
     nodeType: 'channel' as const,
-    position: { x: i * COL_W + 80, y: CHAN_Y },
   }))
 
   // Build static edges

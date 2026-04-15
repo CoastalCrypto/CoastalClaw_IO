@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -6,9 +6,20 @@ import {
   BackgroundVariant,
   Controls,
   MiniMap,
+  useNodesState,
+  useEdgesState,
   type Node,
   type Edge,
 } from '@xyflow/react'
+import {
+  forceSimulation,
+  forceLink,
+  forceManyBody,
+  forceCenter,
+  forceX,
+  forceY,
+  type SimulationNodeDatum,
+} from 'd3-force'
 import '@xyflow/react/dist/style.css'
 import { NavBar, type NavPage } from '../components/NavBar'
 import { AgentNode } from '../components/AgentNode'
@@ -24,54 +35,110 @@ const MINIMAP_STYLE = {
   borderRadius: 8,
 }
 
+// Helper for edge coloring
+const getEdgeStroke = (edgeType: string, active: boolean) => {
+  if (active) return '#00e5ff'
+  if (edgeType === 'agent-tool') return '#10b981'
+  if (edgeType === 'agent-model') return '#8b5cf6'
+  if (edgeType === 'agent-channel') return '#f59e0b'
+  return '#1a3a5c'
+}
+
+interface ForceNode extends SimulationNodeDatum {
+  id: string
+}
+
 export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
   const { nodes: rawNodes, edges: rawEdges, connected } = useAgentGraph()
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<AgentNodeData>>([])
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const { dependencies, impact, isLoading } = useAgentDependencies(selectedId)
 
-  // Edge color by type (active always wins with cyan glow)
-  const edgeStroke = useCallback((e: (typeof rawEdges)[number]) => {
-    if (e.active) return '#00e5ff'
-    if (e.edgeType === 'agent-tool') return '#10b981'
-    if (e.edgeType === 'agent-model') return '#8b5cf6'
-    if (e.edgeType === 'agent-channel') return '#f59e0b'
-    return '#1a3a5c'
-  }, [])
+  // Simulation state
+  const simulationRef = useRef<any>(null)
 
-  // Convert to React Flow node/edge format
-  const rfNodes: Node<AgentNodeData>[] = useMemo(() =>
-    rawNodes.map((n, i) => ({
-      id: n.id,
-      type: 'agent',
-      // Use server-provided position when available, fall back to grid layout
-      position: n.position ?? { x: (i % 4) * 180 + 60, y: Math.floor(i / 4) * 160 + 60 },
-      data: {
-        label: n.label,
-        status: n.status,
-        role: n.role,
-        toolsCount: n.toolsCount,
-        nodeType: n.nodeType,
-        lastActivity: n.lastActivity,
-      },
-      selected: n.id === selectedId,
-    })), [rawNodes, selectedId])
+  // Sync React Flow state with raw data from hook (only when node count or edge count changes)
+  useEffect(() => {
+    if (rawNodes.length === 0) return
 
-  const rfEdges: Edge[] = useMemo(() =>
-    rawEdges.map(e => {
-      const stroke = edgeStroke(e)
+    // Initialize nodes if they don't exist
+    const newNodes: Node<AgentNodeData>[] = rawNodes.map((n) => {
+      const existingNode = nodes.find((en) => en.id === n.id)
       return {
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        label: e.label,
-        style: {
-          stroke,
-          strokeWidth: e.active ? 2 : 1,
-          strokeDasharray: e.active ? undefined : '4 3',
+        id: n.id,
+        type: 'agent',
+        position: existingNode?.position ?? { x: Math.random() * 400, y: Math.random() * 400 },
+        data: {
+          label: n.label,
+          status: n.status,
+          role: n.role,
+          toolsCount: n.toolsCount,
+          nodeType: n.nodeType,
+          lastActivity: n.lastActivity,
         },
-        animated: e.active,
+        selected: n.id === selectedId,
       }
-    }), [rawEdges, edgeStroke])
+    })
+
+    const newEdges: Edge[] = rawEdges.map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      label: e.label,
+      style: {
+        stroke: getEdgeStroke(e.edgeType, e.active),
+        strokeWidth: e.active ? 2 : 1,
+        strokeDasharray: e.active ? undefined : '4 3',
+      },
+      animated: e.active,
+    }))
+
+    setNodes(newNodes)
+    setEdges(newEdges)
+  }, [rawNodes, rawEdges, selectedId]) // Re-run when data or selection changes
+
+  // Brain-like Force Directed Layout
+  useEffect(() => {
+    if (nodes.length === 0) return
+
+    // Create force simulation
+    const simulationNodes: ForceNode[] = nodes.map((n) => ({
+      id: n.id,
+      x: n.position.x,
+      y: n.position.y,
+    }))
+
+    const simulationLinks = edges.map((e) => ({
+      source: e.source,
+      target: e.target,
+    }))
+
+    const sim = forceSimulation<ForceNode>(simulationNodes)
+      .force('link', forceLink(simulationLinks).id((d: any) => d.id).distance(120).strength(1))
+      .force('charge', forceManyBody().strength(-400)) // Repulsion
+      .force('center', forceCenter(400, 300))
+      .force('x', forceX(400).strength(0.05))
+      .force('y', forceY(300).strength(0.05))
+      .on('tick', () => {
+        setNodes((nds) =>
+          nds.map((n) => {
+            const simNode = simulationNodes.find((sn) => sn.id === n.id)
+            if (simNode) {
+              return {
+                ...n,
+                position: { x: simNode.x ?? 0, y: simNode.y ?? 0 },
+              }
+            }
+            return n
+          })
+        )
+      })
+
+    simulationRef.current = sim
+
+    return () => sim.stop()
+  }, [nodes.length, edges.length]) // Only restart simulation when graph structure changes
 
   const onNodeClick = useCallback((_: unknown, node: Node) => {
     setSelectedId(id => id === node.id ? null : node.id)
@@ -99,9 +166,11 @@ export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
 
         <ReactFlowProvider>
           <ReactFlow
-            nodes={rfNodes}
-            edges={rfEdges}
+            nodes={nodes}
+            edges={edges}
             nodeTypes={NODE_TYPES}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
             onNodeClick={onNodeClick}
             fitView
             style={{ background: '#050a0f' }}

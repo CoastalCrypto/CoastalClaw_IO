@@ -278,6 +278,30 @@ That's it. You're up and running.
 
 ---
 
+## 🧪 Sandbox Testing
+
+Coastal.AI includes **ephemeral sandbox environments** for development and CI/CD testing. Spin up a fresh, isolated instance in seconds, test it, and tear it down — no accumulated state, no leftover bugs.
+
+Perfect for:
+- Testing new features in isolation
+- Reproducing bugs in clean state
+- Integration testing
+- CI/CD validation
+- Parallel test runs
+
+**Quick start:**
+```bash
+npm run test:sandbox:start          # Start fresh sandbox
+npm run test:sandbox:stop           # Stop and clean
+npm run test:sandbox:logs           # View sandbox logs
+```
+
+Access the sandbox at `http://localhost:5174`. Results saved to `test-artifacts/` for inspection.
+
+**Detailed guide:** See [Sandbox Testing Guide](docs/TEST-SANDBOX.md) and [CI/CD Integration](docs/CI-CD-SANDBOX.md).
+
+---
+
 ## 🗺 First Boot Walkthrough
 
 Here's a quick tour of the main areas:

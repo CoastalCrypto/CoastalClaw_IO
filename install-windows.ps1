@@ -90,25 +90,25 @@ $Branch = "master"
 
 if (Test-Path "$InstallDir\.git") {
     Write-Info "Updating existing installation..."
-    & git -C $InstallDir fetch origin $Branch -ErrorAction SilentlyContinue | Out-Null
-    & git -C $InstallDir checkout $Branch -ErrorAction SilentlyContinue | Out-Null
-    & git -C $InstallDir reset --hard "origin/$Branch" -ErrorAction SilentlyContinue | Out-Null
+    & git -C $InstallDir fetch origin $Branch 2>$null | Out-Null
+    & git -C $InstallDir checkout $Branch 2>$null | Out-Null
+    & git -C $InstallDir reset --hard "origin/$Branch" 2>$null | Out-Null
 } else {
     Write-Info "Cloning repository..."
     if (Test-Path $InstallDir) { Remove-Item -Recurse -Force $InstallDir }
-    & git clone --depth=1 --branch $Branch $RepoUrl $InstallDir -ErrorAction Stop | Out-Null
+    & git clone --depth=1 --branch $Branch $RepoUrl $InstallDir 2>$null | Out-Null
 }
 Write-Ok "Repository ready"
 
 # ── Install dependencies ───────────────────────────────
 Write-Step "Installing dependencies (this may take a minute)"
 Set-Location $InstallDir
-& pnpm install --frozen-lockfile 2>&1 | Select-Object -Last 3
+& pnpm install --frozen-lockfile | Select-Object -Last 3
 Write-Ok "Dependencies installed"
 
 # ── Build ──────────────────────────────────────────────
 Write-Step "Building packages"
-& pnpm build 2>&1 | Select-Object -Last 2
+& pnpm build | Select-Object -Last 2
 Write-Ok "Build complete"
 
 # ── Configuration ──────────────────────────────────────
@@ -135,7 +135,7 @@ if ($hasModel) {
     Write-Ok "llama3.2 already available"
 } else {
     Write-Info "Pulling llama3.2 (~2 GB, this may take a few minutes)..."
-    & ollama pull llama3.2 2>&1 | Select-Object -Last 1
+    & ollama pull llama3.2 | Select-Object -Last 1
     Write-Ok "llama3.2 ready"
 }
 

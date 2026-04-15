@@ -11,7 +11,6 @@
 #>
 
 $ErrorActionPreference = 'Stop'
-Set-StrictMode -Version Latest
 
 # ── Colors ────────────────────────────────────────────────
 function Write-Title  { param($msg) Write-Host "`n$msg" -ForegroundColor Cyan -BackgroundColor Black }
@@ -103,16 +102,20 @@ Write-Ok "Repository ready"
 # ── Install dependencies ───────────────────────────────
 Write-Step "Installing dependencies (this may take a minute)"
 Set-Location $InstallDir
-& pnpm install --frozen-lockfile | Select-Object -Last 3
+& pnpm install --frozen-lockfile
 Write-Ok "Dependencies installed"
 
 # ── Build ──────────────────────────────────────────────
 Write-Step "Building packages"
-& pnpm build | Select-Object -Last 2
+& pnpm build
 Write-Ok "Build complete"
 
 # ── Configuration ──────────────────────────────────────
 Write-Step "Creating configuration"
+
+if (-not (Test-Path "$InstallDir\packages\core\data")) {
+    New-Item -ItemType Directory -Path "$InstallDir\packages\core\data" -Force | Out-Null
+}
 
 $CoreEnv = "$InstallDir\packages\core\.env.local"
 if (-not (Test-Path $CoreEnv)) {
@@ -135,7 +138,7 @@ if ($hasModel) {
     Write-Ok "llama3.2 already available"
 } else {
     Write-Info "Pulling llama3.2 (~2 GB, this may take a few minutes)..."
-    & ollama pull llama3.2 | Select-Object -Last 1
+    & ollama pull llama3.2
     Write-Ok "llama3.2 ready"
 }
 
@@ -159,7 +162,8 @@ $InfoFile = "$LauncherDir\install.json"
 } | ConvertTo-Json | Set-Content $InfoFile
 
 # ── Show completion info ────────────────────────────────
-Write-Host "`n" + ("=" * 60) -ForegroundColor Cyan
+Write-Host ""
+Write-Host ("=" * 60) -ForegroundColor Cyan
 Write-Host "✓ COASTAL.AI INSTALLED SUCCESSFULLY" -ForegroundColor Green
 Write-Host ("=" * 60) -ForegroundColor Cyan
 

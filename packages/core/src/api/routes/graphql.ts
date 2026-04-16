@@ -1,7 +1,12 @@
 import type { FastifyInstance } from 'fastify'
 import { graphql } from 'graphql'
 import { buildSchema } from '../../graph/schema.js'
-import { queryResolvers } from '../../graph/resolvers.js'
+import {
+  analyzeDependenciesResolver,
+  computeImpactRadiusResolver,
+  detectCyclesResolver,
+  findPathResolver
+} from '../../graph/resolvers.js'
 import { createGraphQLContext } from '../../graph/context.js'
 import type { GraphQLContext } from '../../graph/context.js'
 import type { AgentRegistry } from '../../agents/registry.js'
@@ -64,13 +69,13 @@ export async function graphQLRoutes(
         // but our resolvers expect (parent, args, context) — bridge the gap
         const rootValue = {
           analyzeDependencies: (args: Record<string, unknown>) =>
-            queryResolvers.analyzeDependencies(null, args as any, context),
+            (analyzeDependenciesResolver as Function)(null, args, context),
           impactAnalysis: (args: Record<string, unknown>) =>
-            queryResolvers.impactAnalysis(null, args as any, context),
+            (computeImpactRadiusResolver as Function)(null, args, context),
           findCycles: (args: Record<string, unknown>) =>
-            queryResolvers.findCycles(null, args as any, context),
+            (detectCyclesResolver as Function)(null, args, context),
           findPath: (args: Record<string, unknown>) =>
-            queryResolvers.findPath(null, args as any, context),
+            (findPathResolver as Function)(null, args, context),
         }
 
         const result = await graphql({

@@ -95,7 +95,7 @@ export function Pipeline({ onNav }: { onNav: (p: NavPage) => void }) {
       if (!res.ok) {
         const text = await res.text()
         let msg = `HTTP ${res.status}`
-        try { const j = JSON.parse(text); if (j.error) msg = j.error } catch {}
+        try { const j = JSON.parse(text); if (j.error) msg = j.error } catch { /* fall back to status code msg */ }
         throw new Error(msg)
       }
       const data = await res.json()

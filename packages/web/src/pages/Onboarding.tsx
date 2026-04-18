@@ -46,7 +46,7 @@ export function Onboarding({ onComplete }: { onComplete: (sessionId: string) => 
         ownerName: data.ownerName,
       })
       onComplete(`session-${Date.now()}`)
-    } catch (e) {
+    } catch {
       setError('Could not connect to the server. Is coastal-server running?')
       setSubmitting(false)
     }

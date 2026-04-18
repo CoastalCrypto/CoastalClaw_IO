@@ -18,6 +18,7 @@
  * Until you have a .riv file, this component renders the CSS fallback.
  */
 
+import { useEffect } from 'react'
 import { useRive, useStateMachineInput } from '@rive-app/react-canvas'
 
 export type AgentState = 'idle' | 'thinking' | 'speaking'
@@ -64,8 +65,12 @@ export function RiveAgent({
   const thinkingInput = useStateMachineInput(rive, 'AgentController', 'isThinking')
   const speakingInput = useStateMachineInput(rive, 'AgentController', 'isSpeaking')
 
-  if (thinkingInput) thinkingInput.value = isThinking
-  if (speakingInput) speakingInput.value = isSpeaking
+  useEffect(() => {
+    if (thinkingInput) thinkingInput.value = isThinking
+  }, [thinkingInput, isThinking])
+  useEffect(() => {
+    if (speakingInput) speakingInput.value = isSpeaking
+  }, [speakingInput, isSpeaking])
 
   const color = DOMAIN_COLORS[domain]
   const label = DOMAIN_LABELS[domain]

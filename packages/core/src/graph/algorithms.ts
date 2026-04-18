@@ -184,25 +184,25 @@ export function computeImpactRadius(
     throw new Error(`Agent ${agentId} not found`)
   }
 
-  // Direct dependents: agents that immediately depend on this one (predecessors — they call this agent)
-  const directPredecessors = dag.predecessors(agentId) || []
-  const directDependents = directPredecessors
+  // Direct dependents: downstream callees this agent invokes — they are starved if this fails
+  const directSuccessors = dag.successors(agentId) || []
+  const directDependents = directSuccessors
     .map(id => graphState.nodes.find(n => n.id === id))
     .filter((n): n is GraphNode => n !== undefined)
 
-  // Indirect dependents: all agents that transitively depend on this one (excluding direct)
+  // Indirect dependents: all agents transitively reachable downstream (excluding direct)
   const visited = new Set<string>()
-  const queue = [...directPredecessors]
+  const queue = [...directSuccessors]
   while (queue.length > 0) {
     const current = queue.shift()!
     if (visited.has(current)) continue
     visited.add(current)
-    const predecessors = dag.predecessors(current) || []
-    queue.push(...predecessors)
+    const successors = dag.successors(current) || []
+    queue.push(...successors)
   }
 
   const indirectDependents = Array.from(visited)
-    .filter(id => !directPredecessors.includes(id))  // Exclude direct dependents
+    .filter(id => !directSuccessors.includes(id))  // Exclude direct dependents
     .map(id => graphState.nodes.find(n => n.id === id))
     .filter((n): n is GraphNode => n !== undefined)
 

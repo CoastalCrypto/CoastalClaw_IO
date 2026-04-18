@@ -44,7 +44,9 @@ function useUpdateBanner() {
         } else if (version !== loadedVersion.current) {
           setBanner(`Server updated to v${version} — refresh to get the latest`)
         }
-      } catch {}
+      } catch {
+        /* version probe is best-effort */
+      }
     }
 
     check()

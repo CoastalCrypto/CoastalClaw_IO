@@ -1,5 +1,6 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { buildServer } from '../../src/server.js'
+import { invalidateConfig } from '../../src/config.js'
 import { ModelRegistry } from '../../src/models/registry.js'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -21,6 +22,7 @@ describe('Admin API', () => {
     tmpDir = mkdtempSync(join(tmpdir(), 'cc-admin-'))
     process.env.CC_DATA_DIR = tmpDir
     process.env.CC_ADMIN_TOKEN = token
+    invalidateConfig()
     server = await buildServer()
     await server.listen({ port: 0 })
   })
@@ -29,7 +31,8 @@ describe('Admin API', () => {
     await server.close()
     delete process.env.CC_DATA_DIR
     delete process.env.CC_ADMIN_TOKEN
-    rmSync(tmpDir, { recursive: true })
+    invalidateConfig()
+    rmSync(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
   })
 
   it('GET /api/admin/models returns 401 without token', async () => {

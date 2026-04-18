@@ -114,7 +114,7 @@ export function Tools({ onNav }: { onNav: (page: NavPage) => void }) {
     setTestResult(null)
     try {
       let args: Record<string, unknown> = {}
-      try { args = JSON.parse(testArgs) } catch {}
+      try { args = JSON.parse(testArgs) } catch { /* invalid JSON, run with empty args */ }
       const result = await coreClient.testTool({ implBody: form.implBody, parameters: form.parameters, args })
       setTestResult(result)
     } catch (e: any) {

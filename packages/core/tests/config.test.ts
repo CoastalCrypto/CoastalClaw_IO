@@ -1,16 +1,18 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { loadConfig } from '../src/config.js'
+import { loadConfig, invalidateConfig } from '../src/config.js'
 
 describe('loadConfig', () => {
   let originalPort: string | undefined
 
   beforeEach(() => {
     originalPort = process.env.CC_PORT
+    invalidateConfig()
   })
 
   afterEach(() => {
     if (originalPort === undefined) delete process.env.CC_PORT
     else process.env.CC_PORT = originalPort
+    invalidateConfig()
   })
 
   it('returns default port 4747', () => {

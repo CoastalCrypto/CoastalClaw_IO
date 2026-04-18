@@ -40,4 +40,9 @@ export async function teamRoutes(fastify: FastifyInstance) {
     const result = await boss.run(task, sessionId)
     return reply.send(result)
   })
+
+  fastify.addHook('onClose', async () => {
+    router.close()
+    agentRegistry.close()
+  })
 }

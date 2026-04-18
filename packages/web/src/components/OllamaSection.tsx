@@ -106,7 +106,9 @@ export function OllamaSection({ onModelsChanged }: Props) {
           setPulling(false)
           ws.close()
         }
-      } catch {}
+      } catch {
+        /* skip malformed ws message */
+      }
     }
 
     await new Promise<void>((resolve) => {

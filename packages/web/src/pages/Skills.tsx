@@ -92,7 +92,7 @@ export function Skills({ onNav }: { onNav: (page: NavPage) => void }) {
       if (!res.ok) {
         const text = await res.text()
         let msg = 'Save failed'
-        try { const j = JSON.parse(text); if (j.error) msg = j.error } catch {}
+        try { const j = JSON.parse(text); if (j.error) msg = j.error } catch { /* fall back to default msg */ }
         throw new Error(msg)
       }
       cancel()

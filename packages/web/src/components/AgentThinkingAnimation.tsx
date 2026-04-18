@@ -253,6 +253,7 @@ const DOMAIN_MAP: Record<AgentDomain, React.FC> = {
  * Lightweight client-side keyword pre-classifier.
  * Used only to pick the animation — the server makes the real routing decision.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function guessDomain(message: string): AgentDomain {
   const m = message.toLowerCase()
   if (/\b(budget|cash|invoice|financ|forecast|revenue|profit|compliance|risk|audit|spend)\b/.test(m)) return 'cfo'

@@ -38,7 +38,9 @@ export function useEventStream(maxEvents = 100) {
           const next = [...prev, event]
           return next.length > maxEvents ? next.slice(-maxEvents) : next
         })
-      } catch {}
+      } catch {
+        /* skip malformed event */
+      }
     }
 
     es.onerror = () => {

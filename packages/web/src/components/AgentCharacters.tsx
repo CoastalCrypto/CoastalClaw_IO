@@ -430,11 +430,13 @@ const AGENT_META_KNOWN: Record<string, AgentMeta> = {
   system_integrator: { label: 'SysInt',    color: '#fb923c', svg: SystemIntegrator },
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function getAgentMeta(agentId: string): AgentMeta {
   return AGENT_META_KNOWN[agentId] ?? getDefaultAgentMeta(agentId)
 }
 
 // Backward compatibility export
+// eslint-disable-next-line react-refresh/only-export-components
 export const AGENT_META = AGENT_META_KNOWN
 
 // ─── Component ────────────────────────────────────────────────────────────────

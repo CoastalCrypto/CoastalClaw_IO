@@ -52,7 +52,9 @@ export function Models() {
       try {
         const msg = JSON.parse(e.data)
         if (msg.type === 'quant_progress') setProgress(msg)
-      } catch {}
+      } catch {
+        /* skip malformed message */
+      }
     }
 
     await new Promise<void>((resolve) => {

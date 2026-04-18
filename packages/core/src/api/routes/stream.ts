@@ -119,6 +119,8 @@ export async function streamRoutes(fastify: FastifyInstance) {
   })
 
   fastify.addHook('onClose', async () => {
+    await memory.close()
+    router.close()
     agentRegistry.close()
     db.close()
     personaMgr.close()

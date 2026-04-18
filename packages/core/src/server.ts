@@ -231,6 +231,8 @@ export async function buildServer() {
     agentRegistry.close()
     pipelinePersonaMgr.close()
     pipelineRouter.close()
+    skillGaps.close()
+    await searchMemory.close()
     db.close()
   })
 

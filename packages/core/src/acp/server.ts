@@ -1,7 +1,12 @@
 // Coastal ACP agent — implements the Agent interface from
-// @agentclientprotocol/sdk. Each ACP session resolves to a Coastal agent
-// (coo/cfo/cto/general). The actual LLM/AgenticLoop wiring is intentionally
-// deferred — Phase 1 proves transport + persona routing end-to-end.
+// @agentclientprotocol/sdk and bridges into Coastal's AgenticLoop.
+//
+// Phase 2 wires the real LLM:
+//   - newSession creates an AcpSession (ACP holds its own short-form history)
+//   - prompt resolves the domain (env pin > keyword classify > general),
+//     looks up the AgentConfig, builds an AgentSession, and runs AgenticLoop
+//   - onToken streams agent_message_chunk updates as the LLM generates
+//   - onApprovalNeeded routes through ACP's requestPermission
 
 import type {
   Agent,
@@ -18,44 +23,27 @@ import type {
 } from '@agentclientprotocol/sdk'
 import { PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
 
-import { AgentRegistry } from '../agents/registry.js'
-import { PersonaManager } from '../persona/manager.js'
-import { loadConfig } from '../config.js'
-import { join as pathJoin } from 'node:path'
+import { AgentSession, type ChatMessage } from '../agents/session.js'
+import { AgenticLoop } from '../agents/loop.js'
 
-import { AcpSessionStore } from './sessions.js'
+import type { CoastalRuntime } from './runtime.js'
+import { AcpSessionStore, type AcpSession } from './sessions.js'
 import { resolveDomain, type Domain } from './persona-resolver.js'
-import { makeApprovalBridge } from './permissions.js'
-
-interface CoastalRuntime {
-  agentRegistry: AgentRegistry
-  personaMgr: PersonaManager
-}
-
-function bootRuntime(): CoastalRuntime {
-  const config = loadConfig()
-  return {
-    agentRegistry: new AgentRegistry(pathJoin(config.dataDir, 'agents.db')),
-    personaMgr: new PersonaManager(pathJoin(config.dataDir, 'persona.db')),
-  }
-}
+import { makeApprovalNotifier } from './permissions.js'
 
 export class CoastalACPAgent implements Agent {
   private readonly sessions = new AcpSessionStore()
-  private readonly runtime: CoastalRuntime
-  private readonly conn: AgentSideConnection
 
-  constructor(conn: AgentSideConnection) {
-    this.conn = conn
-    this.runtime = bootRuntime()
-  }
+  constructor(
+    private readonly conn: AgentSideConnection,
+    private readonly runtime: CoastalRuntime,
+    private readonly logToStderr: (...parts: unknown[]) => void = () => {},
+  ) {}
 
   async initialize(_req: InitializeRequest): Promise<InitializeResponse> {
     return {
       protocolVersion: PROTOCOL_VERSION,
-      agentCapabilities: {
-        loadSession: false,
-      },
+      agentCapabilities: { loadSession: false },
     }
   }
 
@@ -89,50 +77,88 @@ export class CoastalACPAgent implements Agent {
       this.sessions.appendUser(session.id, userText)
 
       if (session.domain === null) {
-        const domain = resolveDomain(userText)
-        this.sessions.setDomain(session.id, domain)
+        this.sessions.setDomain(session.id, resolveDomain(userText))
       }
-      const domain = session.domain ?? 'general'
+      const domain: Domain = session.domain ?? 'general'
 
-      const reply = await this.generateReply(domain, userText, abort.signal)
+      const reply = await this.runLoop(session, domain, userText, abort.signal)
+
       if (abort.signal.aborted) return { stopReason: 'cancelled' }
 
+      this.sessions.appendAssistant(session.id, reply)
+      return { stopReason: 'end_turn' }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      this.logToStderr('prompt error:', msg)
       await this.conn.sessionUpdate({
         sessionId: session.id,
         update: {
           sessionUpdate: 'agent_message_chunk',
-          content: { type: 'text', text: reply },
+          content: { type: 'text', text: `[Coastal error] ${msg}` },
         },
       })
-      this.sessions.appendAssistant(session.id, reply)
-
       return { stopReason: 'end_turn' }
     } finally {
       session.pendingPrompt = null
     }
   }
 
-  // Phase-1 stub. Phase 2 replaces with: ModelRouter + AgenticLoop run,
-  // streaming agent_message_chunk per delta, emitting tool_call updates,
-  // and using makeApprovalBridge(this.conn, session.id) for the gate.
-  private async generateReply(domain: Domain, userText: string, _signal: AbortSignal): Promise<string> {
+  private async runLoop(
+    session: AcpSession,
+    domain: Domain,
+    userText: string,
+    signal: AbortSignal,
+  ): Promise<string> {
     const agent = this.runtime.agentRegistry.getByDomain(domain)
       ?? this.runtime.agentRegistry.get('general')
-    const persona = this.runtime.personaMgr.get()
-    const agentLabel = agent ? `${agent.name} (${domain})` : `general agent`
-    const role = agent?.role ?? 'General assistant'
-    const _bridge = makeApprovalBridge(this.conn, '')
+    if (!agent) throw new Error('No agent registered (not even general)')
 
-    return [
-      `[Coastal ACP — Phase 1 stub]`,
-      `Persona: ${persona.agentName} @ ${persona.orgName}`,
-      `Routed to: ${agentLabel}`,
-      `Role: ${role}`,
-      ``,
-      `Received: ${userText}`,
-      ``,
-      `(LLM completion not yet wired — confirm routing looks right, then Phase 2 plumbs in ModelRouter + AgenticLoop.)`,
-    ].join('\n')
+    const persona = this.runtime.personaMgr.get()
+    const toolDefs = this.runtime.toolRegistry.getDefinitionsFor(agent.tools)
+    const agentSession = new AgentSession(agent, toolDefs, persona)
+
+    const onToken = (token: string): void => {
+      void this.conn.sessionUpdate({
+        sessionId: session.id,
+        update: {
+          sessionUpdate: 'agent_message_chunk',
+          content: { type: 'text', text: token },
+        },
+      })
+    }
+
+    const onApprovalNeeded = makeApprovalNotifier(
+      this.runtime.gate,
+      this.conn,
+      session.id,
+      this.logToStderr,
+    )
+
+    const loop = new AgenticLoop(
+      this.runtime.ollama,
+      this.runtime.toolRegistry,
+      this.runtime.gate,
+      this.runtime.log,
+      onApprovalNeeded,
+      undefined,
+      onToken,
+    )
+
+    const history: ChatMessage[] = session.history.slice(0, -1).map((h) => ({
+      role: h.role,
+      content: h.content,
+    }))
+
+    const result = await loop.run(
+      agentSession,
+      userText,
+      session.id,
+      history,
+      undefined,
+      signal,
+    )
+
+    return result.reply
   }
 }
 

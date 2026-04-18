@@ -1,12 +1,17 @@
-// Bridges ACP permission requests to Coastal's tool-approval shape.
+// Bridges AgenticLoop's onApprovalNeeded fire-and-forget callback to ACP's
+// request-response permission flow.
 //
-// Coastal's PermissionGate expects a callback returning 'once' | 'always' | 'deny'.
-// ACP returns either an AllowedOutcome with an option_id we control, or a
-// CancelledOutcome. We map our own option ids back to Coastal strings.
+// AgenticLoop holds the gate; when a tool needs approval, it calls
+// gate.createPendingApproval() to get a promise, then notifies us via
+// onApprovalNeeded. We must call gate.resolveApproval(approvalId, ...)
+// once the IDE user responds, otherwise the loop stalls until timeout.
+//
+// Phase-2 scope: maps allow_once → 'approved', deny → 'denied'.
+// allow_always is treated as allow_once (no setAlwaysAllow yet — that needs
+// agentId, but the AgenticLoop signature only passes agentName). Phase 3.
 
 import type { AgentSideConnection } from '@agentclientprotocol/sdk'
-
-export type CoastalApprovalResult = 'once' | 'always' | 'deny'
+import type { PermissionGate } from '../agents/permission-gate.js'
 
 interface AcpPermissionOption {
   optionId: string
@@ -20,47 +25,46 @@ const OPTIONS: readonly AcpPermissionOption[] = [
   { optionId: 'deny',         kind: 'reject_once',  name: 'Deny' },
 ]
 
-const OUTCOME_MAP: Record<string, CoastalApprovalResult> = {
-  allow_once: 'once',
-  allow_always: 'always',
-  deny: 'deny',
-}
+const APPROVE_IDS = new Set(['allow_once', 'allow_always'])
 
-export function makeApprovalBridge(
+export type ApprovalNotifier = (
+  approvalId: string,
+  agentName: string,
+  toolName: string,
+  cmd: string,
+) => void
+
+export function makeApprovalNotifier(
+  gate: PermissionGate,
   conn: AgentSideConnection,
-  sessionId: string,
-  timeoutMs = 60_000,
-): (toolName: string, description: string) => Promise<CoastalApprovalResult> {
-  return async (toolName, description) => {
-    const toolCallId = `perm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  acpSessionId: string,
+  logToStderr: (...parts: unknown[]) => void = () => {},
+): ApprovalNotifier {
+  return (approvalId, agentName, toolName, cmd) => {
+    void (async () => {
+      try {
+        const response = await conn.requestPermission({
+          sessionId: acpSessionId,
+          toolCall: {
+            toolCallId: approvalId,
+            title: `${agentName}: ${toolName}`,
+            kind: 'execute',
+            status: 'pending',
+            rawInput: { command: cmd },
+          },
+          options: OPTIONS as unknown as Parameters<typeof conn.requestPermission>[0]['options'],
+        })
 
-    const requestPromise = conn.requestPermission({
-      sessionId,
-      toolCall: {
-        toolCallId,
-        title: toolName,
-        kind: 'execute',
-        status: 'pending',
-        rawInput: { description },
-      },
-      options: OPTIONS as unknown as Parameters<typeof conn.requestPermission>[0]['options'],
-    })
-
-    let timer: NodeJS.Timeout | undefined
-    const timeoutPromise = new Promise<'deny'>((resolve) => {
-      timer = setTimeout(() => resolve('deny'), timeoutMs)
-    })
-
-    try {
-      const result = await Promise.race([requestPromise, timeoutPromise])
-      if (result === 'deny') return 'deny'
-      const outcome = result.outcome
-      if (outcome.outcome !== 'selected') return 'deny'
-      return OUTCOME_MAP[outcome.optionId] ?? 'deny'
-    } catch {
-      return 'deny'
-    } finally {
-      if (timer) clearTimeout(timer)
-    }
+        const outcome = response.outcome
+        if (outcome.outcome === 'selected' && APPROVE_IDS.has(outcome.optionId)) {
+          gate.resolveApproval(approvalId, 'approved')
+        } else {
+          gate.resolveApproval(approvalId, 'denied')
+        }
+      } catch (err) {
+        logToStderr('approval bridge error:', err instanceof Error ? err.message : String(err))
+        gate.resolveApproval(approvalId, 'denied')
+      }
+    })()
   }
 }

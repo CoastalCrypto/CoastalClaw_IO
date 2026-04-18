@@ -1,13 +1,13 @@
 // CLI entry point for the Coastal ACP adapter.
 //
-// Loads .env (so AgentRegistry/PersonaManager find the configured data dir),
+// Loads .env, boots the shared CoastalRuntime (Ollama, registries, tools, gate),
 // routes ALL logging to stderr (stdout is reserved for ACP JSON-RPC),
 // and serves the agent over stdin/stdout via ndJsonStream.
 //
 // Usage:
-//   node packages/core/dist/acp/entry.js
 //   pnpm --filter @coastal-ai/core acp
-//   coastal-acp                          (after `pnpm install` if bin is wired)
+//   COASTAL_ACP_PERSONA=cto pnpm --filter @coastal-ai/core acp
+//   coastal-acp                          (after install, when bin is on PATH)
 
 import { config as loadEnv } from 'dotenv'
 import { resolve, dirname } from 'node:path'
@@ -16,6 +16,7 @@ import { Readable, Writable } from 'node:stream'
 
 import { AgentSideConnection, ndJsonStream } from '@agentclientprotocol/sdk'
 import { CoastalACPAgent } from './server.js'
+import { bootRuntime } from './runtime.js'
 
 const __dir = dirname(fileURLToPath(import.meta.url))
 loadEnv({ path: resolve(__dir, '..', '..', '.env.local'), override: false })
@@ -27,20 +28,26 @@ function logToStderr(...parts: unknown[]): void {
 
 async function main(): Promise<void> {
   logToStderr('starting ACP adapter')
+  const runtime = await bootRuntime()
+  logToStderr(`runtime ready (ollama=${runtime.config.ollamaUrl} trust=${runtime.config.agentTrustLevel})`)
 
   const stream = ndJsonStream(
-    Readable.toWeb(process.stdin) as ReadableStream<Uint8Array>,
     Writable.toWeb(process.stdout) as WritableStream<Uint8Array>,
+    Readable.toWeb(process.stdin) as ReadableStream<Uint8Array>,
   )
 
-  const conn = new AgentSideConnection((c) => new CoastalACPAgent(c), stream)
+  const conn = new AgentSideConnection(
+    (c) => new CoastalACPAgent(c, runtime, logToStderr),
+    stream,
+  )
 
-  const shutdown = (signal: string) => {
+  const shutdown = async (signal: string) => {
     logToStderr(`received ${signal}, shutting down`)
+    try { await runtime.dispose() } catch { /* noop */ }
     process.exit(0)
   }
-  process.on('SIGINT', () => shutdown('SIGINT'))
-  process.on('SIGTERM', () => shutdown('SIGTERM'))
+  process.on('SIGINT', () => { void shutdown('SIGINT') })
+  process.on('SIGTERM', () => { void shutdown('SIGTERM') })
 
   void conn
 }

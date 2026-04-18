@@ -5,14 +5,20 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "coastal-acp": "dist/acp/entry.js"
+  },
   "scripts": {
     "build": "tsc && node -e \"const fs=require('fs');if(fs.existsSync('src/agents/souls'))fs.cpSync('src/agents/souls','dist/agents/souls',{recursive:true});if(fs.existsSync('src/skills/default-skills.json'))fs.copyFileSync('src/skills/default-skills.json','dist/skills/default-skills.json')\"",
     "dev": "node --watch --loader ts-node/esm src/main.ts",
+    "acp": "node --loader ts-node/esm src/acp/entry.ts",
+    "acp:built": "node dist/acp/entry.js",
     "repair": "node --loader ts-node/esm src/cli/repair.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@agentclientprotocol/sdk": "^0.19.0",
     "@apollo/server": "^4.10.0",
     "@dagrejs/graphlib": "^2.2.2",
     "@fastify/cors": "^9.0.0",

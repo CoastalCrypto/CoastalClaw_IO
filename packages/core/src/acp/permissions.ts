@@ -6,9 +6,8 @@
 // onApprovalNeeded. We must call gate.resolveApproval(approvalId, ...)
 // once the IDE user responds, otherwise the loop stalls until timeout.
 //
-// Phase-2 scope: maps allow_once → 'approved', deny → 'denied'.
-// allow_always is treated as allow_once (no setAlwaysAllow yet — that needs
-// agentId, but the AgenticLoop signature only passes agentName). Phase 3.
+// agentId is captured in the closure (not passed by AgenticLoop) so that
+// 'allow_always' can persist via gate.setAlwaysAllow before resolving.
 
 import type { AgentSideConnection } from '@agentclientprotocol/sdk'
 import type { PermissionGate } from '../agents/permission-gate.js'
@@ -25,8 +24,6 @@ const OPTIONS: readonly AcpPermissionOption[] = [
   { optionId: 'deny',         kind: 'reject_once',  name: 'Deny' },
 ]
 
-const APPROVE_IDS = new Set(['allow_once', 'allow_always'])
-
 export type ApprovalNotifier = (
   approvalId: string,
   agentName: string,
@@ -34,12 +31,18 @@ export type ApprovalNotifier = (
   cmd: string,
 ) => void
 
-export function makeApprovalNotifier(
-  gate: PermissionGate,
-  conn: AgentSideConnection,
-  acpSessionId: string,
-  logToStderr: (...parts: unknown[]) => void = () => {},
-): ApprovalNotifier {
+export interface ApprovalBridgeOptions {
+  gate: PermissionGate
+  conn: AgentSideConnection
+  acpSessionId: string
+  agentId: string
+  logToStderr?: (...parts: unknown[]) => void
+}
+
+export function makeApprovalNotifier(opts: ApprovalBridgeOptions): ApprovalNotifier {
+  const { gate, conn, acpSessionId, agentId } = opts
+  const logToStderr = opts.logToStderr ?? (() => {})
+
   return (approvalId, agentName, toolName, cmd) => {
     void (async () => {
       try {
@@ -56,10 +59,21 @@ export function makeApprovalNotifier(
         })
 
         const outcome = response.outcome
-        if (outcome.outcome === 'selected' && APPROVE_IDS.has(outcome.optionId)) {
-          gate.resolveApproval(approvalId, 'approved')
-        } else {
+        if (outcome.outcome !== 'selected') {
           gate.resolveApproval(approvalId, 'denied')
+          return
+        }
+
+        switch (outcome.optionId) {
+          case 'allow_always':
+            gate.setAlwaysAllow(agentId, toolName)
+            gate.resolveApproval(approvalId, 'approved')
+            return
+          case 'allow_once':
+            gate.resolveApproval(approvalId, 'approved')
+            return
+          default:
+            gate.resolveApproval(approvalId, 'denied')
         }
       } catch (err) {
         logToStderr('approval bridge error:', err instanceof Error ? err.message : String(err))

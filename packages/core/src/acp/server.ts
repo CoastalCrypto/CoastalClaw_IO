@@ -30,6 +30,7 @@ import type { CoastalRuntime } from './runtime.js'
 import { AcpSessionStore, type AcpSession } from './sessions.js'
 import { resolveDomain, type Domain } from './persona-resolver.js'
 import { makeApprovalNotifier } from './permissions.js'
+import { subscribeToolCalls } from './tool-call-bridge.js'
 
 export class CoastalACPAgent implements Agent {
   private readonly sessions = new AcpSessionStore()
@@ -127,12 +128,13 @@ export class CoastalACPAgent implements Agent {
       })
     }
 
-    const onApprovalNeeded = makeApprovalNotifier(
-      this.runtime.gate,
-      this.conn,
-      session.id,
-      this.logToStderr,
-    )
+    const onApprovalNeeded = makeApprovalNotifier({
+      gate: this.runtime.gate,
+      conn: this.conn,
+      acpSessionId: session.id,
+      agentId: agent.id,
+      logToStderr: this.logToStderr,
+    })
 
     const loop = new AgenticLoop(
       this.runtime.ollama,
@@ -149,16 +151,26 @@ export class CoastalACPAgent implements Agent {
       content: h.content,
     }))
 
-    const result = await loop.run(
-      agentSession,
-      userText,
-      session.id,
-      history,
-      undefined,
-      signal,
-    )
+    const unsubscribeToolCalls = subscribeToolCalls({
+      conn: this.conn,
+      acpSessionId: session.id,
+      loopSessionId: session.id,
+      logToStderr: this.logToStderr,
+    })
 
-    return result.reply
+    try {
+      const result = await loop.run(
+        agentSession,
+        userText,
+        session.id,
+        history,
+        undefined,
+        signal,
+      )
+      return result.reply
+    } finally {
+      unsubscribeToolCalls()
+    }
   }
 }
 

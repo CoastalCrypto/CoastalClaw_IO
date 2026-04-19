@@ -149,7 +149,7 @@ export async function buildServer() {
   await fastify.register(systemRoutes)
   await fastify.register(sessionRoutes)
   await fastify.register(uploadRoutes)
-  await fastify.register(streamRoutes)
+  await fastify.register(streamRoutes, { gate })
 
   // Pipeline: needs its own instances of shared infrastructure
   mkdirSync(config.dataDir, { recursive: true })
@@ -224,7 +224,7 @@ export async function buildServer() {
   const userModelStore = new UserModelStore(db)
   const searchMemory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey, cloudConsentGranted: config.cloudConsentGranted })
 
-  await fastify.register(chatRoutes, { mcpStore })
+  await fastify.register(chatRoutes, { mcpStore, gate })
   await fastify.register(skillRoutes, { store: skillStore, router: pipelineRouter, gaps: skillGaps })
   await fastify.register(skillPackRoutes, { skillStore, agentRegistry })
   await fastify.register(mcpRoutes, { store: mcpStore })

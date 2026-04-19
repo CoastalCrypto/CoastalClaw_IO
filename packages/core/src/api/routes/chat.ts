@@ -22,8 +22,11 @@ import { join as pathJoin } from 'node:path'
 
 import { McpStore } from '../../tools/mcp/store.js'
 
-export async function chatRoutes(fastify: FastifyInstance, opts: { mcpStore: McpStore }) {
-  const { mcpStore } = opts
+export async function chatRoutes(
+  fastify: FastifyInstance,
+  opts: { mcpStore: McpStore; gate: PermissionGate },
+) {
+  const { mcpStore, gate } = opts
   const config = loadConfig()
 
   // Ensure data dir and workspace exist
@@ -44,7 +47,6 @@ export async function chatRoutes(fastify: FastifyInstance, opts: { mcpStore: Mcp
     trustLevel: config.agentTrustLevel,
     workdir: config.agentWorkdir,
   })
-  const gate = new PermissionGate(db)
   const log = new ActionLog(db)
   const skillGaps = new SkillGapsLog(config.dataDir)
   const personaMgr = new PersonaManager(pathJoin(config.dataDir, 'persona.db'))

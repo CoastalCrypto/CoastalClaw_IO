@@ -15,7 +15,11 @@ import { randomUUID } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 
-export async function streamRoutes(fastify: FastifyInstance) {
+export async function streamRoutes(
+  fastify: FastifyInstance,
+  opts: { gate: PermissionGate },
+) {
+  const { gate } = opts
   const config = loadConfig()
   mkdirSync(config.dataDir, { recursive: true })
   mkdirSync(config.agentWorkdir, { recursive: true })
@@ -30,7 +34,6 @@ export async function streamRoutes(fastify: FastifyInstance) {
     trustLevel: config.agentTrustLevel,
     workdir: config.agentWorkdir,
   })
-  const gate = new PermissionGate(db)
   const log = new ActionLog(db)
   const personaMgr = new PersonaManager(join(config.dataDir, 'persona.db'))
 

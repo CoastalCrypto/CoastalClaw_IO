@@ -55,7 +55,8 @@ export class AgentSession {
       .join('\n')
     const now = new Date().toISOString()
     const contextSection = this.contextDocs.length > 0
-      ? '\n\n---\n## Project Context\n' + this.contextDocs.map(d => `### ${d.title}\n${d.content}`).join('\n\n')
+      ? '\n\n---\n## Knowledge Library\n_The following documents have been uploaded to this workspace by the user. Treat them as authoritative reference material and cite them by title when you use them. When asked whether you can "see" or "access" the knowledge library, the answer is YES — it is the section below._\n\n'
+        + this.contextDocs.map(d => `### ${d.title}\n${d.content}`).join('\n\n')
       : ''
     const userSection = this.userModel?.toPromptSection() ?? ''
     this._systemPrompt = `${interpolated}${contextSection}${userSection}\n\nAvailable tools:\n${toolLines}\n\nCurrent date/time: ${now}`

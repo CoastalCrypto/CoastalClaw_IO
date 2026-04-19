@@ -1,5 +1,4 @@
 import type { FastifyInstance } from 'fastify'
-import multipart from '@fastify/multipart'
 import { PDFParse } from 'pdf-parse'
 import mammoth from 'mammoth'
 import type { KnowledgeStore } from '../../knowledge/store.js'
@@ -69,9 +68,8 @@ export async function knowledgeRoutes(
   fastify: FastifyInstance,
   opts: { store: KnowledgeStore; router: ModelRouter },
 ) {
-  await fastify.register(multipart, {
-    limits: { fileSize: MAX_FILE_SIZE, files: 1 },
-  })
+  // Note: @fastify/multipart is registered globally in server.ts so `req.file()`
+  // is already available here. Registering it again would throw FST_ERR_DEC_ALREADY_PRESENT.
 
   // POST /api/admin/knowledge/ingest — upload a document, extract/caption, ingest.
   fastify.post('/api/admin/knowledge/ingest', async (req, reply) => {

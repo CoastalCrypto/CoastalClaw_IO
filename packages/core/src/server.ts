@@ -56,6 +56,7 @@ import { EdgeFeedbackStore } from './agents/edge-feedback.js'
 import { ChannelManager } from './channels/manager.js'
 import { McpStore } from './tools/mcp/store.js'
 import { loadConfig } from './config.js'
+import multipart from '@fastify/multipart'
 import Database from 'better-sqlite3'
 import { join } from 'node:path'
 import { timingSafeEqual } from 'node:crypto'
@@ -114,6 +115,12 @@ export async function buildServer() {
     global: false, // opt-in per route
   })
   await fastify.register(websocket)
+  // Multipart is registered ONCE here so both upload and knowledge ingest
+  // can share `req.file()`. Each route was previously re-registering the
+  // plugin, which Fastify rejects (FST_ERR_DEC_ALREADY_PRESENT) and broke
+  // the graph-side knowledge upload. The 25MB ceiling matches the larger
+  // of the two limits; each route still enforces its own size check.
+  await fastify.register(multipart, { limits: { fileSize: 25 * 1024 * 1024, files: 1 } })
   await fastify.register(healthRoutes)
   await fastify.register(wsRoutes)
   await fastify.register(adminRoutes)
@@ -148,13 +155,17 @@ export async function buildServer() {
   await fastify.register(personaRoutes, { registry: agentRegistry })
   await fastify.register(systemRoutes)
   await fastify.register(sessionRoutes)
-  await fastify.register(uploadRoutes)
-  await fastify.register(streamRoutes, { gate })
-
-  // Pipeline: needs its own instances of shared infrastructure
+  // Shared infrastructure needed by multiple routes. Built here so upload.ts
+  // can auto-persist chat uploads into the knowledge library.
   mkdirSync(config.dataDir, { recursive: true })
   mkdirSync(config.agentWorkdir, { recursive: true })
   const pipelineRouter = new ModelRouter({ ollamaUrl: config.ollamaUrl, vllmUrl: config.vllmUrl, airllmUrl: config.airllmUrl, defaultModel: config.defaultModel })
+  const sharedContextStore = new ContextStore(db)
+  const sharedSearchMemory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey, cloudConsentGranted: config.cloudConsentGranted })
+  const sharedKnowledgeStore = new KnowledgeStore(db, sharedContextStore, sharedSearchMemory)
+
+  await fastify.register(uploadRoutes, { knowledgeStore: sharedKnowledgeStore, router: pipelineRouter })
+  await fastify.register(streamRoutes, { gate })
   const pipelineBackend = await createBackend(config.agentTrustLevel, [config.agentWorkdir])
   const pipelineToolRegistry = new ToolRegistry({
     backend: pipelineBackend,
@@ -220,20 +231,17 @@ export async function buildServer() {
   }
 
   const skillGaps = new SkillGapsLog(config.dataDir)
-  const contextStore = new ContextStore(db)
   const userModelStore = new UserModelStore(db)
-  const searchMemory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey, cloudConsentGranted: config.cloudConsentGranted })
 
   await fastify.register(chatRoutes, { mcpStore, gate })
   await fastify.register(skillRoutes, { store: skillStore, router: pipelineRouter, gaps: skillGaps })
   await fastify.register(skillPackRoutes, { skillStore, agentRegistry })
   await fastify.register(mcpRoutes, { store: mcpStore })
-  await fastify.register(searchRoutes, { memory: searchMemory })
-  await fastify.register(contextRoutes, { store: contextStore })
+  await fastify.register(searchRoutes, { memory: sharedSearchMemory })
+  await fastify.register(contextRoutes, { store: sharedContextStore })
   await fastify.register(userModelRoutes, { store: userModelStore })
 
-  const knowledgeStore = new KnowledgeStore(db, contextStore, searchMemory)
-  await fastify.register(knowledgeRoutes, { store: knowledgeStore, router: pipelineRouter })
+  await fastify.register(knowledgeRoutes, { store: sharedKnowledgeStore, router: pipelineRouter })
 
   // Ensure the default admin account is fully seeded before accepting requests.
   // Without this, a login attempt during scrypt hashing would return "Invalid credentials".
@@ -249,7 +257,7 @@ export async function buildServer() {
     pipelinePersonaMgr.close()
     pipelineRouter.close()
     skillGaps.close()
-    await searchMemory.close()
+    await sharedSearchMemory.close()
     db.close()
   })
 

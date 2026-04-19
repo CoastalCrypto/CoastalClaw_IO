@@ -68,6 +68,9 @@ export async function buildServer() {
   const userStore = new UserStore(db, adminToken)
 
   fastify.addHook('onRequest', async (req, reply) => {
+    // CORS preflight must bypass auth so the browser can complete the handshake.
+    // The @fastify/cors plugin replies to OPTIONS with the proper Access-Control-* headers.
+    if (req.method === 'OPTIONS') return
     const isAdminRoute = req.url.startsWith('/api/admin')
     const isNetworkRoute = req.url.startsWith('/api/chat') || req.url.startsWith('/api/upload')
     // Only enforce auth on admin routes, and on chat/upload when server is network-exposed

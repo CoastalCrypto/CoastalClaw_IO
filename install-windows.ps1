@@ -135,15 +135,95 @@ CC_DEFAULT_MODEL=llama3.2
     Write-Info "Core configuration already exists"
 }
 
-# ── Pull default model ────────────────────────────────
-Write-Step "Verifying default model (llama3.2)"
-$hasModel = (ollama list) -match "llama3\.2"
-if ($hasModel) {
-    Write-Ok "llama3.2 already available"
+# ── System scan ────────────────────────────────────────
+Write-Step "Scanning system for model recommendations"
+
+$totalRamGb = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB, 1)
+Write-Info "RAM: $totalRamGb GB"
+
+# VRAM detection — Win32_VideoController.AdapterRAM is capped at 4GB on some drivers,
+# so prefer nvidia-smi when available for accurate dedicated-GPU numbers.
+$maxVramGb = 0
+$gpuName = "(none detected)"
+foreach ($gpu in (Get-CimInstance Win32_VideoController)) {
+    if ($gpu.AdapterRAM -gt 0) {
+        $vramGb = [math]::Round($gpu.AdapterRAM / 1GB, 1)
+        if ($vramGb -gt $maxVramGb) {
+            $maxVramGb = $vramGb
+            $gpuName = $gpu.Name
+        }
+    }
+}
+if (Has-Command nvidia-smi) {
+    try {
+        $smiOut = nvidia-smi --query-gpu=name,memory.total --format=csv,noheader,nounits 2>$null | Select-Object -First 1
+        if ($smiOut) {
+            $parts = $smiOut.Split(",")
+            if ($parts.Count -ge 2) {
+                $smiGb = [math]::Round([int]($parts[1].Trim()) / 1024, 1)
+                if ($smiGb -gt $maxVramGb) {
+                    $maxVramGb = $smiGb
+                    $gpuName = $parts[0].Trim()
+                }
+            }
+        }
+    } catch { }
+}
+Write-Info "GPU: $gpuName ($maxVramGb GB VRAM)"
+
+# ── Pick model tier by RAM ─────────────────────────────
+# Tier table — tunable. Each tier is a cumulative superset of the previous one.
+if     ($totalRamGb -lt 8)  { $tier = "minimal";     $models = @("llama3.2:1b") }
+elseif ($totalRamGb -lt 16) { $tier = "light";       $models = @("llama3.2") }
+elseif ($totalRamGb -lt 32) { $tier = "standard";    $models = @("llama3.2", "qwen2.5-coder:7b") }
+elseif ($totalRamGb -lt 64) { $tier = "performance"; $models = @("llama3.2", "qwen2.5-coder:7b", "qwen2.5:14b") }
+else                        { $tier = "premium";     $models = @("llama3.2", "qwen2.5-coder:7b", "qwen2.5:14b", "gemma3:27b") }
+
+Write-Info ("Recommended tier: {0} — {1} model(s)" -f $tier, $models.Count)
+foreach ($m in $models) { Write-Host "      - $m" -ForegroundColor Gray }
+
+if ($totalRamGb -lt 8) {
+    Write-Warn "Low RAM — local models will be slow. Consider upgrading before heavy use."
+}
+if ($maxVramGb -lt 4 -and $totalRamGb -ge 16) {
+    Write-Warn "No dedicated GPU detected — models will run on CPU and may be slower."
+}
+
+# ── Pull primary model, recommend the rest ─────────────
+# Only the first model is auto-pulled to keep install fast and disk usage predictable.
+# The remaining models are printed as manual pull instructions.
+Write-Step "Installing primary model"
+$primary = $models[0]
+$optional = if ($models.Count -gt 1) { $models[1..($models.Count - 1)] } else { @() }
+
+$installedList = (ollama list 2>$null | Out-String)
+$primaryShort = ($primary -split ':')[0]
+if ($installedList -match [regex]::Escape($primaryShort)) {
+    Write-Ok "$primary already available"
 } else {
-    Write-Info "Pulling llama3.2 (~2 GB, this may take a few minutes)..."
-    & ollama pull llama3.2
-    Write-Ok "llama3.2 ready"
+    Write-Info "Pulling $primary (this may take a few minutes)..."
+    & ollama pull $primary
+    if ($LASTEXITCODE -eq 0) {
+        Write-Ok "$primary ready"
+    } else {
+        Write-Warn "Pull failed for $primary — retry later with: ollama pull $primary"
+    }
+}
+
+if ($optional.Count -gt 0) {
+    Write-Host ""
+    Write-Host "  Recommended additional models for your system:" -ForegroundColor White
+    foreach ($m in $optional) {
+        $shortName = ($m -split ':')[0]
+        if ($installedList -match [regex]::Escape($shortName)) {
+            Write-Host "    - $m " -NoNewline -ForegroundColor Gray
+            Write-Host "(already installed)" -ForegroundColor Green
+        } else {
+            Write-Host "    - $m" -ForegroundColor Gray
+            Write-Host "      ollama pull $m" -ForegroundColor DarkCyan
+        }
+    }
+    Write-Host ""
 }
 
 # ── Create launcher shortcut ───────────────────────────

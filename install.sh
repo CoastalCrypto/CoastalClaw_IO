@@ -196,8 +196,56 @@ else
   info "Web config already exists — skipping."
 fi
 
-# ── Pull default model ───────────────────────────────────────
-step "⑦ Pulling default model (llama3.2)"
+# ── System scan + model recommendations ──────────────────────
+step "⑦ Scanning system for model recommendations"
+
+# RAM detection — prefer /proc/meminfo on Linux, sysctl on macOS.
+if [[ "$PLATFORM" == "linux" && -r /proc/meminfo ]]; then
+  RAM_KB=$(awk '/^MemTotal:/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)
+  TOTAL_RAM_GB=$(awk -v kb="$RAM_KB" 'BEGIN { printf "%.1f", kb/1024/1024 }')
+elif [[ "$PLATFORM" == "macos" ]] && has sysctl; then
+  RAM_BYTES=$(sysctl -n hw.memsize 2>/dev/null || echo 0)
+  TOTAL_RAM_GB=$(awk -v b="$RAM_BYTES" 'BEGIN { printf "%.1f", b/1024/1024/1024 }')
+else
+  TOTAL_RAM_GB=0
+fi
+info "RAM: ${TOTAL_RAM_GB} GB"
+
+# VRAM detection — nvidia-smi (Linux + Win/WSL), otherwise rely on unified memory on Apple Silicon.
+MAX_VRAM_GB=0
+GPU_NAME="(none detected)"
+if has nvidia-smi; then
+  SMI_OUT=$(nvidia-smi --query-gpu=name,memory.total --format=csv,noheader,nounits 2>/dev/null | head -1 || true)
+  if [[ -n "$SMI_OUT" ]]; then
+    GPU_NAME=$(echo "$SMI_OUT" | awk -F', ' '{print $1}')
+    SMI_MB=$(echo "$SMI_OUT" | awk -F', ' '{print $2}')
+    MAX_VRAM_GB=$(awk -v mb="$SMI_MB" 'BEGIN { printf "%.1f", mb/1024 }')
+  fi
+elif [[ "$PLATFORM" == "macos" ]]; then
+  # Apple Silicon: GPU shares RAM. Report unified.
+  GPU_NAME="Apple Silicon (unified memory)"
+  MAX_VRAM_GB="$TOTAL_RAM_GB"
+fi
+info "GPU:  ${GPU_NAME} (${MAX_VRAM_GB} GB VRAM)"
+
+# Tier selection by RAM — cumulative supersets.
+RAM_INT=${TOTAL_RAM_GB%.*}
+if   [[ $RAM_INT -lt 8  ]]; then TIER="minimal";     RECOMMENDED=("llama3.2:1b")
+elif [[ $RAM_INT -lt 16 ]]; then TIER="light";       RECOMMENDED=("llama3.2")
+elif [[ $RAM_INT -lt 32 ]]; then TIER="standard";    RECOMMENDED=("llama3.2" "qwen2.5-coder:7b")
+elif [[ $RAM_INT -lt 64 ]]; then TIER="performance"; RECOMMENDED=("llama3.2" "qwen2.5-coder:7b" "qwen2.5:14b")
+else                             TIER="premium";     RECOMMENDED=("llama3.2" "qwen2.5-coder:7b" "qwen2.5:14b" "gemma3:27b")
+fi
+
+info "Recommended tier: ${BOLD}${TIER}${RESET} — ${#RECOMMENDED[@]} model(s)"
+for m in "${RECOMMENDED[@]}"; do echo -e "      ${DIM}- $m${RESET}"; done
+
+if [[ $RAM_INT -lt 8 ]]; then
+  warn "Low RAM — local models will be slow. Consider upgrading before heavy use."
+fi
+
+# ── Pull recommended models ──────────────────────────────────
+step "⑧ Pulling recommended models"
 
 # Start Ollama in background if not already running
 if ! ollama list &>/dev/null; then
@@ -208,12 +256,36 @@ if ! ollama list &>/dev/null; then
   info "Ollama started (PID ${OLLAMA_PID})"
 fi
 
-if ollama list 2>/dev/null | grep -q "llama3.2"; then
-  success "llama3.2 already pulled"
+# Only the first model is auto-pulled to keep install fast.
+# The rest are listed as manual pull instructions.
+PRIMARY="${RECOMMENDED[0]}"
+INSTALLED_LIST=$(ollama list 2>/dev/null || echo "")
+PRIMARY_SHORT="${PRIMARY%%:*}"
+
+if echo "$INSTALLED_LIST" | grep -q "$PRIMARY_SHORT"; then
+  success "$PRIMARY already available"
 else
-  info "Pulling llama3.2 (~2 GB)..."
-  ollama pull llama3.2
-  success "llama3.2 ready"
+  info "Pulling $PRIMARY..."
+  if ollama pull "$PRIMARY"; then
+    success "$PRIMARY ready"
+  else
+    warn "Pull failed for $PRIMARY — retry later with: ollama pull $PRIMARY"
+  fi
+fi
+
+if [[ ${#RECOMMENDED[@]} -gt 1 ]]; then
+  echo ""
+  echo -e "  ${BOLD}Recommended additional models for your system:${RESET}"
+  for m in "${RECOMMENDED[@]:1}"; do
+    SHORT_NAME="${m%%:*}"
+    if echo "$INSTALLED_LIST" | grep -q "$SHORT_NAME"; then
+      echo -e "    ${DIM}- $m${RESET}  ${GREEN}(already installed)${RESET}"
+    else
+      echo -e "    ${DIM}- $m${RESET}"
+      echo -e "      ${CYAN}ollama pull $m${RESET}"
+    fi
+  done
+  echo ""
 fi
 
 # ── Add to PATH (shell profile) ──────────────────────────────

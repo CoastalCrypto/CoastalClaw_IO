@@ -17,21 +17,21 @@ const DefaultAgent = () => (
   </svg>
 )
 
-// Generate fallback metadata for unknown agents using a color hash
-function getDefaultAgentMeta(agentId: string): AgentMeta {
-  const colors = ['#00e5ff', '#4ade80', '#a78bfa', '#f59e0b', '#f472b6', '#38bdf8', '#a855f7', '#fbbf24', '#fb923c', '#ec4899']
-  const hash = agentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-  const color = colors[hash % colors.length]
+const FALLBACK_COLORS = ['#00e5ff', '#4ade80', '#a78bfa', '#f59e0b', '#f472b6', '#38bdf8', '#a855f7', '#fbbf24', '#fb923c', '#ec4899']
 
-  return {
-    label: agentId
-      .split(/[-_]/)
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ')
-      .substring(0, 8),
-    color,
-    svg: DefaultAgent,
-  }
+// Generate fallback metadata for unknown agents using a color hash
+function getDefaultAgentMeta(agentId: string, displayName?: string): AgentMeta {
+  const hash = agentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  const color = FALLBACK_COLORS[hash % FALLBACK_COLORS.length]
+
+  const rawLabel = displayName?.trim() || agentId
+  const label = rawLabel
+    .split(/[-_\s]+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+    .substring(0, 10)
+
+  return { label, color, svg: DefaultAgent }
 }
 
 // ─── SVG characters ──────────────────────────────────────────────────────────
@@ -431,8 +431,8 @@ const AGENT_META_KNOWN: Record<string, AgentMeta> = {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-export function getAgentMeta(agentId: string): AgentMeta {
-  return AGENT_META_KNOWN[agentId] ?? getDefaultAgentMeta(agentId)
+export function getAgentMeta(agentId: string, displayName?: string): AgentMeta {
+  return AGENT_META_KNOWN[agentId] ?? getDefaultAgentMeta(agentId, displayName)
 }
 
 // Backward compatibility export
@@ -478,14 +478,14 @@ export function AgentCharacters({ agents, selected, onSelect, vertical = false }
         <div className="w-8 h-px bg-white/5 my-1 shrink-0" />
 
         {active.map(agent => {
-          const meta = getAgentMeta(agent.id)
+          const meta = getAgentMeta(agent.id, agent.name)
           const isSelected = selected === agent.id
           const glowColor = meta.color
 
           const style: CSSProperties = {
-            borderColor: isSelected ? glowColor : 'rgba(255,255,255,0.07)',
+            borderColor: isSelected ? glowColor : `${glowColor}55`,
             background: 'rgba(5,10,15,0.9)',
-            boxShadow: isSelected ? `0 0 0 2px ${glowColor}, 0 0 20px ${glowColor}55` : 'none',
+            boxShadow: isSelected ? `0 0 0 2px ${glowColor}, 0 0 20px ${glowColor}55` : `0 0 6px ${glowColor}22`,
           }
 
           return (
@@ -495,18 +495,18 @@ export function AgentCharacters({ agents, selected, onSelect, vertical = false }
               title={agent.name}
               className="flex flex-col items-center gap-1 transition-all duration-200"
               style={{
-                opacity: isSelected ? 1 : 0.55,
+                opacity: isSelected ? 1 : 0.82,
                 transform: isSelected ? 'scale(1.12)' : 'scale(1)',
               }}
-              onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.opacity = '0.85' }}
-              onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.opacity = '0.55' }}
+              onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.opacity = '1' }}
+              onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.opacity = '0.82' }}
             >
               <div className="w-14 h-14 rounded-full overflow-hidden border-2 transition-all duration-200" style={style}>
                 <meta.svg />
               </div>
               <span
                 className="text-[8px] font-mono tracking-wide leading-none"
-                style={{ color: isSelected ? glowColor : '#374151' }}
+                style={{ color: isSelected ? glowColor : '#9ca3af' }}
               >
                 {meta.label}
               </span>
@@ -532,18 +532,18 @@ export function AgentCharacters({ agents, selected, onSelect, vertical = false }
       </button>
       <div className="w-px h-12 bg-gray-800 shrink-0" />
       {active.map(agent => {
-        const meta = getAgentMeta(agent.id)
+        const meta = getAgentMeta(agent.id, agent.name)
         const isSelected = selected === agent.id
         return (
           <button key={agent.id} onClick={() => onSelect(isSelected ? null : agent.id)}
             title={agent.name} className="shrink-0 flex flex-col items-center gap-1 transition-all duration-200"
-            style={{ opacity: isSelected ? 1 : 0.55, transform: isSelected ? 'scale(1.1)' : 'scale(1)' }}>
+            style={{ opacity: isSelected ? 1 : 0.82, transform: isSelected ? 'scale(1.1)' : 'scale(1)' }}>
             <div className="w-14 h-14 rounded-full overflow-hidden border-2 transition-all duration-200"
-              style={{ borderColor: isSelected ? meta.color : 'rgba(255,255,255,0.07)', background: 'rgba(5,10,15,0.9)',
-                boxShadow: isSelected ? `0 0 0 2px ${meta.color}, 0 0 16px ${meta.color}55` : 'none' }}>
+              style={{ borderColor: isSelected ? meta.color : `${meta.color}55`, background: 'rgba(5,10,15,0.9)',
+                boxShadow: isSelected ? `0 0 0 2px ${meta.color}, 0 0 16px ${meta.color}55` : `0 0 6px ${meta.color}22` }}>
               <meta.svg />
             </div>
-            <span className="text-[9px] font-mono" style={{ color: isSelected ? meta.color : '#374151' }}>
+            <span className="text-[9px] font-mono" style={{ color: isSelected ? meta.color : '#9ca3af' }}>
               {meta.label}
             </span>
           </button>

@@ -54,15 +54,17 @@ export function Settings({ onNav }: { onNav: (page: NavPage) => void }) {
   }
 
   const handleTrustLevelChange = async (next: TrustLevel) => {
+    const previous = trustLevel
+    setTrustLevel(next)
     setTrustSaving(true)
     setTrustSaved(false)
     setError('')
     try {
       await coreClient.setTrustLevel(next)
-      setTrustLevel(next)
       setTrustSaved(true)
       setTimeout(() => setTrustSaved(false), 3000)
     } catch (e: any) {
+      setTrustLevel(previous)
       setError(`Failed to update trust level: ${e.message ?? 'unknown error'}`)
     } finally {
       setTrustSaving(false)

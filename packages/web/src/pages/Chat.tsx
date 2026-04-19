@@ -1088,6 +1088,15 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
             onSelect={setSelectedAgentId}
             vertical
           />
+          {agentListError && agentList.length === 0 && (
+            <div
+              className="text-[8px] font-mono text-center px-1 mt-2 leading-tight"
+              style={{ color: '#f59e0b' }}
+              title="Could not load agents — check server connection or re-login"
+            >
+              agents<br />offline
+            </div>
+          )}
         </div>
       )}
 

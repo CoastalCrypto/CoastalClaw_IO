@@ -18,7 +18,7 @@ export interface GraphEdge {
   target: string
   label?: string
   active: boolean
-  edgeType?: 'agent-tool' | 'agent-model' | 'agent-channel'
+  edgeType?: 'agent-tool' | 'agent-model' | 'agent-channel' | 'agent-agent'
   /** Normalized 0-1 strength derived from interaction history. 1 = heavily used */
   weight?: number
   /** Timestamp of the most recent interaction across this edge */
@@ -46,7 +46,7 @@ export type AgentGraphEvent =
   | { type: 'edge_added'; edge: GraphEdge }
   | { type: 'edge_removed'; edgeId: string }
   | { type: 'edge_active'; edgeId: string; active: boolean }
-  | { type: 'graph_edge'; ts: number; source: string; target: string; edgeType: 'agent-tool' | 'agent-model' | 'agent-channel' }
+  | { type: 'graph_edge'; ts: number; source: string; target: string; edgeType: 'agent-tool' | 'agent-model' | 'agent-channel' | 'agent-agent' }
   | { type: 'edge_weight_update'; ts: number; edgeId: string; weight: number; feedbackScore: number }
   | { type: 'agent_reaction'; ts: number; agentId: string; kind: ReactionKind; intensity: number; duration: number; toolName?: string }
   | { type: 'ping' }

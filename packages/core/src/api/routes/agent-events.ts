@@ -7,10 +7,15 @@ import type { AgentRegistry } from '../../agents/registry.js'
 import type { ChannelManager } from '../../channels/manager.js'
 import { findSuggestedToolEdges } from '../../agents/co-activation.js'
 import { EdgeFeedbackStore, feedbackMultiplier } from '../../agents/edge-feedback.js'
+import type { PipelineStore } from '../../pipeline/store.js'
 
 const TOOL_EDGE_DEFAULT_WEIGHT = 0.18  // unused tools still visible but faint
 const NON_TOOL_EDGE_WEIGHT = 0.5       // agent→model and agent→channel are config edges
 const RECENCY_HALF_LIFE_DAYS = 14      // weight halves every 14 days of inactivity
+
+/** Starting weight for a declared-but-never-run agent→agent handoff.
+ *  A bit heavier than the default tool edge since handoffs are intentional. */
+const AGENT_AGENT_BASE_WEIGHT = 0.45
 
 /**
  * Build a per-(agent, tool) usage map from the action_log.
@@ -109,7 +114,41 @@ function categorizeTool(t: string): string {
     : t.includes('_') ? 'MCP' : 'File'
 }
 
-function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager, db: Database.Database, feedbackStore: EdgeFeedbackStore) {
+/**
+ * Extract declared agent→agent handoffs from saved pipelines: every pair of
+ * consecutive stages with different agent ids counts as a "flow" relationship.
+ * Same-agent consecutive stages (rare but legal) are skipped since they'd just
+ * loop back onto the same node. Returns per-pair counts so heavily-repeated
+ * handoffs (in multiple saved pipelines) render thicker.
+ */
+function readAgentAgentEdges(pipelineStore?: PipelineStore): Map<string, { count: number; lastUsedAt: number | null }> {
+  const out = new Map<string, { count: number; lastUsedAt: number | null }>()
+  if (!pipelineStore) return out
+  try {
+    for (const p of pipelineStore.list()) {
+      for (let i = 0; i < p.stages.length - 1; i++) {
+        const a = p.stages[i].agentId
+        const b = p.stages[i + 1].agentId
+        if (!a || !b || a === b) continue
+        const key = `${a}=>${b}`
+        const existing = out.get(key)
+        out.set(key, {
+          count: (existing?.count ?? 0) + 1,
+          lastUsedAt: Math.max(existing?.lastUsedAt ?? 0, p.updatedAt) || p.updatedAt,
+        })
+      }
+    }
+  } catch { /* no pipelines table on fresh install */ }
+  return out
+}
+
+function buildSnapshot(
+  registry: AgentRegistry,
+  channelManager: ChannelManager,
+  db: Database.Database,
+  feedbackStore: EdgeFeedbackStore,
+  pipelineStore?: PipelineStore,
+) {
   const allAgents = registry.listAll()
   const channels = channelManager.list()
   const now = Date.now()
@@ -221,6 +260,31 @@ function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager, 
     }
   }
 
+  // Agent → agent handoff edges from saved pipelines. These render as
+  // warm coral tendrils and pulse bidirectionally during live pipeline
+  // runs (stage handoffs). Count across pipelines scales the weight so
+  // frequently-reused handoff pairs read as stronger collaborations.
+  const agentAgent = readAgentAgentEdges(pipelineStore)
+  const agentIds = new Set(allAgents.map(a => a.id))
+  const maxAgentAgentCount = Array.from(agentAgent.values()).reduce((m, v) => Math.max(m, v.count), 0)
+  for (const [key, info] of agentAgent) {
+    const [source, target] = key.split('=>')
+    // Skip if either endpoint isn't an active agent (dangling configs)
+    if (!agentIds.has(source) || !agentIds.has(target)) continue
+    const boost = maxAgentAgentCount > 0
+      ? Math.log(1 + info.count) / Math.log(1 + maxAgentAgentCount)
+      : 0
+    edges.push({
+      id: `${source}=>${target}`,
+      source, target,
+      label: 'hands off',
+      active: false,
+      edgeType: 'agent-agent',
+      weight: Math.max(AGENT_AGENT_BASE_WEIGHT, Math.min(1, AGENT_AGENT_BASE_WEIGHT + boost * 0.4)),
+      lastUsedAt: info.lastUsedAt,
+    })
+  }
+
   // Suggested growth tendrils — agent → tool the agent doesn't yet have
   for (const s of suggestions) {
     edges.push({
@@ -246,7 +310,14 @@ function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager, 
 
 export async function agentEventsRoute(
   app: FastifyInstance,
-  opts: { registry: AgentRegistry; channelManager: ChannelManager; db: Database.Database; feedbackStore: EdgeFeedbackStore; validateSession: (token: string) => boolean }
+  opts: {
+    registry: AgentRegistry
+    channelManager: ChannelManager
+    db: Database.Database
+    feedbackStore: EdgeFeedbackStore
+    pipelineStore?: PipelineStore
+    validateSession: (token: string) => boolean
+  }
 ) {
   // Thumbs feedback on a (agent, tool) edge — closes the learning loop.
   // Reinforced edges thicken; rejected edges fade. The bounded multiplier
@@ -309,7 +380,7 @@ export async function agentEventsRoute(
       clearTimeout(authTimeout)
       // Send initial state with full graph
       if (socket.readyState === socket.OPEN) {
-        const snapshot = buildSnapshot(opts.registry, opts.channelManager, opts.db, opts.feedbackStore)
+        const snapshot = buildSnapshot(opts.registry, opts.channelManager, opts.db, opts.feedbackStore, opts.pipelineStore)
         socket.send(JSON.stringify({ type: 'snapshot', ...snapshot }))
       }
     }
@@ -342,11 +413,37 @@ export async function agentEventsRoute(
       }
     }, 30_000)
 
+    // Per-run last-stage tracking so we can emit agent→agent graph_edge
+    // events the moment one agent hands off work to another. Scoped to
+    // this socket so one client's runs don't leak across connections.
+    const lastStageAgentByRun = new Map<string, string>()
+
     // Subscribe to agent events
     const listener = (event: AgentEvent) => {
       if (socket.readyState !== socket.OPEN) return
       for (const outbound of toGraphEvents(event)) {
         socket.send(JSON.stringify(outbound))
+      }
+
+      // Derive live agent→agent handoff edges from consecutive stages of
+      // the same run. stage_end records the outgoing agent; the next
+      // stage_start names the incoming agent — if different, that's a
+      // handoff worth pulsing.
+      if (event.type === 'stage_end') {
+        lastStageAgentByRun.set(event.runId, event.agentId)
+      } else if (event.type === 'stage_start') {
+        const prev = lastStageAgentByRun.get(event.runId)
+        if (prev && prev !== event.agentId) {
+          socket.send(JSON.stringify({
+            type: 'graph_edge',
+            ts: event.ts,
+            source: prev,
+            target: event.agentId,
+            edgeType: 'agent-agent',
+          }))
+        }
+      } else if (event.type === 'pipeline_done' || event.type === 'pipeline_error') {
+        lastStageAgentByRun.delete(event.runId)
       }
     }
 
@@ -355,6 +452,7 @@ export async function agentEventsRoute(
     socket.on('close', () => {
       clearInterval(pingInterval)
       eventBus.offAgent(listener)
+      lastStageAgentByRun.clear()
     })
 
     socket.on('error', () => {

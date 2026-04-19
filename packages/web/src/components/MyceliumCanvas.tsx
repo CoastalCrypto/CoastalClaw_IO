@@ -33,6 +33,9 @@ interface Pulse {
   startTs: number
   duration: number
   color: string
+  /** When true, animate target → source instead of the default forward direction.
+   *  Used for the return leg of a bidirectional agent↔agent handoff. */
+  reverse?: boolean
 }
 
 const NODE_COLOR: Record<NodeType, { core: string; ring: string }> = {
@@ -53,6 +56,9 @@ const EDGE_COLOR: Record<string, string> = {
   'agent-tool': '#10b981',
   'agent-model': '#8b5cf6',
   'agent-channel': '#f59e0b',
+  // Warm coral — agent↔agent handoffs read as "relationship" rather than
+  // the cooler tool/model/channel palette. Distinct enough at a glance.
+  'agent-agent': '#fb7185',
 }
 
 // Deterministic hash → stable per-edge organic offset
@@ -205,13 +211,27 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
       const wasActive = prevEdgeActiveRef.current.get(edge.id) ?? false
       if (edge.active && !wasActive) {
         const color = EDGE_COLOR[edge.edgeType ?? ''] ?? '#00e5ff'
+        const rand = Math.random().toString(36).slice(2, 6)
         pulsesRef.current.push({
-          id: `${edge.id}-${now.toFixed(0)}-${Math.random().toString(36).slice(2, 6)}`,
+          id: `${edge.id}-${now.toFixed(0)}-${rand}`,
           edgeId: edge.id,
           startTs: now,
           duration: 900,
           color,
         })
+        // Agent↔agent handoffs are conversations, not one-way sends.
+        // Fire a delayed return pulse so the user sees the reply travel
+        // back to the initiating agent — a visible dialogue beat.
+        if (edge.edgeType === 'agent-agent') {
+          pulsesRef.current.push({
+            id: `${edge.id}-${now.toFixed(0)}-${rand}-r`,
+            edgeId: edge.id,
+            startTs: now + 550,
+            duration: 900,
+            color,
+            reverse: true,
+          })
+        }
       }
       prevEdgeActiveRef.current.set(edge.id, edge.active)
     }
@@ -314,8 +334,9 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
       const pulseGroup = pulseGroupRef.current
       if (pulseGroup) {
         const now = performance.now()
-        const active = pulsesRef.current.filter(p => now - p.startTs < p.duration)
-        pulsesRef.current = active
+        const active = pulsesRef.current.filter(p => now >= p.startTs && now - p.startTs < p.duration)
+        // Keep future-scheduled (return-leg) pulses alive until they fire
+        pulsesRef.current = pulsesRef.current.filter(p => now - p.startTs < p.duration)
 
         const live = new Set(active.map(p => p.id))
         for (const child of Array.from(pulseGroup.children)) {
@@ -331,17 +352,19 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
 
           const t = (now - p.startTs) / p.duration
           const ease = 1 - Math.pow(1 - t, 3)
+          // Reverse traversal for the return leg of bidirectional handoffs
+          const sampled = p.reverse ? 1 - ease : ease
 
           let pt: { x: number; y: number }
           try {
             const length = pathEl.getTotalLength()
-            const point = pathEl.getPointAtLength(length * ease)
+            const point = pathEl.getPointAtLength(length * sampled)
             pt = { x: point.x, y: point.y }
           } catch {
             const sPos = positionsRef.current.get(edge.source)
             const tPos = positionsRef.current.get(edge.target)
             if (!sPos || !tPos) continue
-            pt = { x: sPos.x + (tPos.x - sPos.x) * ease, y: sPos.y + (tPos.y - sPos.y) * ease }
+            pt = { x: sPos.x + (tPos.x - sPos.x) * sampled, y: sPos.y + (tPos.y - sPos.y) * sampled }
           }
 
           let particle = pulseGroup.querySelector<SVGCircleElement>(`[data-pid="${CSS.escape(p.id)}"]`)

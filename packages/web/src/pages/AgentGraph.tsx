@@ -316,6 +316,7 @@ function Legend() {
     { label: 'Tool',    color: '#10b981' },
     { label: 'Model',   color: '#8b5cf6' },
     { label: 'Channel', color: '#f59e0b' },
+    { label: 'Handoff', color: '#fb7185' },
   ]
   return (
     <div style={{

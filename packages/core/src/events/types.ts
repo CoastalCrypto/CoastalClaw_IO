@@ -21,7 +21,7 @@ export interface GraphEdgeEvent {
   ts: number
   source: string
   target: string
-  edgeType: 'agent-tool' | 'agent-model' | 'agent-channel'
+  edgeType: 'agent-tool' | 'agent-model' | 'agent-channel' | 'agent-agent'
 }
 
 export interface EdgeWeightUpdateEvent {

@@ -123,12 +123,16 @@ export async function buildServer() {
   const customToolLoader = new CustomToolLoader(db)
   const channelManager = new ChannelManager(db)
   const edgeFeedbackStore = new EdgeFeedbackStore(db)
+  // Built early so agent-events can read saved-pipeline handoff structure
+  // for the initial graph snapshot. Pipeline routes reuse this same store.
+  const pipelineStore = new PipelineStore(db)
 
   await fastify.register(agentEventsRoute, {
     registry: agentRegistry,
     channelManager,
     db,
     feedbackStore: edgeFeedbackStore,
+    pipelineStore,
     validateSession: (token: string) => {
       if (validateSessionToken(adminToken, token)) return true
       const claims = userStore.verifySessionToken(token)
@@ -159,7 +163,6 @@ export async function buildServer() {
   })
   const pipelineLog = new ActionLog(db)
   const pipelinePersonaMgr = new PersonaManager(join(config.dataDir, 'persona.db'))
-  const pipelineStore = new PipelineStore(db)
   const steerQueue = new SteerQueue()
   const asyncRunner = new AsyncPipelineRunner(
     agentRegistry, pipelineRouter, pipelineToolRegistry, gate, pipelineLog, pipelinePersonaMgr, steerQueue, pipelineStore,

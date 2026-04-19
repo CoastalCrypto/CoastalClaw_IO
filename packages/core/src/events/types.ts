@@ -14,6 +14,7 @@ export type AgentEventType =
   | 'pipeline_done'
   | 'pipeline_error'
   | 'graph_edge'
+  | 'edge_weight_update'
 
 export interface GraphEdgeEvent {
   type: 'graph_edge'
@@ -21,6 +22,14 @@ export interface GraphEdgeEvent {
   source: string
   target: string
   edgeType: 'agent-tool' | 'agent-model' | 'agent-channel'
+}
+
+export interface EdgeWeightUpdateEvent {
+  type: 'edge_weight_update'
+  ts: number
+  edgeId: string
+  weight: number
+  feedbackScore: number
 }
 
 export interface ToolCallStartEvent {
@@ -162,3 +171,4 @@ export type AgentEvent =
   | PipelineDoneEvent
   | PipelineErrorEvent
   | GraphEdgeEvent
+  | EdgeWeightUpdateEvent

@@ -50,6 +50,7 @@ import { UserStore } from './users/store.js'
 import { AgentRegistry } from './agents/registry.js'
 import { PermissionGate } from './agents/permission-gate.js'
 import { CustomToolLoader } from './tools/custom/loader.js'
+import { EdgeFeedbackStore } from './agents/edge-feedback.js'
 import { ChannelManager } from './channels/manager.js'
 import { McpStore } from './tools/mcp/store.js'
 import { loadConfig } from './config.js'
@@ -119,11 +120,13 @@ export async function buildServer() {
   const gate = new PermissionGate(db)
   const customToolLoader = new CustomToolLoader(db)
   const channelManager = new ChannelManager(db)
+  const edgeFeedbackStore = new EdgeFeedbackStore(db)
 
   await fastify.register(agentEventsRoute, {
     registry: agentRegistry,
     channelManager,
     db,
+    feedbackStore: edgeFeedbackStore,
     validateSession: (token: string) => {
       if (validateSessionToken(adminToken, token)) return true
       const claims = userStore.verifySessionToken(token)

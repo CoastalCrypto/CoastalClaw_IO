@@ -6,6 +6,7 @@ import type { AgentEvent } from '../../events/types.js'
 import type { AgentRegistry } from '../../agents/registry.js'
 import type { ChannelManager } from '../../channels/manager.js'
 import { findSuggestedToolEdges } from '../../agents/co-activation.js'
+import { EdgeFeedbackStore, feedbackMultiplier } from '../../agents/edge-feedback.js'
 
 const TOOL_EDGE_DEFAULT_WEIGHT = 0.18  // unused tools still visible but faint
 const NON_TOOL_EDGE_WEIGHT = 0.5       // agent→model and agent→channel are config edges
@@ -36,15 +37,22 @@ function readToolEdgeUsage(db: Database.Database): Map<string, { count: number; 
  * Compute an edge's weight in [WEIGHT_FLOOR, 1] from its raw use count and
  * the most globally-active edge's count. Recency decays exponentially with
  * a 14-day half-life so dormant connections fade visually without vanishing.
+ * User feedback (thumbs) applies a bounded multiplier so reinforcement
+ * shapes the visualization without ever annihilating real usage.
  */
-function computeEdgeWeight(count: number, lastAt: number, maxCount: number, now: number): number {
-  if (count === 0 || maxCount === 0) return TOOL_EDGE_DEFAULT_WEIGHT
-  // Log-normalized so a few highly-used edges don't crush the long tail
-  const useScore = Math.log(1 + count) / Math.log(1 + maxCount)
-  const ageDays = (now - lastAt) / (1000 * 60 * 60 * 24)
-  const recency = Math.pow(0.5, ageDays / RECENCY_HALF_LIFE_DAYS)
-  const combined = useScore * 0.6 + recency * 0.4
-  return Math.max(TOOL_EDGE_DEFAULT_WEIGHT, Math.min(1, combined))
+function computeEdgeWeight(count: number, lastAt: number, maxCount: number, now: number, feedbackScore = 0): number {
+  let base: number
+  if (count === 0 || maxCount === 0) {
+    base = TOOL_EDGE_DEFAULT_WEIGHT
+  } else {
+    // Log-normalized so a few highly-used edges don't crush the long tail
+    const useScore = Math.log(1 + count) / Math.log(1 + maxCount)
+    const ageDays = (now - lastAt) / (1000 * 60 * 60 * 24)
+    const recency = Math.pow(0.5, ageDays / RECENCY_HALF_LIFE_DAYS)
+    base = useScore * 0.6 + recency * 0.4
+  }
+  const adjusted = base * feedbackMultiplier(feedbackScore)
+  return Math.max(TOOL_EDGE_DEFAULT_WEIGHT, Math.min(1, adjusted))
 }
 
 // Translate internal agent events to graph events
@@ -64,6 +72,9 @@ function toGraphEvent(event: AgentEvent): Record<string, unknown> | null {
   if (event.type === 'graph_edge') {
     return { type: 'graph_edge', ts: Date.now(), source: event.source, target: event.target, edgeType: event.edgeType }
   }
+  if (event.type === 'edge_weight_update') {
+    return { type: 'edge_weight_update', ts: event.ts, edgeId: event.edgeId, weight: event.weight, feedbackScore: event.feedbackScore }
+  }
   return null
 }
 
@@ -76,12 +87,13 @@ function categorizeTool(t: string): string {
     : t.includes('_') ? 'MCP' : 'File'
 }
 
-function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager, db: Database.Database) {
+function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager, db: Database.Database, feedbackStore: EdgeFeedbackStore) {
   const allAgents = registry.listAll()
   const channels = channelManager.list()
   const now = Date.now()
   const usage = readToolEdgeUsage(db)
   const maxCount = Array.from(usage.values()).reduce((m, v) => Math.max(m, v.count), 0)
+  const feedback = feedbackStore.getAll()
 
   // Collect unique tools and models across all active agents
   const toolSet = new Map<string, { label: string; category: string }>()
@@ -155,7 +167,8 @@ function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager, 
     for (const t of a.tools) {
       const id = `${a.id}->tool:${t}`
       const u = usage.get(id)
-      const weight = u ? computeEdgeWeight(u.count, u.lastAt, maxCount, now) : TOOL_EDGE_DEFAULT_WEIGHT
+      const fb = feedback.get(id)?.score ?? 0
+      const weight = computeEdgeWeight(u?.count ?? 0, u?.lastAt ?? 0, maxCount, now, fb)
       edges.push({
         id, source: a.id, target: `tool:${t}`,
         label: 'uses', active: false, edgeType: 'agent-tool',
@@ -211,8 +224,43 @@ function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager, 
 
 export async function agentEventsRoute(
   app: FastifyInstance,
-  opts: { registry: AgentRegistry; channelManager: ChannelManager; db: Database.Database; validateSession: (token: string) => boolean }
+  opts: { registry: AgentRegistry; channelManager: ChannelManager; db: Database.Database; feedbackStore: EdgeFeedbackStore; validateSession: (token: string) => boolean }
 ) {
+  // Thumbs feedback on a (agent, tool) edge — closes the learning loop.
+  // Reinforced edges thicken; rejected edges fade. The bounded multiplier
+  // guarantees feedback shapes the visualization without ever erasing
+  // actual usage history.
+  app.post<{
+    Params: { agentId: string; toolName: string }
+    Body: { value: 1 | -1 }
+  }>('/api/admin/agents/:agentId/tools/:toolName/feedback', async (req, reply) => {
+    const { agentId, toolName } = req.params
+    const { value } = req.body ?? { value: 0 as 1 | -1 }
+    if (value !== 1 && value !== -1) {
+      return reply.status(400).send({ error: 'value must be 1 or -1' })
+    }
+
+    const newScore = opts.feedbackStore.vote(agentId, toolName, value)
+
+    // Recompute that single edge's weight and broadcast so connected
+    // clients update the tendril live without a full snapshot refetch.
+    const usage = readToolEdgeUsage(opts.db)
+    const maxCount = Array.from(usage.values()).reduce((m, v) => Math.max(m, v.count), 0)
+    const edgeId = `${agentId}->tool:${toolName}`
+    const u = usage.get(edgeId)
+    const weight = computeEdgeWeight(u?.count ?? 0, u?.lastAt ?? 0, maxCount, Date.now(), newScore)
+
+    eventBus.publish({
+      type: 'edge_weight_update',
+      ts: Date.now(),
+      edgeId,
+      weight,
+      feedbackScore: newScore,
+    })
+
+    return { agentId, toolName, score: newScore, weight }
+  })
+
   app.get('/ws/agent-events', { websocket: true }, (connection: SocketStream, req) => {
     const socket = connection.socket
     let authenticated = false
@@ -239,7 +287,7 @@ export async function agentEventsRoute(
       clearTimeout(authTimeout)
       // Send initial state with full graph
       if (socket.readyState === socket.OPEN) {
-        const snapshot = buildSnapshot(opts.registry, opts.channelManager, opts.db)
+        const snapshot = buildSnapshot(opts.registry, opts.channelManager, opts.db, opts.feedbackStore)
         socket.send(JSON.stringify({ type: 'snapshot', ...snapshot }))
       }
     }

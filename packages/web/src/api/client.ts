@@ -519,6 +519,19 @@ export class CoreClient {
     return res.json()
   }
 
+  async voteEdgeFeedback(agentId: string, toolName: string, value: 1 | -1): Promise<{ score: number; weight: number }> {
+    const res = await fetch(
+      `${this.baseUrl}/api/admin/agents/${encodeURIComponent(agentId)}/tools/${encodeURIComponent(toolName)}/feedback`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+        body: JSON.stringify({ value }),
+      }
+    )
+    if (!res.ok) await this.extractError(res, `Failed to record feedback (${res.status})`)
+    return res.json()
+  }
+
   async listUsers(): Promise<any[]> {
     const res = await fetch(`${this.baseUrl}/api/admin/users`, { headers: this.adminHeaders() })
     if (!res.ok) throw new Error(`List users failed (${res.status})`)

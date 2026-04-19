@@ -63,6 +63,12 @@ export function applyEvent(state: AgentGraphState, event: AgentGraphEvent): Agen
 
       return { nodes, edges, lastUpdated: now }
     }
+    case 'edge_weight_update':
+      return {
+        ...state,
+        edges: state.edges.map(e => e.id === event.edgeId ? { ...e, weight: event.weight } : e),
+        lastUpdated: Date.now(),
+      }
     case 'ping':
       return state
     default:

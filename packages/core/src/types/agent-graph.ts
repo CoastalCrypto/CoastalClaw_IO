@@ -19,6 +19,10 @@ export interface GraphEdge {
   label?: string
   active: boolean
   edgeType?: 'agent-tool' | 'agent-model' | 'agent-channel'
+  /** Normalized 0-1 strength derived from interaction history. 1 = heavily used */
+  weight?: number
+  /** Timestamp of the most recent interaction across this edge */
+  lastUsedAt?: number | null
 }
 
 export interface AgentGraphState {

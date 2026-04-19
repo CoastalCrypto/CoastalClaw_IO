@@ -123,6 +123,7 @@ export async function buildServer() {
   await fastify.register(agentEventsRoute, {
     registry: agentRegistry,
     channelManager,
+    db,
     validateSession: (token: string) => {
       if (validateSessionToken(adminToken, token)) return true
       const claims = userStore.verifySessionToken(token)

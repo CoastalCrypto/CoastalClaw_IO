@@ -23,6 +23,8 @@ interface SimNode extends SimulationNodeDatum {
 interface SimLink extends SimulationLinkDatum<SimNode> {
   source: string | SimNode
   target: string | SimNode
+  /** Normalized 0-1 — heavier edges pull tighter and render thicker */
+  weight: number
 }
 
 interface Pulse {
@@ -229,13 +231,21 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
       }
     })
 
-    const simLinks: SimLink[] = edges.map(e => ({ source: e.source, target: e.target }))
+    const simLinks: SimLink[] = edges.map(e => ({
+      source: e.source,
+      target: e.target,
+      weight: e.weight ?? 0.5,
+    }))
 
     if (simulationRef.current) simulationRef.current.stop()
     if (animationRef.current !== null) cancelAnimationFrame(animationRef.current)
 
     const sim = forceSimulation<SimNode>(simNodes)
-      .force('link', forceLink<SimNode, SimLink>(simLinks).id(d => d.id).distance(140).strength(0.55))
+      .force('link', forceLink<SimNode, SimLink>(simLinks)
+        .id(d => d.id)
+        // Heavier-used edges pull tighter; light edges stretch out organically
+        .distance(d => 180 - d.weight * 60)
+        .strength(d => 0.3 + d.weight * 0.5))
       .force('charge', forceManyBody().strength(-750))
       .force('center', forceCenter(cx, cy))
       .force('radial', forceRadial(220, cx, cy).strength(0.07))
@@ -438,6 +448,10 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
           const color = EDGE_COLOR[e.edgeType ?? ''] ?? '#4a6a8a'
           const relevant = !selectedId || (connectedIds && connectedIds.has(e.source) && connectedIds.has(e.target))
           const dim = selectedId && !relevant
+          const w = e.weight ?? 0.5
+          // Heavily-used edges render thicker and brighter — interaction history made visible
+          const baseWidth = 0.6 + w * 2.0
+          const baseOpacity = 0.15 + w * 0.55
           return (
             <path
               key={e.id}
@@ -445,8 +459,8 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
               d="M0,0"
               fill="none"
               stroke={color}
-              strokeWidth={e.active ? 2.2 : 1.2}
-              strokeOpacity={dim ? 0.1 : e.active ? 0.85 : 0.38}
+              strokeWidth={e.active ? baseWidth + 1.0 : baseWidth}
+              strokeOpacity={dim ? 0.08 : e.active ? Math.min(baseOpacity + 0.25, 0.95) : baseOpacity}
               strokeLinecap="round"
               className={e.active ? 'tendril-active' : undefined}
               style={{ transition: 'stroke-width 0.4s ease, stroke-opacity 0.4s ease' }}

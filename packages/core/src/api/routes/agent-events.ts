@@ -1,9 +1,50 @@
 import type { FastifyInstance } from 'fastify'
 import type { SocketStream } from '@fastify/websocket'
+import type Database from 'better-sqlite3'
 import { eventBus } from '../../events/bus.js'
 import type { AgentEvent } from '../../events/types.js'
 import type { AgentRegistry } from '../../agents/registry.js'
 import type { ChannelManager } from '../../channels/manager.js'
+
+const TOOL_EDGE_DEFAULT_WEIGHT = 0.18  // unused tools still visible but faint
+const NON_TOOL_EDGE_WEIGHT = 0.5       // agent→model and agent→channel are config edges
+const RECENCY_HALF_LIFE_DAYS = 14      // weight halves every 14 days of inactivity
+
+/**
+ * Build a per-(agent, tool) usage map from the action_log.
+ * Returns count and last-use timestamp so the caller can compute a
+ * recency-decayed weight. Returns an empty map if the table doesn't exist
+ * yet (fresh install).
+ */
+function readToolEdgeUsage(db: Database.Database): Map<string, { count: number; lastAt: number }> {
+  const usage = new Map<string, { count: number; lastAt: number }>()
+  try {
+    const rows = db.prepare(`
+      SELECT agent_id, tool_name, COUNT(*) AS cnt, MAX(created_at) AS last_at
+      FROM action_log
+      GROUP BY agent_id, tool_name
+    `).all() as Array<{ agent_id: string; tool_name: string; cnt: number; last_at: number }>
+    for (const r of rows) {
+      usage.set(`${r.agent_id}->tool:${r.tool_name}`, { count: r.cnt, lastAt: r.last_at })
+    }
+  } catch { /* fresh install — table not yet created */ }
+  return usage
+}
+
+/**
+ * Compute an edge's weight in [WEIGHT_FLOOR, 1] from its raw use count and
+ * the most globally-active edge's count. Recency decays exponentially with
+ * a 14-day half-life so dormant connections fade visually without vanishing.
+ */
+function computeEdgeWeight(count: number, lastAt: number, maxCount: number, now: number): number {
+  if (count === 0 || maxCount === 0) return TOOL_EDGE_DEFAULT_WEIGHT
+  // Log-normalized so a few highly-used edges don't crush the long tail
+  const useScore = Math.log(1 + count) / Math.log(1 + maxCount)
+  const ageDays = (now - lastAt) / (1000 * 60 * 60 * 24)
+  const recency = Math.pow(0.5, ageDays / RECENCY_HALF_LIFE_DAYS)
+  const combined = useScore * 0.6 + recency * 0.4
+  return Math.max(TOOL_EDGE_DEFAULT_WEIGHT, Math.min(1, combined))
+}
 
 // Translate internal agent events to graph events
 function toGraphEvent(event: AgentEvent): Record<string, unknown> | null {
@@ -25,9 +66,12 @@ function toGraphEvent(event: AgentEvent): Record<string, unknown> | null {
   return null
 }
 
-function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager) {
+function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager, db: Database.Database) {
   const allAgents = registry.listAll()
   const channels = channelManager.list()
+  const now = Date.now()
+  const usage = readToolEdgeUsage(db)
+  const maxCount = Array.from(usage.values()).reduce((m, v) => Math.max(m, v.count), 0)
 
   // Collect unique tools and models across all active agents
   const toolSet = new Map<string, { label: string; category: string }>()
@@ -86,24 +130,42 @@ function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager) 
     nodeType: 'channel' as const,
   }))
 
-  // Build static edges
-  const edges: Array<{ id: string; source: string; target: string; label: string; active: boolean; edgeType: string }> = []
+  // Build edges with weights derived from actual interaction history.
+  // agent→tool weights come from action_log aggregates; agent→model/channel
+  // are configuration edges and get a fixed mid weight so they always render.
+  const edges: Array<{ id: string; source: string; target: string; label: string; active: boolean; edgeType: string; weight: number; lastUsedAt: number | null }> = []
 
   for (const a of allAgents) {
     // Agent → tools
     for (const t of a.tools) {
-      edges.push({ id: `${a.id}->tool:${t}`, source: a.id, target: `tool:${t}`, label: 'uses', active: false, edgeType: 'agent-tool' })
+      const id = `${a.id}->tool:${t}`
+      const u = usage.get(id)
+      const weight = u ? computeEdgeWeight(u.count, u.lastAt, maxCount, now) : TOOL_EDGE_DEFAULT_WEIGHT
+      edges.push({
+        id, source: a.id, target: `tool:${t}`,
+        label: 'uses', active: false, edgeType: 'agent-tool',
+        weight,
+        lastUsedAt: u?.lastAt ?? null,
+      })
     }
     // Agent → model
     const modelId = a.modelPref ? `model:${a.modelPref}` : 'model:ollama:default'
     if (modelSet.has(a.modelPref ?? '') || !a.modelPref) {
-      edges.push({ id: `${a.id}->${modelId}`, source: a.id, target: modelId, label: 'runs on', active: false, edgeType: 'agent-model' })
+      edges.push({
+        id: `${a.id}->${modelId}`, source: a.id, target: modelId,
+        label: 'runs on', active: false, edgeType: 'agent-model',
+        weight: NON_TOOL_EDGE_WEIGHT, lastUsedAt: null,
+      })
     }
     // Agent → channels (active agents broadcast to all enabled channels)
     if (a.active) {
       for (const c of channels) {
         if (c.enabled) {
-          edges.push({ id: `${a.id}->channel:${c.id}`, source: a.id, target: `channel:${c.id}`, label: 'outputs to', active: false, edgeType: 'agent-channel' })
+          edges.push({
+            id: `${a.id}->channel:${c.id}`, source: a.id, target: `channel:${c.id}`,
+            label: 'outputs to', active: false, edgeType: 'agent-channel',
+            weight: NON_TOOL_EDGE_WEIGHT, lastUsedAt: null,
+          })
         }
       }
     }
@@ -117,7 +179,7 @@ function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager) 
 
 export async function agentEventsRoute(
   app: FastifyInstance,
-  opts: { registry: AgentRegistry; channelManager: ChannelManager; validateSession: (token: string) => boolean }
+  opts: { registry: AgentRegistry; channelManager: ChannelManager; db: Database.Database; validateSession: (token: string) => boolean }
 ) {
   app.get('/ws/agent-events', { websocket: true }, (connection: SocketStream, req) => {
     const socket = connection.socket
@@ -145,7 +207,7 @@ export async function agentEventsRoute(
       clearTimeout(authTimeout)
       // Send initial state with full graph
       if (socket.readyState === socket.OPEN) {
-        const snapshot = buildSnapshot(opts.registry, opts.channelManager)
+        const snapshot = buildSnapshot(opts.registry, opts.channelManager, opts.db)
         socket.send(JSON.stringify({ type: 'snapshot', ...snapshot }))
       }
     }

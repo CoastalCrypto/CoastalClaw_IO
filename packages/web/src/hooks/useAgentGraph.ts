@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { AgentGraphState, AgentGraphEvent } from '../types/agent-graph'
+import type { AgentGraphState, AgentGraphEvent, Reaction } from '../types/agent-graph'
 
 const INITIAL_STATE: AgentGraphState = { nodes: [], edges: [], lastUpdated: 0 }
 
@@ -79,6 +79,12 @@ export function applyEvent(state: AgentGraphState, event: AgentGraphEvent): Agen
 export function useAgentGraph() {
   const [state, setState] = useState<AgentGraphState>(INITIAL_STATE)
   const [connected, setConnected] = useState(false)
+  // Reactions are ephemeral per-agent "currently doing" signals. We expose
+  // them as a ref + version counter pattern so high-frequency reactions
+  // don't trigger React re-renders on the whole graph — the canvas reads
+  // them off the ref inside its rAF loop.
+  const reactionsRef = useRef<Map<string, Reaction>>(new Map())
+  const reactionCleanupRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -99,6 +105,29 @@ export function useAgentGraph() {
     ws.onmessage = (e) => {
       try {
         const event: AgentGraphEvent = JSON.parse(e.data as string)
+
+        // Reactions bypass React state — written directly to a ref the
+        // canvas reads during its animation loop, so a burst of activity
+        // doesn't thrash the reconciler.
+        if (event.type === 'agent_reaction') {
+          reactionsRef.current.set(event.agentId, {
+            agentId: event.agentId,
+            kind: event.kind,
+            intensity: event.intensity,
+            startedAt: performance.now(),
+            duration: event.duration,
+            toolName: event.toolName,
+          })
+          const existingTimer = reactionCleanupRef.current.get(event.agentId)
+          if (existingTimer) clearTimeout(existingTimer)
+          const timer = setTimeout(() => {
+            reactionsRef.current.delete(event.agentId)
+            reactionCleanupRef.current.delete(event.agentId)
+          }, event.duration + 200)
+          reactionCleanupRef.current.set(event.agentId, timer)
+          return
+        }
+
         setState(prev => applyEvent(prev, event))
 
         // After a graph_edge fires, de-activate the edge so the glow fades out
@@ -133,11 +162,14 @@ export function useAgentGraph() {
 
   useEffect(() => {
     connect()
+    const cleanupMap = reactionCleanupRef.current
     return () => {
       wsRef.current?.close()
       if (reconnectRef.current) clearTimeout(reconnectRef.current)
+      for (const t of cleanupMap.values()) clearTimeout(t)
+      cleanupMap.clear()
     }
   }, [connect])
 
-  return { ...state, connected }
+  return { ...state, connected, reactionsRef }
 }

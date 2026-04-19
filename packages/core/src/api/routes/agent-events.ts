@@ -55,27 +55,49 @@ function computeEdgeWeight(count: number, lastAt: number, maxCount: number, now:
   return Math.max(TOOL_EDGE_DEFAULT_WEIGHT, Math.min(1, adjusted))
 }
 
-// Translate internal agent events to graph events
-function toGraphEvent(event: AgentEvent): Record<string, unknown> | null {
+/**
+ * Classify a tool name into a reaction "kind" so the canvas can choose a
+ * color and strobe speed. Keeping the taxonomy small on purpose — the
+ * unified-pulse grammar relies on only a handful of distinctions.
+ */
+function reactionKindFromTool(toolName: string): 'memory' | 'skill' | 'handoff' | 'search' | 'tool' {
+  if (toolName.startsWith('memory_') || toolName === 'recall' || toolName === 'remember') return 'memory'
+  if (toolName.startsWith('search') || toolName === 'http_get' || toolName === 'query_db') return 'search'
+  if (toolName.startsWith('skill_') || toolName === 'invoke_skill' || toolName === 'run_skill') return 'skill'
+  if (toolName === 'delegate' || toolName === 'ask_agent' || toolName === 'handoff' || toolName.startsWith('agent_')) return 'handoff'
+  return 'tool'
+}
+
+// Translate internal agent events to graph events. Returns zero or more
+// outbound events — one internal tick can fan out into multiple UI signals
+// (status change + reaction pulse).
+function toGraphEvents(event: AgentEvent): Array<Record<string, unknown>> {
   if (event.type === 'session_start') {
-    return { type: 'node_status', nodeId: event.agentId, status: 'thinking' }
+    return [
+      { type: 'node_status', nodeId: event.agentId, status: 'thinking' },
+      { type: 'agent_reaction', ts: event.ts, agentId: event.agentId, kind: 'think', intensity: 0.6, duration: 2000 },
+    ]
   }
   if (event.type === 'session_complete') {
-    return { type: 'node_status', nodeId: event.agentId, status: 'idle' }
+    return [{ type: 'node_status', nodeId: event.agentId, status: 'idle' }]
   }
   if (event.type === 'tool_call_start') {
-    return { type: 'node_status', nodeId: event.agentId, status: 'executing' }
+    const kind = reactionKindFromTool(event.toolName)
+    return [
+      { type: 'node_status', nodeId: event.agentId, status: 'executing' },
+      { type: 'agent_reaction', ts: event.ts, agentId: event.agentId, kind, intensity: 1, duration: 1800, toolName: event.toolName },
+    ]
   }
   if (event.type === 'tool_call_end') {
-    return { type: 'node_status', nodeId: event.agentId, status: 'idle' }
+    return [{ type: 'node_status', nodeId: event.agentId, status: 'idle' }]
   }
   if (event.type === 'graph_edge') {
-    return { type: 'graph_edge', ts: Date.now(), source: event.source, target: event.target, edgeType: event.edgeType }
+    return [{ type: 'graph_edge', ts: Date.now(), source: event.source, target: event.target, edgeType: event.edgeType }]
   }
   if (event.type === 'edge_weight_update') {
-    return { type: 'edge_weight_update', ts: event.ts, edgeId: event.edgeId, weight: event.weight, feedbackScore: event.feedbackScore }
+    return [{ type: 'edge_weight_update', ts: event.ts, edgeId: event.edgeId, weight: event.weight, feedbackScore: event.feedbackScore }]
   }
-  return null
+  return []
 }
 
 function categorizeTool(t: string): string {
@@ -322,9 +344,9 @@ export async function agentEventsRoute(
 
     // Subscribe to agent events
     const listener = (event: AgentEvent) => {
-      const graphEvent = toGraphEvent(event)
-      if (graphEvent && socket.readyState === socket.OPEN) {
-        socket.send(JSON.stringify(graphEvent))
+      if (socket.readyState !== socket.OPEN) return
+      for (const outbound of toGraphEvents(event)) {
+        socket.send(JSON.stringify(outbound))
       }
     }
 

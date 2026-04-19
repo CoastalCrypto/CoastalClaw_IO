@@ -48,7 +48,20 @@ export type AgentGraphEvent =
   | { type: 'edge_active'; edgeId: string; active: boolean }
   | { type: 'graph_edge'; ts: number; source: string; target: string; edgeType: 'agent-tool' | 'agent-model' | 'agent-channel' }
   | { type: 'edge_weight_update'; ts: number; edgeId: string; weight: number; feedbackScore: number }
+  | { type: 'agent_reaction'; ts: number; agentId: string; kind: ReactionKind; intensity: number; duration: number; toolName?: string }
   | { type: 'ping' }
+
+/** What flavor of work an agent is doing — drives color + strobe speed on the canvas */
+export type ReactionKind = 'tool' | 'memory' | 'skill' | 'handoff' | 'search' | 'think'
+
+export interface Reaction {
+  agentId: string
+  kind: ReactionKind
+  intensity: number    // 0-1
+  startedAt: number    // performance.now()
+  duration: number     // ms
+  toolName?: string
+}
 
 // React Flow node data type — index signature required for React Flow compatibility
 export interface AgentNodeData extends Record<string, unknown> {

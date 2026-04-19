@@ -343,7 +343,7 @@ function Legend() {
 /* ------------------------------------------------------------------ */
 
 export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
-  const { nodes, edges, connected } = useAgentGraph()
+  const { nodes, edges, connected, reactionsRef } = useAgentGraph()
   const { summary: memorySummary } = useAgentMemory()
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -419,6 +419,7 @@ export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
           selectedId={selectedId}
           onSelectNode={setSelectedId}
           memorySummary={memorySummary}
+          reactionsRef={reactionsRef}
         />
 
         <Legend />

@@ -11,7 +11,7 @@ import {
   type SimulationNodeDatum,
   type SimulationLinkDatum,
 } from 'd3-force'
-import type { GraphNode, GraphEdge, NodeType } from '../types/agent-graph'
+import type { GraphNode, GraphEdge, NodeType, Reaction, ReactionKind } from '../types/agent-graph'
 import type { AgentMemorySummary } from '../api/client'
 
 interface SimNode extends SimulationNodeDatum {
@@ -93,6 +93,20 @@ interface Props {
   selectedId: string | null
   onSelectNode: (id: string | null) => void
   memorySummary?: Record<string, AgentMemorySummary>
+  /** Ref populated by useAgentGraph — live, per-agent "currently doing" signals.
+   *  Read in the rAF loop so updates don't thrash React reconciliation. */
+  reactionsRef?: React.MutableRefObject<Map<string, Reaction>>
+}
+
+/** Reaction color + strobe-period grammar. Unified pulse vocabulary:
+ *  same ring, varied by hue and speed. Faster = more urgent activity. */
+const REACTION_STYLE: Record<ReactionKind, { color: string; periodMs: number }> = {
+  tool:    { color: '#10b981', periodMs: 600 },   // green, fast
+  memory:  { color: '#00e5ff', periodMs: 900 },   // cyan, medium
+  skill:   { color: '#f59e0b', periodMs: 750 },   // amber, medium-fast
+  handoff: { color: '#f97316', periodMs: 1100 },  // orange, slow (deliberate)
+  search:  { color: '#8b5cf6', periodMs: 700 },   // violet, medium-fast
+  think:   { color: '#a8e6ff', periodMs: 1400 },  // pale cyan, slow breath
 }
 
 interface Satellite {
@@ -162,11 +176,12 @@ function buildSatellites(
   return sats
 }
 
-export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memorySummary }: Props) {
+export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memorySummary, reactionsRef }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const nodeGroupRef = useRef<SVGGElement>(null)
   const edgeGroupRef = useRef<SVGGElement>(null)
   const pulseGroupRef = useRef<SVGGElement>(null)
+  const reactionGroupRef = useRef<SVGGElement>(null)
 
   const positionsRef = useRef<Map<string, { x: number; y: number }>>(new Map())
   const simulationRef = useRef<Simulation<SimNode, SimLink> | null>(null)
@@ -342,6 +357,54 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
         }
       }
 
+      // Reaction halos — read live from ref, render one animated ring per
+      // active reaction. Imperative DOM updates avoid re-render thrash when
+      // dozens of reactions fire per second across many agents.
+      const reactionGroup = reactionGroupRef.current
+      const reactions = reactionsRef?.current
+      if (reactionGroup && reactions) {
+        const now = performance.now()
+        const live = new Set<string>()
+        for (const [agentId, r] of reactions) {
+          const age = now - r.startedAt
+          if (age > r.duration) continue
+          live.add(agentId)
+          const pos = positionsRef.current.get(agentId)
+          if (!pos) continue
+
+          const style = REACTION_STYLE[r.kind] ?? REACTION_STYLE.tool
+          // Sinusoidal strobe — breath in, breath out, then fade at tail
+          const phase = (now % style.periodMs) / style.periodMs
+          const breath = 0.5 + 0.5 * Math.sin(phase * Math.PI * 2)
+          const lifeFade = age < 200 ? age / 200 : age > r.duration - 300 ? (r.duration - age) / 300 : 1
+          const scale = 1.6 + breath * 0.9 * r.intensity
+          const opacity = (0.35 + breath * 0.55) * lifeFade
+
+          const key = `reaction:${agentId}`
+          let ring = reactionGroup.querySelector<SVGCircleElement>(`[data-rid="${CSS.escape(key)}"]`)
+          if (!ring) {
+            ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+            ring.setAttribute('data-rid', key)
+            ring.setAttribute('fill', 'none')
+            ring.setAttribute('stroke-width', '2')
+            ring.setAttribute('filter', 'url(#pulse-glow)')
+            ring.setAttribute('pointerEvents', 'none')
+            reactionGroup.appendChild(ring)
+          }
+          ring.setAttribute('cx', pos.x.toFixed(2))
+          ring.setAttribute('cy', pos.y.toFixed(2))
+          ring.setAttribute('r', (28 * scale).toFixed(2))
+          ring.setAttribute('stroke', style.color)
+          ring.setAttribute('opacity', opacity.toFixed(2))
+        }
+        // Remove dead rings
+        for (const child of Array.from(reactionGroup.children)) {
+          const rid = (child as SVGElement).getAttribute('data-rid')
+          const agentId = rid?.replace(/^reaction:/, '') ?? ''
+          if (!live.has(agentId)) reactionGroup.removeChild(child)
+        }
+      }
+
       animationRef.current = requestAnimationFrame(render)
     }
 
@@ -501,6 +564,9 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
           )
         })}
       </g>
+
+      {/* Reaction halos — live per-agent "currently doing" indicators */}
+      <g ref={reactionGroupRef} pointerEvents="none" />
 
       {/* Pulses */}
       <g ref={pulseGroupRef} pointerEvents="none" />

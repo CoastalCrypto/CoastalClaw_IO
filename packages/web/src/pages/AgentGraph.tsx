@@ -3,6 +3,7 @@ import { NavBar, type NavPage } from '../components/NavBar'
 import { MyceliumCanvas } from '../components/MyceliumCanvas'
 import { useAgentGraph } from '../hooks/useAgentGraph'
 import { useAgentDependencies } from '../hooks/useAgentDependencies'
+import { useAgentMemory } from '../hooks/useAgentMemory'
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -56,6 +57,7 @@ interface SidebarPanelProps {
     totalAffected?: number
     directDependents?: DependencyItem[]
   } | null
+  memory?: { contexts: number; toolsUsed: number; actions: number; bindings: number; lastActionAt: number | null } | null
   isLoading: boolean
   errors: string[]
   onClose: () => void
@@ -65,6 +67,7 @@ function SidebarPanel({
   selectedNode,
   dependencies,
   impact,
+  memory,
   isLoading,
   errors,
   onClose,
@@ -121,6 +124,24 @@ function SidebarPanel({
       {errors.length > 0 && errors.map((err) => (
         <ErrorBanner key={err} message={err} />
       ))}
+
+      {memory && selectedNode.nodeType === 'agent' && (memory.contexts + memory.toolsUsed + memory.actions + memory.bindings) > 0 && (
+        <div style={{
+          marginBottom: 14, padding: '8px 10px',
+          background: 'rgba(0,229,255,0.05)', borderRadius: 6,
+          border: '1px solid rgba(0,229,255,0.15)',
+        }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: '#00e5ff', marginBottom: 6, letterSpacing: '0.06em' }}>
+            MEMORY BLOOM
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, fontSize: 10, color: '#94adc4', fontFamily: 'JetBrains Mono, monospace' }}>
+            <div><span style={{ color: '#10b981' }}>●</span> {memory.toolsUsed} tools used</div>
+            <div><span style={{ color: '#00e5ff' }}>●</span> {memory.contexts} contexts</div>
+            <div><span style={{ color: '#f59e0b' }}>●</span> {memory.bindings} bindings</div>
+            <div><span style={{ color: '#94adc4' }}>●</span> {memory.actions} actions</div>
+          </div>
+        </div>
+      )}
 
       {isLoading && (
         <div style={{ fontSize: 11, color: '#94adc4', fontStyle: 'italic' }}>Loading analysis...</div>
@@ -254,6 +275,7 @@ function Legend() {
 
 export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
   const { nodes, edges, connected } = useAgentGraph()
+  const { summary: memorySummary } = useAgentMemory()
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const {
@@ -309,6 +331,7 @@ export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
           edges={edges}
           selectedId={selectedId}
           onSelectNode={setSelectedId}
+          memorySummary={memorySummary}
         />
 
         <Legend />
@@ -318,6 +341,7 @@ export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
             selectedNode={selectedNode}
             dependencies={dependencies}
             impact={impact}
+            memory={memorySummary[selectedNode.id] ?? null}
             isLoading={isLoading}
             errors={analysisErrors}
             onClose={() => setSelectedId(null)}

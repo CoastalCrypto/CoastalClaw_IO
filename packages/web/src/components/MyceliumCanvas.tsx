@@ -12,6 +12,7 @@ import {
   type SimulationLinkDatum,
 } from 'd3-force'
 import type { GraphNode, GraphEdge, NodeType } from '../types/agent-graph'
+import type { AgentMemorySummary } from '../api/client'
 
 interface SimNode extends SimulationNodeDatum {
   id: string
@@ -89,9 +90,77 @@ interface Props {
   edges: GraphEdge[]
   selectedId: string | null
   onSelectNode: (id: string | null) => void
+  memorySummary?: Record<string, AgentMemorySummary>
 }
 
-export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode }: Props) {
+interface Satellite {
+  /** Unique key per (agentId, kind, slot) so additions can bloom-in */
+  key: string
+  kind: 'context' | 'tool' | 'binding'
+  /** Angle in radians on the orbit */
+  angle: number
+  /** Orbit radius from the agent center */
+  radius: number
+  /** Drift speed (radians per ms) — small positive or negative for variety */
+  drift: number
+  /** Particle radius */
+  size: number
+}
+
+const SATELLITE_COLOR: Record<Satellite['kind'], string> = {
+  context: '#00e5ff',
+  tool: '#10b981',
+  binding: '#f59e0b',
+}
+
+const MAX_SATELLITES_PER_KIND = 6
+
+/**
+ * Build a deterministic satellite layout from a memory summary.
+ * Same counts always produce the same arrangement, so satellites
+ * stay in their orbital slots across renders — only newly-added
+ * satellites bloom in.
+ */
+function buildSatellites(
+  agentId: string,
+  summary: AgentMemorySummary | undefined,
+  agentRadius: number,
+): Satellite[] {
+  if (!summary) return []
+  const sats: Satellite[] = []
+  const seed = hashString(agentId)
+
+  const groups: Array<{ kind: Satellite['kind']; count: number; orbit: number; sizeRange: [number, number] }> = [
+    { kind: 'tool',    count: Math.min(summary.toolsUsed,  MAX_SATELLITES_PER_KIND), orbit: agentRadius + 18, sizeRange: [2.4, 3.6] },
+    { kind: 'context', count: Math.min(summary.contexts,   MAX_SATELLITES_PER_KIND), orbit: agentRadius + 30, sizeRange: [2.0, 3.0] },
+    { kind: 'binding', count: Math.min(summary.bindings,   MAX_SATELLITES_PER_KIND), orbit: agentRadius + 42, sizeRange: [1.8, 2.6] },
+  ]
+
+  for (const g of groups) {
+    if (g.count === 0) continue
+    const angleStep = (Math.PI * 2) / Math.max(g.count, 4)
+    const baseAngle = ((seed >>> (g.kind === 'tool' ? 0 : g.kind === 'context' ? 8 : 16)) % 360) * (Math.PI / 180)
+    const driftSign = ((seed >>> 4) & 1) === 0 ? 1 : -1
+    const driftBase = g.kind === 'tool' ? 0.00012 : g.kind === 'context' ? 0.00008 : 0.00005
+    for (let i = 0; i < g.count; i++) {
+      const slotSeed = hashString(`${agentId}|${g.kind}|${i}`)
+      const sizeJitter = ((slotSeed >>> 0) % 100) / 100
+      const size = g.sizeRange[0] + (g.sizeRange[1] - g.sizeRange[0]) * sizeJitter
+      sats.push({
+        key: `${agentId}|${g.kind}|${i}`,
+        kind: g.kind,
+        angle: baseAngle + i * angleStep,
+        radius: g.orbit + ((slotSeed >>> 8) % 6) - 3,
+        drift: driftSign * driftBase * (0.7 + sizeJitter * 0.6),
+        size,
+      })
+    }
+  }
+
+  return sats
+}
+
+export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memorySummary }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const nodeGroupRef = useRef<SVGGElement>(null)
   const edgeGroupRef = useRef<SVGGElement>(null)
@@ -337,6 +406,15 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode }: Props
           @keyframes tendril-flow {
             to { stroke-dashoffset: -24; }
           }
+          @keyframes satellite-bloom {
+            from { opacity: 0; transform: scale(0.1); }
+            to   { opacity: 0.85; transform: scale(1); }
+          }
+          .satellite-bloom {
+            transform-origin: center;
+            transform-box: fill-box;
+            animation: satellite-bloom 800ms ease-out both;
+          }
           .mycelium-halo-active {
             animation: mycelium-pulse 1.8s ease-in-out infinite;
             transform-origin: center;
@@ -431,6 +509,33 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode }: Props
                   pointerEvents="none"
                 />
               )}
+              {/* Memory bloom satellites — orbit the agent, encode learning */}
+              {type === 'agent' && !isOffline && buildSatellites(n.id, memorySummary?.[n.id], radius).map(sat => {
+                const orbitDurationSec = (2 * Math.PI / Math.abs(sat.drift) / 1000)
+                const initialAngleDeg = (sat.angle * 180) / Math.PI
+                const endAngleDeg = sat.drift > 0 ? initialAngleDeg + 360 : initialAngleDeg - 360
+                return (
+                  <g key={sat.key} pointerEvents="none">
+                    <circle
+                      cx={sat.radius}
+                      cy={0}
+                      r={sat.size}
+                      fill={SATELLITE_COLOR[sat.kind]}
+                      opacity={0.85}
+                      filter="url(#node-glow)"
+                      className="satellite-bloom"
+                    />
+                    <animateTransform
+                      attributeName="transform"
+                      type="rotate"
+                      from={`${initialAngleDeg.toFixed(2)} 0 0`}
+                      to={`${endAngleDeg.toFixed(2)} 0 0`}
+                      dur={`${orbitDurationSec.toFixed(1)}s`}
+                      repeatCount="indefinite"
+                    />
+                  </g>
+                )
+              })}
               {/* Label */}
               <text
                 y={radius + 16}

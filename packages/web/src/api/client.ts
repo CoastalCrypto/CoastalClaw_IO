@@ -54,6 +54,14 @@ export interface AgentRecord {
   active: boolean
 }
 
+export interface AgentMemorySummary {
+  contexts: number
+  toolsUsed: number
+  actions: number
+  bindings: number
+  lastActionAt: number | null
+}
+
 export interface SystemStats {
   cpu: { percent: number }
   mem: { total: number; used: number; free: number; cached: number }
@@ -502,6 +510,12 @@ export class CoreClient {
   async listAgents(): Promise<AgentRecord[]> {
     const res = await fetch(`${this.baseUrl}/api/admin/agents`, { headers: this.adminHeaders() })
     if (!res.ok) throw new Error(`Failed to list agents (${res.status})`)
+    return res.json()
+  }
+
+  async getAgentMemorySummary(): Promise<Record<string, AgentMemorySummary>> {
+    const res = await fetch(`${this.baseUrl}/api/admin/agents/memory-summary`, { headers: this.adminHeaders() })
+    if (!res.ok) throw new Error(`Failed to load memory summary (${res.status})`)
     return res.json()
   }
 

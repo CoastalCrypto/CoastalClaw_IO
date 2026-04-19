@@ -10,6 +10,7 @@ import { chatRoutes } from './api/routes/chat.js'
 import { adminActionsRoutes } from './api/routes/admin-actions.js'
 import { adminRoutes, getOrCreateAdminToken, validateSessionToken } from './api/routes/admin.js'
 import { agentRoutes } from './api/routes/agents.js'
+import { agentMemoryRoutes } from './api/routes/agent-memory.js'
 import { teamRoutes } from './api/routes/team.js'
 import { personaRoutes } from './api/routes/persona.js'
 import { systemRoutes } from './api/routes/system.js'
@@ -131,6 +132,7 @@ export async function buildServer() {
   // Register GraphQL endpoint for agent dependency analysis
   await fastify.register(graphQLRoutes, { registry: agentRegistry })
   await fastify.register(agentRoutes, { registry: agentRegistry, gate })
+  await fastify.register(agentMemoryRoutes, { registry: agentRegistry, db })
   await fastify.register(adminActionsRoutes)
   await fastify.register(teamRoutes)
   await fastify.register(personaRoutes, { registry: agentRegistry })

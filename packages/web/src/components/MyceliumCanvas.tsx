@@ -234,7 +234,10 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
     const simLinks: SimLink[] = edges.map(e => ({
       source: e.source,
       target: e.target,
-      weight: e.weight ?? 0.5,
+      // Suggested edges shouldn't tug the layout — they're hypotheses, not bindings.
+      // A faint pull keeps suggested tools loosely orbiting their proposing agent
+      // so the user sees the relationship without the graph distorting around it.
+      weight: e.suggested ? 0.05 : (e.weight ?? 0.5),
     }))
 
     if (simulationRef.current) simulationRef.current.stop()
@@ -416,6 +419,14 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
           @keyframes tendril-flow {
             to { stroke-dashoffset: -24; }
           }
+          @keyframes suggested-shimmer {
+            0%, 100% { stroke-opacity: 0.18; }
+            50%      { stroke-opacity: 0.42; }
+          }
+          .tendril-suggested {
+            stroke-dasharray: 3 7;
+            animation: suggested-shimmer 3.4s ease-in-out infinite;
+          }
           @keyframes satellite-bloom {
             from { opacity: 0; transform: scale(0.1); }
             to   { opacity: 0.85; transform: scale(1); }
@@ -449,6 +460,28 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
           const relevant = !selectedId || (connectedIds && connectedIds.has(e.source) && connectedIds.has(e.target))
           const dim = selectedId && !relevant
           const w = e.weight ?? 0.5
+
+          if (e.suggested) {
+            // Ghost tendril — proposes a connection without claiming it exists.
+            // Color stays in the agent-tool family but desaturates toward white
+            // to read as "potential" rather than "active".
+            const sScore = e.suggestionScore ?? 0
+            return (
+              <path
+                key={e.id}
+                data-eid={e.id}
+                d="M0,0"
+                fill="none"
+                stroke="#a8e6ff"
+                strokeWidth={0.5 + sScore * 1.0}
+                strokeOpacity={dim ? 0.04 : 0.25}
+                strokeLinecap="round"
+                className="tendril-suggested"
+                pointerEvents="none"
+              />
+            )
+          }
+
           // Heavily-used edges render thicker and brighter — interaction history made visible
           const baseWidth = 0.6 + w * 2.0
           const baseOpacity = 0.15 + w * 0.55

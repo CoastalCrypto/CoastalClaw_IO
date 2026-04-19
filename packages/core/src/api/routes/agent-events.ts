@@ -5,6 +5,7 @@ import { eventBus } from '../../events/bus.js'
 import type { AgentEvent } from '../../events/types.js'
 import type { AgentRegistry } from '../../agents/registry.js'
 import type { ChannelManager } from '../../channels/manager.js'
+import { findSuggestedToolEdges } from '../../agents/co-activation.js'
 
 const TOOL_EDGE_DEFAULT_WEIGHT = 0.18  // unused tools still visible but faint
 const NON_TOOL_EDGE_WEIGHT = 0.5       // agent→model and agent→channel are config edges
@@ -66,6 +67,15 @@ function toGraphEvent(event: AgentEvent): Record<string, unknown> | null {
   return null
 }
 
+function categorizeTool(t: string): string {
+  return t.startsWith('memory_') ? 'Memory'
+    : t.startsWith('git_') ? 'Git'
+    : t === 'run_command' ? 'Shell'
+    : t === 'query_db' ? 'Database'
+    : t === 'http_get' ? 'Web'
+    : t.includes('_') ? 'MCP' : 'File'
+}
+
 function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager, db: Database.Database) {
   const allAgents = registry.listAll()
   const channels = channelManager.list()
@@ -79,19 +89,20 @@ function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager, 
 
   for (const a of allAgents) {
     for (const t of a.tools) {
-      if (!toolSet.has(t)) {
-        const cat = t.startsWith('memory_') ? 'Memory'
-          : t.startsWith('git_') ? 'Git'
-          : t === 'run_command' ? 'Shell'
-          : t === 'query_db' ? 'Database'
-          : t === 'http_get' ? 'Web'
-          : t.includes('_') ? 'MCP' : 'File'
-        toolSet.set(t, { label: t, category: cat })
-      }
+      if (!toolSet.has(t)) toolSet.set(t, { label: t, category: categorizeTool(t) })
     }
     if (a.modelPref) modelSet.set(a.modelPref, a.modelPref)
   }
   if (modelSet.size === 0) modelSet.set('ollama:default', 'Ollama (default)')
+
+  // Mine co-activation patterns: suggested growth edges to tools the agent
+  // doesn't have but other agents pair with the agent's existing tools.
+  const suggestions = findSuggestedToolEdges(db, allAgents.map(a => ({ id: a.id, tools: a.tools })))
+  // Suggested tools may not exist as nodes yet — add them so the suggested
+  // tendril has something to terminate at.
+  for (const s of suggestions) {
+    if (!toolSet.has(s.toolName)) toolSet.set(s.toolName, { label: s.toolName, category: categorizeTool(s.toolName) })
+  }
 
   // Build nodes (without positions, let frontend handle layout)
   const agentNodes = allAgents.map((a) => ({
@@ -133,7 +144,11 @@ function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager, 
   // Build edges with weights derived from actual interaction history.
   // agent→tool weights come from action_log aggregates; agent→model/channel
   // are configuration edges and get a fixed mid weight so they always render.
-  const edges: Array<{ id: string; source: string; target: string; label: string; active: boolean; edgeType: string; weight: number; lastUsedAt: number | null }> = []
+  const edges: Array<{
+    id: string; source: string; target: string; label: string; active: boolean;
+    edgeType: string; weight: number; lastUsedAt: number | null;
+    suggested?: boolean; suggestionScore?: number; suggestionPairedWith?: string;
+  }> = []
 
   for (const a of allAgents) {
     // Agent → tools
@@ -169,6 +184,23 @@ function buildSnapshot(registry: AgentRegistry, channelManager: ChannelManager, 
         }
       }
     }
+  }
+
+  // Suggested growth tendrils — agent → tool the agent doesn't yet have
+  for (const s of suggestions) {
+    edges.push({
+      id: `${s.agentId}~>tool:${s.toolName}`,
+      source: s.agentId,
+      target: `tool:${s.toolName}`,
+      label: 'could grow',
+      active: false,
+      edgeType: 'agent-tool',
+      weight: s.score,
+      lastUsedAt: null,
+      suggested: true,
+      suggestionScore: s.score,
+      suggestionPairedWith: s.pairedWith,
+    })
   }
 
   return {

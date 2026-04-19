@@ -23,6 +23,12 @@ export interface GraphEdge {
   weight?: number
   /** Timestamp of the most recent interaction across this edge */
   lastUsedAt?: number | null
+  /** True if this edge is a growth suggestion (data-mined, not a real binding) */
+  suggested?: boolean
+  /** Normalized 0-1 confidence of the suggestion */
+  suggestionScore?: number
+  /** For suggested edges: an existing tool the agent has that pairs strongly with this one */
+  suggestionPairedWith?: string
 }
 
 export interface AgentGraphState {

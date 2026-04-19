@@ -54,6 +54,18 @@ export interface AgentRecord {
   active: boolean
 }
 
+export interface KnowledgeDoc {
+  id: string
+  title: string
+  mimeType: string
+  sizeBytes: number
+  scope: string
+  chunkCount: number
+  contextDocIds: string[]
+  sourceType: 'pdf' | 'docx' | 'text' | 'image' | 'other'
+  createdAt: number
+}
+
 export interface AgentMemorySummary {
   contexts: number
   toolsUsed: number
@@ -517,6 +529,36 @@ export class CoreClient {
     const res = await fetch(`${this.baseUrl}/api/admin/agents/memory-summary`, { headers: this.adminHeaders() })
     if (!res.ok) throw new Error(`Failed to load memory summary (${res.status})`)
     return res.json()
+  }
+
+  async ingestKnowledge(file: File, scope = 'global'): Promise<KnowledgeDoc> {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('scope', scope)
+    const res = await fetch(`${this.baseUrl}/api/admin/knowledge/ingest`, {
+      method: 'POST',
+      headers: this.adminHeaders(),
+      body: form,
+    })
+    this.checkAuth(res)
+    if (!res.ok) await this.extractError(res, `Ingest failed (${res.status})`)
+    return res.json()
+  }
+
+  async listKnowledge(): Promise<KnowledgeDoc[]> {
+    const res = await fetch(`${this.baseUrl}/api/admin/knowledge`, { headers: this.adminHeaders() })
+    this.checkAuth(res)
+    if (!res.ok) throw new Error(`List knowledge failed (${res.status})`)
+    return res.json()
+  }
+
+  async deleteKnowledge(id: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/admin/knowledge/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: this.adminHeaders(),
+    })
+    this.checkAuth(res)
+    if (!res.ok) await this.extractError(res, `Delete knowledge failed (${res.status})`)
   }
 
   async voteEdgeFeedback(agentId: string, toolName: string, value: 1 | -1): Promise<{ score: number; weight: number }> {

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { NavBar, type NavPage } from '../components/NavBar'
 import { MyceliumCanvas } from '../components/MyceliumCanvas'
+import { KnowledgeLibrary } from '../components/KnowledgeLibrary'
 import { useAgentGraph } from '../hooks/useAgentGraph'
 import { useAgentDependencies } from '../hooks/useAgentDependencies'
 import { useAgentMemory } from '../hooks/useAgentMemory'
@@ -344,8 +345,9 @@ function Legend() {
 
 export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
   const { nodes, edges, connected, reactionsRef } = useAgentGraph()
-  const { summary: memorySummary } = useAgentMemory()
+  const { summary: memorySummary, refresh: refreshMemory } = useAgentMemory()
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [dropToast, setDropToast] = useState<string | null>(null)
 
   const {
     dependencies,
@@ -365,6 +367,31 @@ export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
   const selectedToolEdges = selectedId
     ? edges.filter(e => e.source === selectedId && e.edgeType === 'agent-tool' && !e.suggested)
     : []
+
+  /**
+   * Drop-on-agent handler — ingests each dropped file scoped to that agent,
+   * so the resulting context_docs count toward the agent's per-agent memory
+   * bloom (not the global shared library). Sequential to avoid slamming the
+   * vision model when multiple image files drop at once.
+   */
+  const handleDropOnAgent = useCallback(async (agentId: string, files: FileList) => {
+    const names: string[] = []
+    for (const file of Array.from(files)) {
+      try {
+        await coreClient.ingestKnowledge(file, agentId)
+        names.push(file.name)
+      } catch (err) {
+        console.error(`[AgentGraph] ingest failed for ${file.name}:`, err)
+        setDropToast(`Failed: ${file.name}`)
+        return
+      }
+    }
+    if (names.length > 0) {
+      setDropToast(`Ingested ${names.length} file${names.length > 1 ? 's' : ''} → ${agentId}`)
+      refreshMemory()
+      setTimeout(() => setDropToast(null), 3500)
+    }
+  }, [refreshMemory])
 
   const handleVote = useCallback(async (toolName: string, value: 1 | -1) => {
     if (!selectedId) return
@@ -420,7 +447,23 @@ export function AgentGraph({ onNav }: { onNav: (page: NavPage) => void }) {
           onSelectNode={setSelectedId}
           memorySummary={memorySummary}
           reactionsRef={reactionsRef}
+          onDropFilesOnAgent={handleDropOnAgent}
         />
+
+        <KnowledgeLibrary onIngestComplete={refreshMemory} />
+
+        {dropToast && (
+          <div style={{
+            position: 'absolute', bottom: 72, left: '50%', transform: 'translateX(-50%)',
+            zIndex: 20,
+            background: 'rgba(16,185,129,0.12)',
+            border: '1px solid rgba(16,185,129,0.35)',
+            borderRadius: 8, padding: '8px 16px',
+            fontSize: 11, fontFamily: 'JetBrains Mono, monospace', color: '#10b981',
+          }}>
+            {dropToast}
+          </div>
+        )}
 
         <Legend />
 

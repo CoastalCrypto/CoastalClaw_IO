@@ -96,6 +96,9 @@ interface Props {
   /** Ref populated by useAgentGraph — live, per-agent "currently doing" signals.
    *  Read in the rAF loop so updates don't thrash React reconciliation. */
   reactionsRef?: React.MutableRefObject<Map<string, Reaction>>
+  /** Fired when the user drops a file onto an agent node — scope the ingest
+   *  to that agent so the knowledge blooms as per-agent context. */
+  onDropFilesOnAgent?: (agentId: string, files: FileList) => void
 }
 
 /** Reaction color + strobe-period grammar. Unified pulse vocabulary:
@@ -176,7 +179,7 @@ function buildSatellites(
   return sats
 }
 
-export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memorySummary, reactionsRef }: Props) {
+export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memorySummary, reactionsRef, onDropFilesOnAgent }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const nodeGroupRef = useRef<SVGGElement>(null)
   const edgeGroupRef = useRef<SVGGElement>(null)
@@ -587,6 +590,7 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
           const ring = isError ? '#ef4444' : isSelected ? '#ffffff' : `rgba(${color.ring},0.65)`
           const coreFill = isOffline ? '#1a3a5c' : color.core
 
+          const isDropTarget = type === 'agent' && !isOffline && !!onDropFilesOnAgent
           return (
             <g
               key={n.id}
@@ -594,6 +598,26 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
               transform="translate(0,0)"
               style={{ cursor: 'pointer', opacity: dim ? 0.35 : 1, transition: 'opacity 0.3s ease' }}
               onClick={(ev) => { ev.stopPropagation(); onSelectNode(n.id === selectedId ? null : n.id) }}
+              onDragOver={isDropTarget ? (ev) => {
+                // Allow drop only if data transfer contains files
+                if (Array.from(ev.dataTransfer.items).some(it => it.kind === 'file')) {
+                  ev.preventDefault()
+                  ev.stopPropagation()
+                  ev.dataTransfer.dropEffect = 'copy'
+                  ;(ev.currentTarget as SVGGElement).setAttribute('data-drop-hover', '1')
+                }
+              } : undefined}
+              onDragLeave={isDropTarget ? (ev) => {
+                ;(ev.currentTarget as SVGGElement).removeAttribute('data-drop-hover')
+              } : undefined}
+              onDrop={isDropTarget ? (ev) => {
+                ev.preventDefault()
+                ev.stopPropagation()
+                ;(ev.currentTarget as SVGGElement).removeAttribute('data-drop-hover')
+                if (ev.dataTransfer.files.length > 0) {
+                  onDropFilesOnAgent!(n.id, ev.dataTransfer.files)
+                }
+              } : undefined}
             >
               {/* Halo */}
               <circle

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { coreClient, type AgentMemorySummary } from '../api/client'
 
 const POLL_INTERVAL_MS = 30_000
@@ -14,22 +14,21 @@ export function useAgentMemory() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const cancelledRef = useRef(false)
 
+  const load = useCallback(async () => {
+    try {
+      const data = await coreClient.getAgentMemorySummary()
+      if (!cancelledRef.current) {
+        setSummary(data)
+        setError(null)
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to load memory summary'
+      if (!cancelledRef.current) setError(msg)
+    }
+  }, [])
+
   useEffect(() => {
     cancelledRef.current = false
-
-    const load = async () => {
-      try {
-        const data = await coreClient.getAgentMemorySummary()
-        if (!cancelledRef.current) {
-          setSummary(data)
-          setError(null)
-        }
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : 'Failed to load memory summary'
-        if (!cancelledRef.current) setError(msg)
-      }
-    }
-
     load()
     intervalRef.current = setInterval(load, POLL_INTERVAL_MS)
 
@@ -37,7 +36,7 @@ export function useAgentMemory() {
       cancelledRef.current = true
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [])
+  }, [load])
 
-  return { summary, error }
+  return { summary, error, refresh: load }
 }

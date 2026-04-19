@@ -36,6 +36,8 @@ import { mcpRoutes } from './api/routes/mcp.js'
 import { searchRoutes } from './api/routes/search.js'
 import { contextRoutes } from './api/routes/context.js'
 import { userModelRoutes } from './api/routes/user-model.js'
+import { knowledgeRoutes } from './api/routes/knowledge.js'
+import { KnowledgeStore } from './knowledge/store.js'
 import { CronStore } from './cron/store.js'
 import { CronScheduler } from './cron/scheduler.js'
 import { SkillStore } from './skills/store.js'
@@ -226,6 +228,9 @@ export async function buildServer() {
   await fastify.register(searchRoutes, { memory: searchMemory })
   await fastify.register(contextRoutes, { store: contextStore })
   await fastify.register(userModelRoutes, { store: userModelStore })
+
+  const knowledgeStore = new KnowledgeStore(db, contextStore, searchMemory)
+  await fastify.register(knowledgeRoutes, { store: knowledgeStore, router: pipelineRouter })
 
   // Ensure the default admin account is fully seeded before accepting requests.
   // Without this, a login attempt during scrypt hashing would return "Invalid credentials".

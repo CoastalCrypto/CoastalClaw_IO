@@ -27,7 +27,6 @@ jobs:
       # Developers should run `pnpm install` on Linux/WSL after adding native
       # optional deps to keep pnpm-lock.yaml in sync.
       - run: pnpm install --no-frozen-lockfile
-      - run: pnpm exec playwright install --with-deps
       - run: pnpm build
       - run: pnpm test
 

@@ -27,6 +27,12 @@ jobs:
       # Developers should run `pnpm install` on Linux/WSL after adding native
       # optional deps to keep pnpm-lock.yaml in sync.
       - run: pnpm install --no-frozen-lockfile
+
+      # Install Playwright Chromium for the core package browser tool tests.
+      # Playwright is a runtime dep in packages/core, not the workspace root,
+      # so we must scope the install to that package.
+      - run: pnpm --filter @coastal-ai/core exec playwright install chromium --with-deps
+
       - run: pnpm build
       - run: pnpm test
 

@@ -21,6 +21,7 @@ import { mkdirSync } from 'node:fs'
 import { join as pathJoin } from 'node:path'
 
 import { McpStore } from '../../tools/mcp/store.js'
+import { eventBus } from '../../events/bus.js'
 
 export async function chatRoutes(
   fastify: FastifyInstance,
@@ -136,7 +137,10 @@ export async function chatRoutes(
     }
 
     const loop = new AgenticLoop(router.ollama, toolRegistry, gate, log, onApprovalNeeded, skillGaps)
+    const sessionStart = Date.now()
+    eventBus.publish({ type: 'session_start', ts: sessionStart, sessionId, agentId: agent.id })
     const result = await loop.run(session, message, sessionId, messages, undefined, undefined, images)
+    eventBus.publish({ type: 'session_complete', ts: Date.now(), sessionId, agentId: agent.id, durationMs: Date.now() - sessionStart, toolCallCount: 0 })
 
     await memory.write({ id: randomUUID(), sessionId, role: 'user', content: message, timestamp: Date.now() }, decision.signals.retention)
     await memory.write({ id: randomUUID(), sessionId, role: 'assistant', content: result.reply, timestamp: Date.now() }, 'useful')

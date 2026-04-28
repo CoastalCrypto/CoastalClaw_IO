@@ -246,8 +246,8 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
 
         {messages.length > 0 && (
           <button
-            onClick={e => { e.stopPropagation(); abortRef.current?.abort(); window.speechSynthesis?.cancel(); setMessages([]); setLoading(false) }}
-            title="Clear pane"
+            onClick={e => { e.stopPropagation(); abortRef.current?.abort(); window.speechSynthesis?.cancel(); setMessages([]); setLoading(false); sessionId.current = randomUUID(); if (inputRef.current) inputRef.current.style.height = 'auto' }}
+            title="New chat"
             aria-label="Clear pane"
             style={{ fontSize: '10px', color: '#4a5568', cursor: 'pointer', background: 'none', border: 'none', padding: '2px 4px', borderRadius: '4px' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#a0aec0')}
@@ -354,6 +354,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
           onClick={e => e.stopPropagation()}
           placeholder="Send a message… (Shift+Enter for newline)"
+          spellCheck
           disabled={loading}
           style={{
             flex: 1,

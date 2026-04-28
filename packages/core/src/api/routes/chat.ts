@@ -34,6 +34,7 @@ export async function chatRoutes(
   mkdirSync(config.agentWorkdir, { recursive: true })
 
   const db = new Database(pathJoin(config.dataDir, 'coastal-ai.db'))
+  const sessionsDb = new Database(pathJoin(config.dataDir, 'sessions.db'))
   const router = new ModelRouter({ ollamaUrl: config.ollamaUrl, vllmUrl: config.vllmUrl, airllmUrl: config.airllmUrl, defaultModel: config.defaultModel })
   const memory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey, cloudConsentGranted: config.cloudConsentGranted })
   const agentRegistry = new AgentRegistry(pathJoin(config.dataDir, 'agents.db'))
@@ -52,6 +53,10 @@ export async function chatRoutes(
   const personaMgr = new PersonaManager(pathJoin(config.dataDir, 'persona.db'))
   const contextStore = new ContextStore(db)
   const userModelStore = new UserModelStore(db)
+
+  // Per-session AbortControllers for predictive inference — cancels any in-flight
+  // predictive call before spawning the next one, preventing overlapping runs.
+  const predControllers = new Map<string, AbortController>()
 
   // 1. Initialize Dynamic MCP Servers
   const SECRETS_RE = /key|token|secret|password|auth|credential/i
@@ -82,6 +87,7 @@ export async function chatRoutes(
     agentRegistry.close()
     personaMgr.close()
     db.close()
+    sessionsDb.close()
     skillGaps.close()
     for (const a of activeAdapters) await a.close()
     await browserManager?.closeAll()
@@ -137,21 +143,25 @@ export async function chatRoutes(
 
     // Upsert session record with auto-generated title from first user message
     const title = message.slice(0, 80).replace(/\s+/g, ' ').trim()
-    const internalHost = (config.host === '0.0.0.0' || config.host === '::') ? '127.0.0.1' : config.host
-    fetch(`http://${internalHost}:${config.port}/api/sessions/${sessionId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title }),
-    }).catch(() => {})
+    const now = Date.now()
+    sessionsDb.prepare(`
+      INSERT INTO sessions (id, title, created_at, updated_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET title = excluded.title, updated_at = excluded.updated_at
+    `).run(sessionId, title.slice(0, 120), now, now)
 
     // START PREDICTIVE THREAD
+    // Abort any in-flight predictive call for this session before starting a new one
+    predControllers.get(sessionId)?.abort()
+    const predCtrl = new AbortController()
+    predControllers.set(sessionId, predCtrl)
     setTimeout(async () => {
       try {
         const predictiveAgent = agentRegistry.get('general')!
         const predSession = new AgentSession(predictiveAgent, toolDefs, personaMgr.get())
         const prompt = `Based on the latest user message "${message}" and your reply "${result.reply}", proactively predict the single most helpful next action or follow-up question the user might need. Respond ONLY with a short, actionable phrasing (max 6 words). Do not execute tools. Just provide the suggestion string.`
         const predLoop = new AgenticLoop(router.ollama, toolRegistry, gate, log, onApprovalNeeded)
-        const pResult = await predLoop.run(predSession, prompt, sessionId, [])
+        const pResult = await predLoop.run(predSession, prompt, sessionId, [], undefined, predControllers.get(sessionId)?.signal)
         fastify.websocketServer?.clients.forEach((client: any) => {
           if (client._sessionId === sessionId) {
             client.send(JSON.stringify({ type: 'proactive_suggestion', suggestion: pResult.reply, sessionId }))

@@ -367,19 +367,35 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
             pt = { x: sPos.x + (tPos.x - sPos.x) * sampled, y: sPos.y + (tPos.y - sPos.y) * sampled }
           }
 
-          let particle = pulseGroup.querySelector<SVGCircleElement>(`[data-pid="${CSS.escape(p.id)}"]`)
-          if (!particle) {
-            particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
-            particle.setAttribute('data-pid', p.id)
-            particle.setAttribute('r', '4.5')
-            particle.setAttribute('fill', p.color)
-            particle.setAttribute('filter', 'url(#pulse-glow)')
-            pulseGroup.appendChild(particle)
+          // Two-layer particle: soft halo + bright core for an energy-burst feel
+          let halo = pulseGroup.querySelector<SVGCircleElement>(`[data-pid="${CSS.escape(p.id)}"][data-ph="halo"]`)
+          if (!halo) {
+            halo = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+            halo.setAttribute('data-pid', p.id)
+            halo.setAttribute('data-ph', 'halo')
+            halo.setAttribute('r', '9')
+            halo.setAttribute('fill', p.color)
+            halo.setAttribute('opacity', '0')
+            halo.setAttribute('filter', 'url(#pulse-glow)')
+            pulseGroup.appendChild(halo)
           }
-          particle.setAttribute('cx', pt.x.toFixed(2))
-          particle.setAttribute('cy', pt.y.toFixed(2))
+          let core = pulseGroup.querySelector<SVGCircleElement>(`[data-pid="${CSS.escape(p.id)}"][data-ph="core"]`)
+          if (!core) {
+            core = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+            core.setAttribute('data-pid', p.id)
+            core.setAttribute('data-ph', 'core')
+            core.setAttribute('r', '3')
+            core.setAttribute('fill', '#ffffff')
+            core.setAttribute('filter', 'url(#pulse-glow)')
+            pulseGroup.appendChild(core)
+          }
+          halo.setAttribute('cx', pt.x.toFixed(2))
+          halo.setAttribute('cy', pt.y.toFixed(2))
+          core.setAttribute('cx', pt.x.toFixed(2))
+          core.setAttribute('cy', pt.y.toFixed(2))
           const fade = t < 0.15 ? t / 0.15 : t > 0.85 ? (1 - t) / 0.15 : 1
-          particle.setAttribute('opacity', fade.toFixed(2))
+          halo.setAttribute('opacity', (fade * 0.6).toFixed(2))
+          core.setAttribute('opacity', fade.toFixed(2))
         }
       }
 
@@ -474,11 +490,13 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
       onClick={handleBackgroundClick}
     >
       <defs>
-        <filter id="pulse-glow" x="-200%" y="-200%" width="500%" height="500%">
-          <feGaussianBlur stdDeviation="3" result="blur" />
+        <filter id="pulse-glow" x="-250%" y="-250%" width="600%" height="600%">
+          <feGaussianBlur stdDeviation="2" result="core-blur" />
+          <feGaussianBlur stdDeviation="6" result="halo-blur" in="SourceGraphic" />
           <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="blur" />
+            <feMergeNode in="halo-blur" />
+            <feMergeNode in="halo-blur" />
+            <feMergeNode in="core-blur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
@@ -489,6 +507,9 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
+        <pattern id="depth-grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+          <circle cx="0" cy="0" r="0.8" fill="rgba(0,229,255,0.055)" />
+        </pattern>
         {(Object.keys(NODE_COLOR) as NodeType[]).map(type => (
           <radialGradient key={type} id={`halo-${type}`} cx="0.5" cy="0.5" r="0.5">
             <stop offset="0%" stopColor={NODE_COLOR[type].core} stopOpacity="0.7" />
@@ -504,6 +525,14 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
           @keyframes mycelium-pulse {
             0%, 100% { transform: scale(1); opacity: 0.35; }
             50% { transform: scale(1.25); opacity: 0.7; }
+          }
+          .tendril-idle {
+            stroke-dasharray: 2 10;
+            opacity: 0.35;
+          }
+          .tendril-active {
+            stroke-dasharray: 6 8;
+            animation: tendril-flow 0.9s linear infinite;
           }
           @keyframes tendril-flow {
             to { stroke-dashoffset: -24; }
@@ -535,12 +564,11 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
             transform-origin: center;
             transform-box: fill-box;
           }
-          .tendril-active {
-            stroke-dasharray: 8 6;
-            animation: tendril-flow 1.2s linear infinite;
-          }
         `}</style>
       </defs>
+
+      {/* Depth grid — fine dots give the canvas a sense of scale */}
+      <rect x="0" y="0" width="100%" height="100%" fill="url(#depth-grid)" pointerEvents="none" />
 
       {/* Edges */}
       <g ref={edgeGroupRef}>
@@ -582,9 +610,9 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
               fill="none"
               stroke={color}
               strokeWidth={e.active ? baseWidth + 1.0 : baseWidth}
-              strokeOpacity={dim ? 0.08 : e.active ? Math.min(baseOpacity + 0.25, 0.95) : baseOpacity}
+              strokeOpacity={dim ? 0.06 : e.active ? Math.min(baseOpacity + 0.25, 0.95) : 0.35}
               strokeLinecap="round"
-              className={e.active ? 'tendril-active' : undefined}
+              className={e.active ? 'tendril-active' : 'tendril-idle'}
               style={{ transition: 'stroke-width 0.4s ease, stroke-opacity 0.4s ease' }}
             />
           )
@@ -642,6 +670,15 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
                 }
               } : undefined}
             >
+              {/* Outer ring — thin stroke defines the edge of the object */}
+              <circle
+                r={radius + 3.5}
+                fill="none"
+                stroke={ring}
+                strokeWidth={0.75}
+                opacity={isOffline ? 0.08 : 0.30}
+                pointerEvents="none"
+              />
               {/* Halo */}
               <circle
                 r={radius * 2.3}
@@ -660,12 +697,14 @@ export function MyceliumCanvas({ nodes, edges, selectedId, onSelectNode, memoryS
                 filter="url(#node-glow)"
                 className={!isActive && !isOffline ? 'mycelium-core-breath' : undefined}
               />
-              {/* Inner dot for agents */}
+              {/* Inner specular — top-left highlight simulates dome lighting */}
               {type === 'agent' && !isOffline && (
                 <circle
-                  r={radius * 0.3}
+                  cx={-radius * 0.28}
+                  cy={-radius * 0.28}
+                  r={radius * 0.18}
                   fill="#ffffff"
-                  opacity={isActive ? 0.95 : 0.7}
+                  opacity={isActive ? 0.5 : 0.22}
                   pointerEvents="none"
                 />
               )}

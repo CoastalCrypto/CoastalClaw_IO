@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useEventStream, type AgentEvent } from '../hooks/useEventStream'
 import { NavBar, type NavPage } from '../components/NavBar'
 import { EmptyState } from '../components/ui/EmptyState.js'
@@ -97,16 +97,20 @@ function CronSection() {
   const [triggering, setTriggering] = useState<string | null>(null)
   const [expandedOutput, setExpandedOutput] = useState<string | null>(null)
 
-  const load = async () => {
+  const load = async (signal?: AbortSignal) => {
     try {
-      const res = await fetch('/api/admin/crons', { headers: adminHeaders() })
+      const res = await fetch('/api/admin/crons', { headers: adminHeaders(), signal })
       if (res.ok) setJobs(await res.json())
-    } catch (e) {
-      console.warn('[Dashboard] Failed to load cron jobs:', e)
+    } catch (e: any) {
+      if (e?.name !== 'AbortError') console.warn('[Dashboard] Failed to load cron jobs:', e)
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    const controller = new AbortController()
+    load(controller.signal)
+    return () => controller.abort()
+  }, [])
 
   const openNew = () => {
     setForm(EMPTY_FORM)
@@ -345,13 +349,16 @@ export function Dashboard({ onNav }: { onNav: (page: NavPage) => void }) {
   const { events, connected, clear } = useEventStream(200)
   const [expandedEvent, setExpandedEvent] = useState<number | null>(null)
 
-  const toolCalls   = events.filter(e => e.type === 'tool_call_end')
-  const successful  = toolCalls.filter(e => e.success !== false)
-  const avgMs       = toolCalls.length
-    ? Math.round(toolCalls.reduce((s, e) => s + (e.durationMs ?? 0), 0) / toolCalls.length)
-    : 0
-  const sessions    = events.filter(e => e.type === 'session_complete').length
-  const reversed    = [...events].reverse()
+  const { toolCalls, successful, avgMs, sessions, reversed } = useMemo(() => {
+    const toolCalls  = events.filter(e => e.type === 'tool_call_end')
+    const successful = toolCalls.filter(e => e.success !== false)
+    const avgMs      = toolCalls.length
+      ? Math.round(toolCalls.reduce((s, e) => s + (e.durationMs ?? 0), 0) / toolCalls.length)
+      : 0
+    const sessions  = events.filter(e => e.type === 'session_complete').length
+    const reversed  = [...events].reverse()
+    return { toolCalls, successful, avgMs, sessions, reversed }
+  }, [events])
 
   return (
     <div className="min-h-screen text-white" style={{ background: '#050a0f' }}>

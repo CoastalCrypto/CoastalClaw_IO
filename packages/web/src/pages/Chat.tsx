@@ -160,7 +160,7 @@ function exportMarkdown(messages: Message[], sessionId: string) {
   URL.revokeObjectURL(a.href)
 }
 
-function TeamResult({ msg }: { msg: Message }) {
+const TeamResult = React.memo(function TeamResult({ msg }: { msg: Message }) {
   const [open, setOpen] = useState(false)
   return (
     <div className="flex justify-start mb-3">
@@ -189,7 +189,7 @@ function TeamResult({ msg }: { msg: Message }) {
       </div>
     </div>
   )
-}
+})
 
 // WebSocket with auto-reconnect
 function useReconnectingWs(url: string, onMessage: (data: any) => void) {
@@ -228,6 +228,94 @@ function useReconnectingWs(url: string, onMessage: (data: any) => void) {
   }, [connect])
 }
 
+// ── MessageList ───────────────────────────────────────────────────
+// Isolated behind React.memo so typing in the input field does not
+// re-render the entire message history on every keystroke.
+interface MessageListProps {
+  messages: Message[]
+  loading: boolean
+  suggestions: string[]
+  copiedIdx: number | null
+  fileNotice: string
+  onCopy: (content: string, idx: number) => void
+  onSuggestion: (sug: string) => void
+  onResolveApproval: (approvalId: string) => void
+}
+
+const MessageList = React.memo(function MessageList({
+  messages, loading, suggestions, copiedIdx, fileNotice,
+  onCopy, onSuggestion, onResolveApproval,
+}: MessageListProps) {
+  const bottomRef = useRef<HTMLDivElement>(null)
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+
+  return (
+    <div className="flex-1 overflow-y-auto px-4 py-6">
+      {fileNotice && (
+        <div className="mb-3 text-xs text-cyan-400 font-mono px-2 animate-pulse">{fileNotice}</div>
+      )}
+
+      {messages.map((m, i) => {
+        if (m.role === 'approval') {
+          return m.resolved ? null : (
+            <ApprovalCard
+              key={i}
+              approvalId={m.approvalId!}
+              agentName={m.agentName!}
+              toolName={m.toolName!}
+              cmd={m.cmd!}
+              agentId={m.agentId ?? 'general'}
+              onResolved={() => onResolveApproval(m.approvalId!)}
+            />
+          )
+        }
+        if (m.role === 'team') return <TeamResult key={i} msg={m} />
+        return (
+          <div key={i} className="relative group">
+            {m.imageUrl && (
+              <div className="flex justify-end mb-1 pr-3">
+                <img src={m.imageUrl} alt="attached" className="max-h-48 max-w-xs rounded-lg border border-white/10 object-contain" />
+              </div>
+            )}
+            <ChatBubble role={m.role as 'user' | 'assistant'} content={m.content} />
+            {m.role === 'assistant' && (
+              <button
+                onClick={() => onCopy(m.content, i)}
+                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-600 hover:text-gray-300 px-2 py-0.5 bg-gray-900/80 rounded"
+              >
+                {copiedIdx === i ? 'copied!' : 'copy'}
+              </button>
+            )}
+          </div>
+        )
+      })}
+
+      {loading && (
+        <div className="flex justify-start mb-3 px-3">
+          <span className="text-xs font-mono text-cyan-500/60 animate-pulse tracking-widest">thinking...</span>
+        </div>
+      )}
+
+      {suggestions.length > 0 && !loading && (
+        <div className="flex justify-start gap-3 mt-4 flex-wrap">
+          <span className="text-xs text-amber-500 font-mono self-center tracking-widest animate-pulse">[INSIGHT]</span>
+          {suggestions.map((sug, i) => (
+            <button
+              key={i}
+              onClick={() => onSuggestion(sug)}
+              className="text-xs border border-amber-500/30 bg-amber-950/20 text-amber-200/80 px-3 py-1.5 rounded-full hover:bg-amber-500/20 hover:border-amber-500 hover:text-amber-100 transition-all"
+            >
+              {sug}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div ref={bottomRef} />
+    </div>
+  )
+})
+
 export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string; onNav: (page: string) => void }) {
   const [currentSessionId, setCurrentSessionId] = useState(initialSessionId)
   const [messages, setMessages] = useState<Message[]>([
@@ -260,7 +348,6 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   const [architectToast, setArchitectToast] = useState<{
     proposalId: string; summary: string; vetoDeadline: number
   } | null>(null)
-  const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef2 = useRef<HTMLInputElement>(null)
   const agentVoicesRef = useRef<Map<string, string>>(new Map()) // agentId → voice name
   const [skills, setSkills] = useState<{ name: string; description: string; prompt: string }[]>([])
@@ -268,12 +355,11 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   const [skillVars, setSkillVars] = useState<Record<string, string> | null>(null)
   const [pendingSkill, setPendingSkill] = useState<{ prompt: string } | null>(null)
 
-  // Background picker
-  const savedBg = loadSavedBg()
-  const [bgPresetId, setBgPresetId]   = useState(savedBg.presetId)
-  const [bgCustomUrl, setBgCustomUrl] = useState(savedBg.customUrl)
+  // Background picker — lazy initialisers so localStorage is read only once on mount
+  const [bgPresetId, setBgPresetId]     = useState<string>(() => loadSavedBg().presetId)
+  const [bgCustomUrl, setBgCustomUrl]   = useState<string>(() => loadSavedBg().customUrl)
   const [bgPickerOpen, setBgPickerOpen] = useState(false)
-  const [bgCustomDraft, setBgCustomDraft] = useState(savedBg.customUrl)
+  const [bgCustomDraft, setBgCustomDraft] = useState<string>(() => loadSavedBg().customUrl)
 
   // Validate URL to prevent CSS injection — only allow http(s) and sanitize quotes
   const isValidUrl = (url: string): boolean => {
@@ -487,8 +573,6 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
     }, 50)
   }
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
-
   // Global keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -543,11 +627,11 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
   })()
   useReconnectingWs(wsUrl, handleWsMessage)
 
-  const resolveApproval = (approvalId: string) => {
+  const resolveApproval = useCallback((approvalId: string) => {
     setMessages(prev => prev.map(m =>
       m.approvalId === approvalId ? { ...m, resolved: true } : m
     ))
-  }
+  }, [])
 
   const send = async () => {
     const text = input.trim()
@@ -698,11 +782,11 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
     else { setInput(''); recognitionRef.current.start(); setIsListening(true) }
   }
 
-  const copyMessage = (content: string, idx: number) => {
+  const copyMessage = useCallback((content: string, idx: number) => {
     navigator.clipboard.writeText(content).then(() => {
       setCopiedIdx(idx); setTimeout(() => setCopiedIdx(null), 1500)
     })
-  }
+  }, [])
 
   const resumeSession = (session: Session) => {
     setCurrentSessionId(session.id)
@@ -715,6 +799,11 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
     setMessages([{ role: 'assistant', content: 'Hello. I\'m your AI executive. How can I help you today?' }])
     setSuggestions([]); setSidebarOpen(false)
   }
+
+  const handleSuggestion = useCallback((sug: string) => {
+    setInput(sug)
+    setSuggestions(prev => prev.filter(s => s !== sug))
+  }, [])
 
   // File drag & drop
   const handleDrop = async (e: DragEvent<HTMLDivElement>) => {
@@ -1103,62 +1192,16 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
       {/* ── Main chat column ───────────────────────────────────── */}
       <div className="flex flex-col flex-1 min-w-0">
 
-      <div className="flex-1 overflow-y-auto px-4 py-6">
-        {fileNotice && (
-          <div className="mb-3 text-xs text-cyan-400 font-mono px-2 animate-pulse">{fileNotice}</div>
-        )}
-
-        {messages.map((m, i) => {
-          if (m.role === 'approval') {
-            return m.resolved ? null : (
-              <ApprovalCard
-                key={i}
-                approvalId={m.approvalId!}
-                agentName={m.agentName!}
-                toolName={m.toolName!}
-                cmd={m.cmd!}
-                agentId={m.agentId ?? 'general'}
-                onResolved={() => resolveApproval(m.approvalId!)}
-              />
-            )
-          }
-          if (m.role === 'team') return <TeamResult key={i} msg={m} />
-          return (
-            <div key={i} className="relative group">
-              {m.imageUrl && (
-                <div className="flex justify-end mb-1 pr-3">
-                  <img src={m.imageUrl} alt="attached" className="max-h-48 max-w-xs rounded-lg border border-white/10 object-contain" />
-                </div>
-              )}
-              <ChatBubble role={m.role as 'user' | 'assistant'} content={m.content} />
-              {m.role === 'assistant' && (
-                <button onClick={() => copyMessage(m.content, i)} className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-600 hover:text-gray-300 px-2 py-0.5 bg-gray-900/80 rounded">
-                  {copiedIdx === i ? 'copied!' : 'copy'}
-                </button>
-              )}
-            </div>
-          )
-        })}
-
-        {loading && (
-          <div className="flex justify-start mb-3 px-3">
-            <span className="text-xs font-mono text-cyan-500/60 animate-pulse tracking-widest">thinking...</span>
-          </div>
-        )}
-
-        {suggestions.length > 0 && !loading && (
-          <div className="flex justify-start gap-3 mt-4 flex-wrap">
-            <span className="text-xs text-amber-500 font-mono self-center tracking-widest animate-pulse">[INSIGHT]</span>
-            {suggestions.map((sug, i) => (
-              <button key={i} onClick={() => { setInput(sug); setSuggestions(prev => prev.filter(s => s !== sug)) }} className="text-xs border border-amber-500/30 bg-amber-950/20 text-amber-200/80 px-3 py-1.5 rounded-full hover:bg-amber-500/20 hover:border-amber-500 hover:text-amber-100 transition-all">
-                {sug}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div ref={bottomRef} />
-      </div>
+      <MessageList
+        messages={messages}
+        loading={loading}
+        suggestions={suggestions}
+        copiedIdx={copiedIdx}
+        fileNotice={fileNotice}
+        onCopy={copyMessage}
+        onSuggestion={handleSuggestion}
+        onResolveApproval={resolveApproval}
+      />
 
       {/* Mobile agent drawer toggle */}
       {isMobile && (agentList.length > 0 || agentListError) && (

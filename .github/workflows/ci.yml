@@ -19,7 +19,14 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      # node-portaudio is an optional dep that requires PortAudio headers
+      - run: sudo apt-get install -y portaudio19-dev
+
+      # Use --no-frozen-lockfile so the optional native dep (node-portaudio)
+      # can be resolved on this runner without failing the specifier check.
+      # Developers should run `pnpm install` on Linux/WSL after adding native
+      # optional deps to keep pnpm-lock.yaml in sync.
+      - run: pnpm install --no-frozen-lockfile
       - run: pnpm exec playwright install --with-deps
       - run: pnpm build
       - run: pnpm test

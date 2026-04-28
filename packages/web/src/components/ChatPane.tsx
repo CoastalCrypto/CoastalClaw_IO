@@ -30,7 +30,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
   const [voiceMuted, setVoiceMuted] = useState(true)
   const [hoveredLastMsg, setHoveredLastMsg] = useState(false)
   const sessionId = useRef(randomUUID())
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const thinkingStart = useRef<number | null>(null)
@@ -166,6 +166,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
     const text = input.trim()
     if (!text) return
     setInput('')
+    if (inputRef.current) inputRef.current.style.height = 'auto'
     setMessages(m => [...m, { role: 'user', content: text }])
     await doSend(text)
   }, [input, doSend])
@@ -341,13 +342,18 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
         background: 'rgba(0,0,0,0.20)',
         flexShrink: 0,
       }}>
-        <input
+        <textarea
           ref={inputRef}
           value={input}
-          onChange={e => setInput(e.target.value)}
+          rows={1}
+          onChange={e => {
+            setInput(e.target.value)
+            e.target.style.height = 'auto'
+            e.target.style.height = `${e.target.scrollHeight}px`
+          }}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
           onClick={e => e.stopPropagation()}
-          placeholder="Send a message…"
+          placeholder="Send a message… (Shift+Enter for newline)"
           disabled={loading}
           style={{
             flex: 1,
@@ -360,6 +366,11 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
             fontFamily: 'monospace',
             outline: 'none',
             minWidth: 0,
+            resize: 'none',
+            overflow: 'hidden',
+            maxHeight: '120px',
+            lineHeight: '1.5',
+            display: 'block',
           }}
           onFocus={e => { e.target.style.borderColor = 'rgba(0,229,255,0.40)'; onFocus() }}
           onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.08)' }}

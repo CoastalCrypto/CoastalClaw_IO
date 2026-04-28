@@ -6,7 +6,7 @@ import { guessDomain, type AgentDomain } from '../components/AgentThinkingAnimat
 import { coreClient, type Session } from '../api/client'
 import { AgentCharacters } from '../components/AgentCharacters'
 import { ChatPane } from '../components/ChatPane'
-import { speakText } from '../utils/speech'
+import { speakText as speakTextUtil } from '../utils/speech'
 
 type MessageRole = 'user' | 'assistant' | 'approval' | 'team'
 interface Message {
@@ -515,12 +515,12 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
         audio.play()
       }).catch(() => {
         // VibeVoice service unavailable — fall back to Web Speech API
-        speakText(clean, null)
+        speakTextUtil(clean, null)
       })
       return
     }
 
-    speakText(clean, agentVoiceName ?? null)
+    speakTextUtil(clean, agentVoiceName ?? null)
   }, [])
 
   // Global keyboard shortcuts

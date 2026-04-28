@@ -34,7 +34,7 @@ export async function chatRoutes(
   mkdirSync(config.agentWorkdir, { recursive: true })
 
   const db = new Database(pathJoin(config.dataDir, 'coastal-ai.db'))
-  const sessionsDb = new Database(join(config.dataDir, 'sessions.db'))
+  const sessionsDb = new Database(pathJoin(config.dataDir, 'sessions.db'))
   const router = new ModelRouter({ ollamaUrl: config.ollamaUrl, vllmUrl: config.vllmUrl, airllmUrl: config.airllmUrl, defaultModel: config.defaultModel })
   const memory = new UnifiedMemory({ dataDir: config.dataDir, mem0ApiKey: config.mem0ApiKey, cloudConsentGranted: config.cloudConsentGranted })
   const agentRegistry = new AgentRegistry(pathJoin(config.dataDir, 'agents.db'))

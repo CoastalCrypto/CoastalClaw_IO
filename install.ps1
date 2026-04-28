@@ -108,7 +108,7 @@ Write-Ok "Repository at $InstallDir"
 # ── Install dependencies ──────────────────────────────────────
 Write-Step "4) Installing dependencies"
 Set-Location $InstallDir
-pnpm install
+pnpm install --no-frozen-lockfile
 Write-Ok "Dependencies installed"
 
 # ── Build ─────────────────────────────────────────────────────
@@ -133,16 +133,46 @@ if (-not (Test-Path $WebEnv)) {
     Write-Ok "Created $WebEnv"
 }
 
-# ── Pull default model ────────────────────────────────────────
-Write-Step "7) Pulling default model (llama3.2)"
-$ollamaList = ollama list 2>$null
-if ($ollamaList -match "llama3\.2") {
-    Write-Ok "llama3.2 already pulled"
-} else {
-    Write-Info "Pulling llama3.2 (~2 GB)..."
-    ollama pull llama3.2
-    Write-Ok "llama3.2 ready"
+# ── Detect or pull model ─────────────────────────────────────
+Write-Step "7) Detecting available Ollama model"
+$recommendedModels = @("llama3.2", "qwen2.5-coder:7b", "qwen2.5:14b", "gemma3:27b")
+$ollamaList = & ollama list 2>$null | Out-String
+$chosenModel = $null
+
+# Prefer any already-installed recommended model
+foreach ($m in $recommendedModels) {
+    $short = $m.Split(':')[0]
+    if ($ollamaList -match [regex]::Escape($short)) {
+        $chosenModel = $m
+        Write-Ok "$m already installed — using it"
+        break
+    }
 }
+
+# Fall back to whatever model is already on the device
+if (-not $chosenModel) {
+    $firstLine = ($ollamaList -split "`n" | Select-Object -Skip 1 | Where-Object { $_ -match '\S' } | Select-Object -First 1)
+    if ($firstLine) {
+        $firstInstalled = ($firstLine -split '\s+')[0]
+        if ($firstInstalled) {
+            $chosenModel = $firstInstalled
+            Write-Ok "Found existing model: $chosenModel — using it"
+        }
+    }
+}
+
+# No models at all — pull primary recommended
+if (-not $chosenModel) {
+    Write-Info "No local models found — pulling llama3.2..."
+    & ollama pull llama3.2
+    Write-Ok "llama3.2 ready"
+    $chosenModel = "llama3.2"
+}
+
+# Update CC_DEFAULT_MODEL in .env.local
+$chosenShort = $chosenModel.Split(':')[0]
+(Get-Content $CoreEnv) -replace '^CC_DEFAULT_MODEL=.*', "CC_DEFAULT_MODEL=$chosenShort" | Set-Content $CoreEnv -Encoding utf8
+Write-Info "CC_DEFAULT_MODEL set to $chosenShort"
 
 # ── Launch ────────────────────────────────────────────────────
 Write-Step "8) Launching Coastal.AI"

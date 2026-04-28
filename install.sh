@@ -157,7 +157,7 @@ success "Repository at ${INSTALL_DIR}"
 step "④ Installing dependencies"
 cd "$INSTALL_DIR"
 info "Running pnpm install (this may take a minute)..."
-pnpm install --frozen-lockfile --reporter=append-only 2>&1 || pnpm install --reporter=append-only 2>&1
+pnpm install --no-frozen-lockfile --reporter=append-only 2>&1
 success "Dependencies installed"
 
 # ── Build ────────────────────────────────────────────────────
@@ -244,8 +244,8 @@ if [[ $RAM_INT -lt 8 ]]; then
   warn "Low RAM — local models will be slow. Consider upgrading before heavy use."
 fi
 
-# ── Pull recommended models ──────────────────────────────────
-step "⑧ Pulling recommended models"
+# ── Detect or pull model ─────────────────────────────────────
+step "⑧ Detecting available Ollama model"
 
 # Start Ollama in background if not already running
 if ! ollama list &>/dev/null; then
@@ -256,34 +256,60 @@ if ! ollama list &>/dev/null; then
   info "Ollama started (PID ${OLLAMA_PID})"
 fi
 
-# Only the first model is auto-pulled to keep install fast.
-# The rest are listed as manual pull instructions.
-PRIMARY="${RECOMMENDED[0]}"
 INSTALLED_LIST=$(ollama list 2>/dev/null || echo "")
-PRIMARY_SHORT="${PRIMARY%%:*}"
+CHOSEN_MODEL=""
 
-if echo "$INSTALLED_LIST" | grep -q "$PRIMARY_SHORT"; then
-  success "$PRIMARY already available"
-else
-  info "Pulling $PRIMARY..."
-  if ollama pull "$PRIMARY"; then
-    success "$PRIMARY ready"
-  else
-    warn "Pull failed for $PRIMARY — retry later with: ollama pull $PRIMARY"
+# Prefer any already-installed recommended model (check in priority order)
+for m in "${RECOMMENDED[@]}"; do
+  SHORT="${m%%:*}"
+  if echo "$INSTALLED_LIST" | grep -qi "^${SHORT}"; then
+    CHOSEN_MODEL="$m"
+    success "$m already installed — using it"
+    break
+  fi
+done
+
+# Fall back to whatever model is already on the device
+if [[ -z "$CHOSEN_MODEL" ]]; then
+  FIRST_INSTALLED=$(echo "$INSTALLED_LIST" | awk 'NR>1 && NF>0 {print $1; exit}')
+  if [[ -n "$FIRST_INSTALLED" ]]; then
+    CHOSEN_MODEL="$FIRST_INSTALLED"
+    success "Found existing model: $CHOSEN_MODEL — using it"
   fi
 fi
 
-if [[ ${#RECOMMENDED[@]} -gt 1 ]]; then
+# No models at all — pull the tier-appropriate primary
+if [[ -z "$CHOSEN_MODEL" ]]; then
+  PRIMARY="${RECOMMENDED[0]}"
+  info "No local models found — pulling $PRIMARY..."
+  if ollama pull "$PRIMARY"; then
+    CHOSEN_MODEL="$PRIMARY"
+    success "$PRIMARY ready"
+  else
+    warn "Pull failed for $PRIMARY — retry later with: ollama pull $PRIMARY"
+    CHOSEN_MODEL="$PRIMARY"
+  fi
+fi
+
+# Write chosen model into .env.local
+sed -i "s|^CC_DEFAULT_MODEL=.*|CC_DEFAULT_MODEL=${CHOSEN_MODEL}|" "${INSTALL_DIR}/packages/core/.env.local"
+info "CC_DEFAULT_MODEL set to ${CHOSEN_MODEL}"
+
+# List recommended models not yet present
+MISSING=()
+for m in "${RECOMMENDED[@]}"; do
+  SHORT="${m%%:*}"
+  if ! echo "$INSTALLED_LIST" | grep -qi "^${SHORT}"; then
+    MISSING+=("$m")
+  fi
+done
+
+if [[ ${#MISSING[@]} -gt 0 ]]; then
   echo ""
-  echo -e "  ${BOLD}Recommended additional models for your system:${RESET}"
-  for m in "${RECOMMENDED[@]:1}"; do
-    SHORT_NAME="${m%%:*}"
-    if echo "$INSTALLED_LIST" | grep -q "$SHORT_NAME"; then
-      echo -e "    ${DIM}- $m${RESET}  ${GREEN}(already installed)${RESET}"
-    else
-      echo -e "    ${DIM}- $m${RESET}"
-      echo -e "      ${CYAN}ollama pull $m${RESET}"
-    fi
+  echo -e "  ${BOLD}Additional recommended models for your system:${RESET}"
+  for m in "${MISSING[@]}"; do
+    echo -e "    ${DIM}- $m${RESET}"
+    echo -e "      ${CYAN}ollama pull $m${RESET}"
   done
   echo ""
 fi

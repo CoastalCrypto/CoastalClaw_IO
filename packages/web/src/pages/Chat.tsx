@@ -6,6 +6,7 @@ import { guessDomain, type AgentDomain } from '../components/AgentThinkingAnimat
 import { coreClient, type Session } from '../api/client'
 import { AgentCharacters } from '../components/AgentCharacters'
 import { ChatPane } from '../components/ChatPane'
+import { speakText } from '../utils/speech'
 
 type MessageRole = 'user' | 'assistant' | 'approval' | 'team'
 interface Message {
@@ -514,64 +515,13 @@ export function Chat({ sessionId: initialSessionId, onNav }: { sessionId: string
         audio.play()
       }).catch(() => {
         // VibeVoice service unavailable — fall back to Web Speech API
-        speakWithWebSpeech(clean, null)
+        speakText(clean, null)
       })
       return
     }
 
-    speakWithWebSpeech(clean, agentVoiceName ?? null)
+    speakText(clean, agentVoiceName ?? null)
   }, [])
-
-  // Extracted so VibeVoice fallback can call it directly
-  // Chrome 15s garble fix: queue all chunks, then reset the internal timer
-  // between utterances via pause()+resume() in onend (silent — no audio playing).
-  function speakWithWebSpeech(text: string, voiceName: string | null) {
-    if (!('speechSynthesis' in window)) return
-    window.speechSynthesis.cancel()
-
-    setTimeout(() => {
-      const voices = window.speechSynthesis.getVoices()
-      const preferredVoice = voiceName
-        ? (voices.find(v => v.name === voiceName) ?? null)
-        : (voices.find(v => v.name.includes('Google UK English Male'))
-            || voices.find(v => v.lang.startsWith('en-') && !v.name.toLowerCase().includes('zira') && !v.name.toLowerCase().includes('david'))
-            || voices.find(v => v.lang.startsWith('en'))
-            || null)
-
-      // Split on sentence and clause boundaries; cap chunks at 100 chars
-      const parts = text.split(/(?<=[.!?;,])\s+/)
-      const chunks: string[] = []
-      let current = ''
-      for (const part of parts) {
-        if (current.length + part.length > 100 && current) {
-          chunks.push(current.trim())
-          current = part
-        } else {
-          current += (current ? ' ' : '') + part
-        }
-      }
-      if (current.trim()) chunks.push(current.trim())
-
-      const utterances = chunks.filter(Boolean).map(chunk => {
-        const u = new SpeechSynthesisUtterance(chunk)
-        u.voice = preferredVoice
-        u.rate = 1.0
-        u.pitch = 1.0
-        return u
-      })
-
-      // Between utterances: pause()+resume() resets Chrome's 15s internal timer
-      // silently — no audio is playing at that moment.
-      for (let i = 0; i < utterances.length - 1; i++) {
-        utterances[i].onend = () => {
-          window.speechSynthesis.pause()
-          window.speechSynthesis.resume()
-        }
-      }
-
-      utterances.forEach(u => window.speechSynthesis.speak(u))
-    }, 50)
-  }
 
   // Global keyboard shortcuts
   useEffect(() => {

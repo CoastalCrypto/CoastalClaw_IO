@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { randomUUID } from '../utils/uuid'
+import { speakText } from '../utils/speech'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -48,16 +49,7 @@ export function ChatPane({ paneIndex, agents, focused, onFocus, compact }: Props
     if (voiceMutedRef.current || !('speechSynthesis' in window)) return
     const clean = text.replace(/[*#`_~>]/g, '').replace(/\s+/g, ' ').trim()
     if (!clean) return
-    window.speechSynthesis.cancel()
-    const utt = new SpeechSynthesisUtterance(clean)
-    setTimeout(() => {
-      const voices = window.speechSynthesis.getVoices()
-      const voice = voices.find(v => v.name.includes('Google UK English Male'))
-        || voices.find(v => v.lang.startsWith('en-') && !v.name.toLowerCase().includes('zira') && !v.name.toLowerCase().includes('david'))
-        || null
-      if (voice) utt.voice = voice
-      window.speechSynthesis.speak(utt)
-    }, 0)
+    speakText(clean)
   }, [])
 
   useEffect(() => {

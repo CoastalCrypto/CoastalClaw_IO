@@ -10,9 +10,10 @@ ENV CC_AGENT_WORKDIR=/var/lib/coastal-ai/workspace
 ENV CC_OLLAMA_URL=http://127.0.0.1:11434
 ENV CC_DEFAULT_MODEL=llama3.2
 
-# Base packages
+# Base packages (portaudio19-dev required by node-portaudio optional dep)
 RUN apt-get update && apt-get install -y --no-install-recommends \
   curl git build-essential python3 python3-pip sqlite3 ca-certificates \
+  portaudio19-dev \
   && rm -rf /var/lib/apt/lists/*
 
 # Node.js 22
@@ -29,7 +30,7 @@ RUN useradd -m -s /bin/bash coastal || true \
 # Copy repo and build (build context = repo root)
 WORKDIR /opt/coastal-ai
 COPY . .
-RUN pnpm install --frozen-lockfile && pnpm build
+RUN pnpm install --no-frozen-lockfile && pnpm build
 
 RUN chown -R coastal:coastal /opt/coastal-ai
 

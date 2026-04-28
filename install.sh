@@ -344,6 +344,25 @@ success "CLI shortcut created at ${CC_BIN_DIR}/coastal-ai"
 # ── Launch ───────────────────────────────────────────────────
 step "⑨ Launching Coastal.AI"
 
+# Stop any existing Coastal.AI processes before starting fresh
+info "Stopping any previous Coastal.AI processes..."
+if [[ -f /tmp/coastal-ai-core.pid ]]; then
+  OLD_PID=$(cat /tmp/coastal-ai-core.pid 2>/dev/null || echo "")
+  if [[ -n "$OLD_PID" ]] && kill -0 "$OLD_PID" 2>/dev/null; then
+    kill "$OLD_PID" && sleep 2
+  fi
+fi
+if [[ -f /tmp/coastal-ai-web.pid ]]; then
+  OLD_PID=$(cat /tmp/coastal-ai-web.pid 2>/dev/null || echo "")
+  [[ -n "$OLD_PID" ]] && kill "$OLD_PID" 2>/dev/null || true
+fi
+# Belt-and-suspenders: free the ports if PID files were stale
+for PORT in 4747 5173; do
+  PIDS=$(lsof -ti:"$PORT" 2>/dev/null || true)
+  [[ -n "$PIDS" ]] && kill $PIDS 2>/dev/null || true
+done
+sleep 1
+
 # Start core in background
 info "Starting core service on :4747..."
 cd "$INSTALL_DIR"
@@ -386,7 +405,7 @@ open_browser() {
 open_browser "http://127.0.0.1:5173"
 
 # ── Admin token ───────────────────────────────────────────────
-ADMIN_TOKEN_FILE="${INSTALL_DIR}/packages/core/data/.admin-token"
+ADMIN_TOKEN_FILE="${INSTALL_DIR}/packages/core/data/.admin-token"   # anchored by main.ts to packages/core/data/
 sleep 2  # give core a moment to write the token
 
 echo ""

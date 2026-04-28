@@ -178,6 +178,24 @@ Write-Info "CC_DEFAULT_MODEL set to $chosenShort"
 Write-Step "8) Launching Coastal.AI"
 Set-Location $InstallDir
 
+# Stop any existing Coastal.AI processes before starting fresh
+Write-Info "Stopping any previous Coastal.AI processes..."
+$pidFile = "$env:TEMP\coastal-ai-core.pid"
+if (Test-Path $pidFile) {
+    $oldPid = Get-Content $pidFile -ErrorAction SilentlyContinue
+    if ($oldPid) {
+        Stop-Process -Id ([int]$oldPid) -ErrorAction SilentlyContinue
+        Start-Sleep -Milliseconds 500
+    }
+}
+# Free port 4747 if still bound
+$netEntry = netstat -ano 2>$null | Select-String ":4747\s"
+if ($netEntry) {
+    $stalePid = ($netEntry.ToString().Trim() -split '\s+')[-1]
+    if ($stalePid -match '^\d+$') { Stop-Process -Id ([int]$stalePid) -ErrorAction SilentlyContinue }
+}
+Start-Sleep -Milliseconds 500
+
 Write-Info "Starting core service on :4747..."
 $coreJob = Start-Process -FilePath "node" `
     -ArgumentList "packages\core\dist\main.js" `

@@ -174,8 +174,34 @@ $chosenShort = $chosenModel.Split(':')[0]
 (Get-Content $CoreEnv) -replace '^CC_DEFAULT_MODEL=.*', "CC_DEFAULT_MODEL=$chosenShort" | Set-Content $CoreEnv -Encoding utf8
 Write-Info "CC_DEFAULT_MODEL set to $chosenShort"
 
+# ── MemPalace memory system ──────────────────────────────────
+Write-Step "8) Installing MemPalace memory system"
+
+$PalaceDir = "$InstallDir\packages\core\data\palace"
+$pipCmd = $null
+foreach ($candidate in @("pip3", "pip", "python3 -m pip", "python -m pip")) {
+    if (Get-Command ($candidate.Split(' ')[0]) -ErrorAction SilentlyContinue) {
+        $pipCmd = $candidate; break
+    }
+}
+
+if (-not $pipCmd) {
+    Write-Warn "Python/pip not found — MemPalace skipped. Install Python 3.8+ and re-run to enable structured memory."
+} else {
+    Write-Info "Installing MemPalace via pip..."
+    Invoke-Expression "$pipCmd install --quiet --upgrade mempalace" 2>$null
+    $mpCmd = Get-Command "mempalace" -ErrorAction SilentlyContinue
+    if ($mpCmd) {
+        $env:MEMPALACE_PALACE_PATH = $PalaceDir
+        & mempalace init $PalaceDir 2>$null
+        Write-Ok "MemPalace palace initialised at $PalaceDir"
+    } else {
+        Write-Warn "mempalace not in PATH after install. Run manually: mempalace init $PalaceDir"
+    }
+}
+
 # ── Launch ────────────────────────────────────────────────────
-Write-Step "8) Launching Coastal.AI"
+Write-Step "9) Launching Coastal.AI"
 Set-Location $InstallDir
 
 # Stop any existing Coastal.AI processes before starting fresh

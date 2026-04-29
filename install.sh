@@ -314,8 +314,39 @@ if [[ ${#MISSING[@]} -gt 0 ]]; then
   echo ""
 fi
 
+# ── MemPalace memory system ──────────────────────────────────
+step "⑧ Installing MemPalace memory system"
+
+PALACE_DIR="${INSTALL_DIR}/packages/core/data/palace"
+MEMPALACE_OK=false
+
+# Detect pip command
+PIP_CMD=""
+if has pip3; then PIP_CMD="pip3"
+elif has pip; then PIP_CMD="pip"
+elif has python3; then PIP_CMD="python3 -m pip"
+elif has python; then PIP_CMD="python -m pip"
+fi
+
+if [[ -z "$PIP_CMD" ]]; then
+  warn "Python/pip not found — MemPalace skipped. Install Python 3.8+ and re-run to enable structured memory."
+else
+  info "Installing MemPalace via pip..."
+  $PIP_CMD install --quiet --upgrade mempalace 2>&1 | tail -2
+
+  # Init the palace (creates ChromaDB store + KG at PALACE_DIR)
+  if has mempalace; then
+    MEMPALACE_PALACE_PATH="$PALACE_DIR" mempalace init "$PALACE_DIR" 2>/dev/null || true
+    MEMPALACE_OK=true
+    success "MemPalace palace initialised at ${PALACE_DIR}"
+  else
+    warn "mempalace command not in PATH after install — you may need to restart your shell."
+    warn "Run manually: MEMPALACE_PALACE_PATH=${PALACE_DIR} mempalace init ${PALACE_DIR}"
+  fi
+fi
+
 # ── Add to PATH (shell profile) ──────────────────────────────
-step "⑧ Setting up CLI shortcut"
+step "⑨ Setting up CLI shortcut"
 
 CC_BIN_DIR="${HOME}/.local/bin"
 mkdir -p "$CC_BIN_DIR"
@@ -342,7 +373,7 @@ fi
 success "CLI shortcut created at ${CC_BIN_DIR}/coastal-ai"
 
 # ── Launch ───────────────────────────────────────────────────
-step "⑨ Launching Coastal.AI"
+step "⑩ Launching Coastal.AI"
 
 # Stop any existing Coastal.AI processes before starting fresh
 info "Stopping any previous Coastal.AI processes..."

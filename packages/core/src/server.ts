@@ -229,6 +229,18 @@ export async function buildServer() {
       enabled: true
     })
   }
+  // Seed MemPalace if not already registered (idempotent — preserves user's enabled/disabled choice)
+  const palaceDir = join(config.dataDir, 'palace')
+  if (!mcpStore.list().find(s => s.id === 'mempalace')) {
+    mcpStore.upsert({
+      id: 'mempalace',
+      name: 'MemPalace Memory',
+      command: process.platform === 'win32' ? 'mempalace-mcp.exe' : 'mempalace-mcp',
+      args: ['--palace', palaceDir],
+      env: { MEMPALACE_PALACE_PATH: palaceDir },
+      enabled: true
+    })
+  }
 
   const skillGaps = new SkillGapsLog(config.dataDir)
   const userModelStore = new UserModelStore(db)

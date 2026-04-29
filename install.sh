@@ -318,31 +318,50 @@ fi
 step "⑧ Installing MemPalace memory system"
 
 PALACE_DIR="${INSTALL_DIR}/packages/core/data/palace"
-MEMPALACE_OK=false
+MEMPALACE_MCP_CMD=""
+COASTAL_VENV="${HOME}/.coastal-ai-py"
 
-# Detect pip command
-PIP_CMD=""
-if has pip3; then PIP_CMD="pip3"
-elif has pip; then PIP_CMD="pip"
-elif has python3; then PIP_CMD="python3 -m pip"
-elif has python; then PIP_CMD="python -m pip"
+# Strategy: pipx (cleanest) → dedicated venv (PEP 668 safe) → skip
+if has pipx; then
+  info "Installing MemPalace via pipx (isolated)..."
+  if pipx list 2>/dev/null | grep -q mempalace; then
+    pipx upgrade mempalace 2>&1 | tail -2 || true
+  else
+    pipx install mempalace 2>&1 | tail -3
+  fi
+  # pipx puts binaries in ~/.local/bin
+  MEMPALACE_MCP_CMD="${HOME}/.local/bin/mempalace-mcp"
+  [[ ! -f "$MEMPALACE_MCP_CMD" ]] && MEMPALACE_MCP_CMD="mempalace-mcp"
+
+elif has python3 || has python; then
+  PYTHON_BIN=$(has python3 && echo python3 || echo python)
+  info "Creating isolated Python venv at ${COASTAL_VENV}..."
+  $PYTHON_BIN -m venv "$COASTAL_VENV"
+  info "Installing MemPalace into venv..."
+  "${COASTAL_VENV}/bin/pip" install --quiet --upgrade mempalace
+  MEMPALACE_MCP_CMD="${COASTAL_VENV}/bin/mempalace-mcp"
+
+  # Persist the venv binary path so the server knows where to find it
+  if grep -q "CC_MEMPALACE_MCP" "$CORE_ENV" 2>/dev/null; then
+    sed -i "s|^CC_MEMPALACE_MCP=.*|CC_MEMPALACE_MCP=${MEMPALACE_MCP_CMD}|" "$CORE_ENV"
+  else
+    echo "CC_MEMPALACE_MCP=${MEMPALACE_MCP_CMD}" >> "$CORE_ENV"
+  fi
+
+else
+  warn "Python not found — MemPalace skipped. Install Python 3.8+ and re-run."
 fi
 
-if [[ -z "$PIP_CMD" ]]; then
-  warn "Python/pip not found — MemPalace skipped. Install Python 3.8+ and re-run to enable structured memory."
-else
-  info "Installing MemPalace via pip..."
-  $PIP_CMD install --quiet --upgrade mempalace 2>&1 | tail -2
-
-  # Init the palace (creates ChromaDB store + KG at PALACE_DIR)
-  if has mempalace; then
-    MEMPALACE_PALACE_PATH="$PALACE_DIR" mempalace init "$PALACE_DIR" 2>/dev/null || true
-    MEMPALACE_OK=true
-    success "MemPalace palace initialised at ${PALACE_DIR}"
-  else
-    warn "mempalace command not in PATH after install — you may need to restart your shell."
-    warn "Run manually: MEMPALACE_PALACE_PATH=${PALACE_DIR} mempalace init ${PALACE_DIR}"
+# Init the palace if we have a working binary
+if [[ -n "$MEMPALACE_MCP_CMD" ]]; then
+  MEMPALACE_BIN="${MEMPALACE_MCP_CMD%%-mcp*}"   # strip -mcp suffix → gets dir/mempalace
+  MEMPALACE_CLI="${MEMPALACE_MCP_CMD%-mcp}mempalace" 2>/dev/null || true
+  # Use the plain 'mempalace' binary from the same dir as mempalace-mcp
+  MP_DIR="$(dirname "$MEMPALACE_MCP_CMD")"
+  if [[ -f "${MP_DIR}/mempalace" ]]; then
+    MEMPALACE_PALACE_PATH="$PALACE_DIR" "${MP_DIR}/mempalace" init "$PALACE_DIR" 2>/dev/null || true
   fi
+  success "MemPalace ready — palace at ${PALACE_DIR}"
 fi
 
 # ── Add to PATH (shell profile) ──────────────────────────────

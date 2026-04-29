@@ -178,25 +178,42 @@ Write-Info "CC_DEFAULT_MODEL set to $chosenShort"
 Write-Step "8) Installing MemPalace memory system"
 
 $PalaceDir = "$InstallDir\packages\core\data\palace"
-$pipCmd = $null
-foreach ($candidate in @("pip3", "pip", "python3 -m pip", "python -m pip")) {
-    if (Get-Command ($candidate.Split(' ')[0]) -ErrorAction SilentlyContinue) {
-        $pipCmd = $candidate; break
-    }
+$CoastalVenv = "$env:USERPROFILE\.coastal-ai-py"
+$MempalaceMcpCmd = $null
+
+$pythonBin = $null
+foreach ($candidate in @("python3", "python")) {
+    if (Get-Command $candidate -ErrorAction SilentlyContinue) { $pythonBin = $candidate; break }
 }
 
-if (-not $pipCmd) {
-    Write-Warn "Python/pip not found — MemPalace skipped. Install Python 3.8+ and re-run to enable structured memory."
+if (-not $pythonBin) {
+    Write-Warn "Python not found — MemPalace skipped. Install Python 3.8+ and re-run."
 } else {
-    Write-Info "Installing MemPalace via pip..."
-    Invoke-Expression "$pipCmd install --quiet --upgrade mempalace" 2>$null
-    $mpCmd = Get-Command "mempalace" -ErrorAction SilentlyContinue
-    if ($mpCmd) {
-        $env:MEMPALACE_PALACE_PATH = $PalaceDir
-        & mempalace init $PalaceDir 2>$null
-        Write-Ok "MemPalace palace initialised at $PalaceDir"
+    Write-Info "Creating isolated Python venv at $CoastalVenv..."
+    & $pythonBin -m venv $CoastalVenv
+    $venvPip = "$CoastalVenv\Scripts\pip.exe"
+    if (Test-Path $venvPip) {
+        Write-Info "Installing MemPalace into venv..."
+        & $venvPip install --quiet --upgrade mempalace
+        $MempalaceMcpCmd = "$CoastalVenv\Scripts\mempalace-mcp.exe"
+
+        # Persist venv binary path to .env.local so server.ts can find it
+        $CoreEnvContent = Get-Content $CoreEnv
+        if ($CoreEnvContent -match "^CC_MEMPALACE_MCP=") {
+            $CoreEnvContent -replace '^CC_MEMPALACE_MCP=.*', "CC_MEMPALACE_MCP=$MempalaceMcpCmd" | Set-Content $CoreEnv -Encoding utf8
+        } else {
+            Add-Content $CoreEnv "`nCC_MEMPALACE_MCP=$MempalaceMcpCmd"
+        }
+
+        # Init palace
+        $mempalaceCli = "$CoastalVenv\Scripts\mempalace.exe"
+        if (Test-Path $mempalaceCli) {
+            $env:MEMPALACE_PALACE_PATH = $PalaceDir
+            & $mempalaceCli init $PalaceDir 2>$null
+        }
+        Write-Ok "MemPalace ready — palace at $PalaceDir"
     } else {
-        Write-Warn "mempalace not in PATH after install. Run manually: mempalace init $PalaceDir"
+        Write-Warn "Venv pip not found — MemPalace skipped."
     }
 }
 

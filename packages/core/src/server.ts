@@ -232,10 +232,14 @@ export async function buildServer() {
   // Seed MemPalace if not already registered (idempotent — preserves user's enabled/disabled choice)
   const palaceDir = join(config.dataDir, 'palace')
   if (!mcpStore.list().find(s => s.id === 'mempalace')) {
+    // CC_MEMPALACE_MCP is written by install.sh when mempalace lives in a venv
+    // rather than system PATH (PEP 668 distros). Falls back to the entry-point name.
+    const mempalaceMcp = process.env.CC_MEMPALACE_MCP
+      ?? (process.platform === 'win32' ? 'mempalace-mcp.exe' : 'mempalace-mcp')
     mcpStore.upsert({
       id: 'mempalace',
       name: 'MemPalace Memory',
-      command: process.platform === 'win32' ? 'mempalace-mcp.exe' : 'mempalace-mcp',
+      command: mempalaceMcp,
       args: ['--palace', palaceDir],
       env: { MEMPALACE_PALACE_PATH: palaceDir },
       enabled: true

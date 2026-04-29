@@ -25,7 +25,7 @@ describe('DockerBackend', () => {
     // stdout may include docker pull output on first run — just check it contains the echo
     expect(result.stdout).toContain('sandbox-works')
     expect(result.exitCode).toBe(0)
-  })
+  }, 30_000) // docker pull alpine on first run takes >5s on CI
 
   it('has no network access inside container', async () => {
     if (!dockerAvailable) return

@@ -16,8 +16,11 @@ describe('workspace link', () => {
   it('can import from @coastal-ai/core/architect/types (subpath)', async () => {
     // Exercises the `./architect/types` entry in the exports map. If the
     // path is misshapen (typo, missing dual entry, dist file not emitted)
-    // this import will fail loudly here instead of confusing Chunk 1.
+    // this import will fail loudly here instead of confusing later chunks.
+    // Plan 1 / Chunk 1 replaced the stub with the real status vocabulary;
+    // assert against a real exported symbol now that the stub is gone.
     const mod = await import('@coastal-ai/core/architect/types')
-    expect(mod.ARCHITECT_TYPES_STUB).toBe('__plan1-chunk0-stub__')
+    expect(mod.WORK_ITEM_STATUSES).toContain('pending')
+    expect(mod.WORK_ITEM_STATUSES).toContain('merged')
   })
 })

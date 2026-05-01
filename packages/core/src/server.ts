@@ -9,6 +9,9 @@ import { graphQLRoutes } from './api/routes/graphql.js'
 import { chatRoutes } from './api/routes/chat.js'
 import { adminActionsRoutes } from './api/routes/admin-actions.js'
 import { adminRoutes, getOrCreateAdminToken, validateSessionToken } from './api/routes/admin.js'
+import { architectRoutes } from './api/routes/architect.js'
+import { openArchitectDb } from './architect/db.js'
+import { WorkItemStore } from './architect/store.js'
 import { agentRoutes } from './api/routes/agents.js'
 import { agentMemoryRoutes } from './api/routes/agent-memory.js'
 import { teamRoutes } from './api/routes/team.js'
@@ -151,6 +154,14 @@ export async function buildServer() {
   await fastify.register(agentRoutes, { registry: agentRegistry, gate })
   await fastify.register(agentMemoryRoutes, { registry: agentRegistry, db })
   await fastify.register(adminActionsRoutes)
+
+  // Architect work-item store (Plan 1 backbone): standalone SQLite database
+  // dedicated to coastal-architect's planning surface. Lives next to the
+  // main coastal-ai.db so it can be backed up / wiped independently.
+  const architectDb = openArchitectDb(join(config.dataDir, 'architect.db'))
+  const architectStore = new WorkItemStore(architectDb)
+  await fastify.register(architectRoutes, { store: architectStore })
+
   await fastify.register(teamRoutes)
   await fastify.register(personaRoutes, { registry: agentRegistry })
   await fastify.register(systemRoutes)
@@ -274,6 +285,7 @@ export async function buildServer() {
     pipelineRouter.close()
     skillGaps.close()
     await sharedSearchMemory.close()
+    architectDb.close()
     db.close()
   })
 

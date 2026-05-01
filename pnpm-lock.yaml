@@ -72,7 +72,7 @@ importers:
     dependencies:
       '@agentclientprotocol/sdk':
         specifier: ^0.19.0
-        version: 0.19.0(zod@4.3.6)
+        version: 0.19.0(zod@4.4.1)
       '@apollo/server':
         specifier: ^4.10.0
         version: 4.13.0(graphql@16.13.2)
@@ -93,7 +93,7 @@ importers:
         version: 8.3.1
       '@modelcontextprotocol/sdk':
         specifier: ^1.28.0
-        version: 1.28.0(@cfworker/json-schema@4.1.1)(zod@4.3.6)
+        version: 1.28.0(@cfworker/json-schema@4.1.1)(zod@4.4.1)
       better-sqlite3:
         specifier: ^11.10.0
         version: 11.10.0
@@ -114,7 +114,7 @@ importers:
         version: 1.12.0
       mem0ai:
         specifier: ^2.4.2
-        version: 2.4.2(@anthropic-ai/sdk@0.40.1)(@azure/identity@4.13.1)(@azure/search-documents@12.2.0)(@cloudflare/workers-types@4.20260317.1)(@google/genai@1.46.0(@modelcontextprotocol/sdk@1.28.0(@cfworker/json-schema@4.1.1)(zod@4.3.6)))(@langchain/core@1.1.35(openai@4.104.0(ws@8.20.0)(zod@4.3.6))(ws@8.20.0))(@mistralai/mistralai@1.15.1)(@qdrant/js-client-rest@1.13.0(typescript@5.9.3))(@supabase/supabase-js@2.100.0)(@types/jest@29.5.14)(@types/pg@8.11.0)(better-sqlite3@11.10.0)(cloudflare@4.5.0)(groq-sdk@0.3.0)(neo4j-driver@5.28.3)(ollama@0.5.18)(pg@8.11.3)(redis@4.7.1)(ws@8.20.0)
+        version: 2.4.2(@anthropic-ai/sdk@0.40.1)(@azure/identity@4.13.1)(@azure/search-documents@12.2.0)(@cloudflare/workers-types@4.20260317.1)(@google/genai@1.46.0(@modelcontextprotocol/sdk@1.28.0(@cfworker/json-schema@4.1.1)(zod@4.4.1)))(@langchain/core@1.1.35(openai@4.104.0(ws@8.20.0)(zod@4.4.1))(ws@8.20.0))(@mistralai/mistralai@1.15.1)(@qdrant/js-client-rest@1.13.0(typescript@5.9.3))(@supabase/supabase-js@2.100.0)(@types/jest@29.5.14)(@types/pg@8.11.0)(better-sqlite3@11.10.0)(cloudflare@4.5.0)(groq-sdk@0.3.0)(neo4j-driver@5.28.3)(ollama@0.5.18)(pg@8.11.3)(redis@4.7.1)(ws@8.20.0)
       nodejs-polars:
         specifier: ^0.24.1
         version: 0.24.1
@@ -127,6 +127,9 @@ importers:
       playwright:
         specifier: ^1.59.1
         version: 1.59.1
+      zod:
+        specifier: ^4.4.1
+        version: 4.4.1
     devDependencies:
       '@types/better-sqlite3':
         specifier: ^7.6.0
@@ -7571,6 +7574,9 @@ packages:
   zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
+  zod@4.4.1:
+    resolution: {integrity: sha512-a6ENMBBGZBsnlSebQ/eKCguSBeGKSf4O7BPnqVPmYGtpBYI7VSqoVqw+QcB7kPRjbqPwhYTpFbVj/RqNz/CT0Q==}
+
   zustand@4.5.7:
     resolution: {integrity: sha512-CHOUy7mu3lbD6o6LJLfllpjkzhHXSBlX8B9+qPddUsIfeF5S/UZ5q0kmCsnRqT1UHFQZchNFDDzMbQsuesHWlw==}
     engines: {node: '>=12.7.0'}
@@ -7613,9 +7619,9 @@ snapshots:
 
   '@adobe/css-tools@4.4.4': {}
 
-  '@agentclientprotocol/sdk@0.19.0(zod@4.3.6)':
+  '@agentclientprotocol/sdk@0.19.0(zod@4.4.1)':
     dependencies:
-      zod: 4.3.6
+      zod: 4.4.1
 
   '@anthropic-ai/sdk@0.40.1':
     dependencies:
@@ -8403,14 +8409,14 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@google/genai@1.46.0(@modelcontextprotocol/sdk@1.28.0(@cfworker/json-schema@4.1.1)(zod@4.3.6))':
+  '@google/genai@1.46.0(@modelcontextprotocol/sdk@1.28.0(@cfworker/json-schema@4.1.1)(zod@4.4.1))':
     dependencies:
       google-auth-library: 10.6.2
       p-retry: 4.6.2
       protobufjs: 7.5.4
       ws: 8.20.0
     optionalDependencies:
-      '@modelcontextprotocol/sdk': 1.28.0(@cfworker/json-schema@4.1.1)(zod@4.3.6)
+      '@modelcontextprotocol/sdk': 1.28.0(@cfworker/json-schema@4.1.1)(zod@4.4.1)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -9114,7 +9120,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@langchain/core@1.1.35(openai@4.104.0(ws@8.20.0)(zod@4.3.6))(ws@8.20.0)':
+  '@langchain/core@1.1.35(openai@4.104.0(ws@8.20.0)(zod@4.4.1))(ws@8.20.0)':
     dependencies:
       '@cfworker/json-schema': 4.1.1
       '@standard-schema/spec': 1.1.0
@@ -9122,7 +9128,7 @@ snapshots:
       camelcase: 6.3.0
       decamelize: 1.2.0
       js-tiktoken: 1.0.21
-      langsmith: 0.5.16(openai@4.104.0(ws@8.20.0)(zod@4.3.6))(ws@8.20.0)
+      langsmith: 0.5.16(openai@4.104.0(ws@8.20.0)(zod@4.4.1))(ws@8.20.0)
       mustache: 4.2.0
       p-queue: 6.6.2
       uuid: 11.1.0
@@ -9184,7 +9190,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@modelcontextprotocol/sdk@1.28.0(@cfworker/json-schema@4.1.1)(zod@4.3.6)':
+  '@modelcontextprotocol/sdk@1.28.0(@cfworker/json-schema@4.1.1)(zod@4.4.1)':
     dependencies:
       '@hono/node-server': 1.19.11(hono@4.12.9)
       ajv: 8.18.0
@@ -9201,8 +9207,8 @@ snapshots:
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
-      zod: 4.3.6
-      zod-to-json-schema: 3.25.1(zod@4.3.6)
+      zod: 4.4.1
+      zod-to-json-schema: 3.25.1(zod@4.4.1)
     optionalDependencies:
       '@cfworker/json-schema': 4.1.1
     transitivePeerDependencies:
@@ -12917,7 +12923,7 @@ snapshots:
 
   kleur@3.0.3: {}
 
-  langsmith@0.5.16(openai@4.104.0(ws@8.20.0)(zod@4.3.6))(ws@8.20.0):
+  langsmith@0.5.16(openai@4.104.0(ws@8.20.0)(zod@4.4.1))(ws@8.20.0):
     dependencies:
       chalk: 5.6.2
       console-table-printer: 2.15.0
@@ -12925,7 +12931,7 @@ snapshots:
       semver: 7.7.4
       uuid: 10.0.0
     optionalDependencies:
-      openai: 4.104.0(ws@8.20.0)(zod@4.3.6)
+      openai: 4.104.0(ws@8.20.0)(zod@4.4.1)
       ws: 8.20.0
 
   lazy-val@1.0.5: {}
@@ -13337,14 +13343,14 @@ snapshots:
       '@types/dom-mediacapture-transform': 0.1.11
       '@types/dom-webcodecs': 0.1.13
 
-  mem0ai@2.4.2(@anthropic-ai/sdk@0.40.1)(@azure/identity@4.13.1)(@azure/search-documents@12.2.0)(@cloudflare/workers-types@4.20260317.1)(@google/genai@1.46.0(@modelcontextprotocol/sdk@1.28.0(@cfworker/json-schema@4.1.1)(zod@4.3.6)))(@langchain/core@1.1.35(openai@4.104.0(ws@8.20.0)(zod@4.3.6))(ws@8.20.0))(@mistralai/mistralai@1.15.1)(@qdrant/js-client-rest@1.13.0(typescript@5.9.3))(@supabase/supabase-js@2.100.0)(@types/jest@29.5.14)(@types/pg@8.11.0)(better-sqlite3@11.10.0)(cloudflare@4.5.0)(groq-sdk@0.3.0)(neo4j-driver@5.28.3)(ollama@0.5.18)(pg@8.11.3)(redis@4.7.1)(ws@8.20.0):
+  mem0ai@2.4.2(@anthropic-ai/sdk@0.40.1)(@azure/identity@4.13.1)(@azure/search-documents@12.2.0)(@cloudflare/workers-types@4.20260317.1)(@google/genai@1.46.0(@modelcontextprotocol/sdk@1.28.0(@cfworker/json-schema@4.1.1)(zod@4.4.1)))(@langchain/core@1.1.35(openai@4.104.0(ws@8.20.0)(zod@4.4.1))(ws@8.20.0))(@mistralai/mistralai@1.15.1)(@qdrant/js-client-rest@1.13.0(typescript@5.9.3))(@supabase/supabase-js@2.100.0)(@types/jest@29.5.14)(@types/pg@8.11.0)(better-sqlite3@11.10.0)(cloudflare@4.5.0)(groq-sdk@0.3.0)(neo4j-driver@5.28.3)(ollama@0.5.18)(pg@8.11.3)(redis@4.7.1)(ws@8.20.0):
     dependencies:
       '@anthropic-ai/sdk': 0.40.1
       '@azure/identity': 4.13.1
       '@azure/search-documents': 12.2.0
       '@cloudflare/workers-types': 4.20260317.1
-      '@google/genai': 1.46.0(@modelcontextprotocol/sdk@1.28.0(@cfworker/json-schema@4.1.1)(zod@4.3.6))
-      '@langchain/core': 1.1.35(openai@4.104.0(ws@8.20.0)(zod@4.3.6))(ws@8.20.0)
+      '@google/genai': 1.46.0(@modelcontextprotocol/sdk@1.28.0(@cfworker/json-schema@4.1.1)(zod@4.4.1))
+      '@langchain/core': 1.1.35(openai@4.104.0(ws@8.20.0)(zod@4.4.1))(ws@8.20.0)
       '@mistralai/mistralai': 1.15.1
       '@qdrant/js-client-rest': 1.13.0(typescript@5.9.3)
       '@supabase/supabase-js': 2.100.0
@@ -13853,7 +13859,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  openai@4.104.0(ws@8.20.0)(zod@4.3.6):
+  openai@4.104.0(ws@8.20.0)(zod@4.4.1):
     dependencies:
       '@types/node': 18.19.130
       '@types/node-fetch': 2.6.13
@@ -13864,7 +13870,7 @@ snapshots:
       node-fetch: 2.7.0
     optionalDependencies:
       ws: 8.20.0
-      zod: 4.3.6
+      zod: 4.4.1
     transitivePeerDependencies:
       - encoding
     optional: true
@@ -15719,9 +15725,9 @@ snapshots:
       compress-commons: 4.1.2
       readable-stream: 3.6.2
 
-  zod-to-json-schema@3.25.1(zod@4.3.6):
+  zod-to-json-schema@3.25.1(zod@4.4.1):
     dependencies:
-      zod: 4.3.6
+      zod: 4.4.1
 
   zod-to-json-schema@3.25.2(zod@4.3.6):
     dependencies:
@@ -15734,6 +15740,8 @@ snapshots:
   zod@3.25.76: {}
 
   zod@4.3.6: {}
+
+  zod@4.4.1: {}
 
   zustand@4.5.7(@types/react@19.2.14)(react@19.2.4):
     dependencies:

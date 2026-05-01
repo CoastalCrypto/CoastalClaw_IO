@@ -66,4 +66,14 @@ Live one.
   it('returns empty for empty input', () => {
     expect(parseQueueMarkdown('')).toEqual([])
   })
+
+  it('normalizes CRLF line endings before parsing', () => {
+    const input = '\r\n## CRLF Item\r\n\r\nbody with crlf\r\n'
+    const items = parseQueueMarkdown(input)
+    expect(items).toHaveLength(1)
+    expect(items[0].title).toBe('CRLF Item')
+    expect(items[0].body).toBe('body with crlf')
+    // Critical: body must NOT contain stray \r
+    expect(items[0].body).not.toContain('\r')
+  })
 })

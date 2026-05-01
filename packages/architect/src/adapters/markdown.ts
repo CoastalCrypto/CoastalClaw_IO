@@ -2,6 +2,7 @@ import { readFileSync, existsSync, watch } from 'node:fs'
 import { createHash } from 'node:crypto'
 import type { ApprovalPolicy } from '@coastal-ai/core/architect/types'
 import type { WorkItemStore, InsertWorkItemInput } from '@coastal-ai/core/architect/store'
+import { DedupConflictError } from '@coastal-ai/core/architect/store'
 
 export interface ParsedQueueItem {
   title: string
@@ -17,6 +18,8 @@ const MOVED_RE = /<!--\s*moved to PR\s+#?\d+\s*-->/i
 
 export function parseQueueMarkdown(content: string): ParsedQueueItem[] {
   if (!content.trim()) return []
+  // Normalize CRLF → LF once at entry so the rest of the parser can assume LF.
+  content = content.replace(/\r\n/g, '\n')
   const items: ParsedQueueItem[] = []
   const parts = content.split(/\n(?=## )/g)
   for (const part of parts) {
@@ -50,7 +53,6 @@ export function parseQueueMarkdown(content: string): ParsedQueueItem[] {
  *  Out of scope: nested objects, multi-line strings, anchors, etc. */
 function parseSimpleYaml(text: string): Record<string, unknown> {
   const out: Record<string, unknown> = {}
-  let currentKey: string | null = null
   let currentList: string[] | null = null
   for (const rawLine of text.split(/\r?\n/)) {
     const line = rawLine.replace(/\s+$/, '')
@@ -61,15 +63,15 @@ function parseSimpleYaml(text: string): Record<string, unknown> {
     }
     const m = line.match(/^([A-Za-z_]\w*):\s*(.*)$/)
     if (!m) continue
-    currentKey = m[1]
+    const key = m[1]
     const rawValue = m[2]
     if (rawValue === '') {
       currentList = []
-      out[currentKey] = currentList
+      out[key] = currentList
     } else {
       currentList = null
       const num = Number(rawValue)
-      out[currentKey] = !Number.isNaN(num) && /^-?\d+(\.\d+)?$/.test(rawValue) ? num : rawValue.replace(/^['"]|['"]$/g, '')
+      out[key] = !Number.isNaN(num) && /^-?\d+(\.\d+)?$/.test(rawValue) ? num : rawValue.replace(/^['"]|['"]$/g, '')
     }
   }
   return out
@@ -111,17 +113,21 @@ export function startMarkdownAdapter(deps: MarkdownAdapterDeps): { stop: () => v
           approvalPolicy: item.approvalPolicy,
         } as InsertWorkItemInput)
         log(`inserted "${item.title}"`)
-      } catch (err: any) {
-        if (err.name === 'DedupConflictError') {
+      } catch (err) {
+        if (err instanceof DedupConflictError) {
           // Idempotent — already in queue.
         } else {
-          log(`failed to insert "${item.title}": ${err.message}`)
+          log(`failed to insert "${item.title}": ${(err as Error).message}`)
         }
       }
     }
   }
 
-  reconcile()
+  try {
+    reconcile()
+  } catch (err: any) {
+    log(`initial reconcile failed: ${err.message ?? String(err)}`)
+  }
 
   const watcher = watch(deps.filePath, () => {
     if (timer) clearTimeout(timer)

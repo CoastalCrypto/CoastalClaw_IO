@@ -38,7 +38,8 @@ export function openArchitectDb(dbPath: string): Database.Database {
       CHECK (status IN ('pending','active','awaiting_human','merged','cancelled','error','paused')),
       CHECK (priority IN ('high','normal','low')),
       CHECK (approval_policy IN ('full','plan-only','pr-only','none')),
-      CHECK (on_timeout IN ('revise','reject','auto_approve'))
+      CHECK (on_timeout IN ('revise','reject','auto_approve')),
+      CHECK (source IN ('ui','markdown','skill_md','github','skill_gap','curriculum'))
     );
 
     CREATE INDEX IF NOT EXISTS work_items_status_priority
@@ -50,7 +51,7 @@ export function openArchitectDb(dbPath: string): Database.Database {
 
     CREATE TABLE IF NOT EXISTS cycles (
       id              TEXT PRIMARY KEY,
-      work_item_id    TEXT REFERENCES work_items(id),
+      work_item_id    TEXT REFERENCES work_items(id) ON DELETE SET NULL,
       kind            TEXT NOT NULL DEFAULT 'normal',
       iteration       INTEGER NOT NULL DEFAULT 1,
       stage           TEXT NOT NULL,
@@ -76,7 +77,7 @@ export function openArchitectDb(dbPath: string): Database.Database {
 
     CREATE TABLE IF NOT EXISTS approvals (
       id               TEXT PRIMARY KEY,
-      cycle_id         TEXT NOT NULL REFERENCES cycles(id),
+      cycle_id         TEXT NOT NULL REFERENCES cycles(id) ON DELETE CASCADE,
       gate             TEXT NOT NULL,
       decision         TEXT NOT NULL,
       decision_revise  INTEGER NOT NULL DEFAULT 0,
@@ -89,10 +90,10 @@ export function openArchitectDb(dbPath: string): Database.Database {
 
     CREATE TABLE IF NOT EXISTS snapshots (
       id              TEXT PRIMARY KEY,
-      cycle_id        TEXT REFERENCES cycles(id),
-      work_item_id    TEXT REFERENCES work_items(id),
+      cycle_id        TEXT REFERENCES cycles(id) ON DELETE SET NULL,
+      work_item_id    TEXT REFERENCES work_items(id) ON DELETE SET NULL,
       shadow_ref      TEXT NOT NULL,
-      parent_id       TEXT REFERENCES snapshots(id),
+      parent_id       TEXT REFERENCES snapshots(id) ON DELETE SET NULL,
       captured_at     INTEGER NOT NULL,
       captured_by     TEXT NOT NULL,
       note            TEXT,

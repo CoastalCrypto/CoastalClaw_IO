@@ -7,6 +7,7 @@ import {
   PRIORITIES,
   SOURCES,
   CYCLE_KINDS,
+  FAILURE_KINDS,
 } from '../types.js'
 
 describe('architect status vocabulary', () => {
@@ -38,13 +39,21 @@ describe('architect status vocabulary', () => {
     expect(APPROVAL_POLICIES).toEqual(['full', 'plan-only', 'pr-only', 'none'])
   })
 
-  it('priorities are ordered low → normal → high', () => {
+  it('priorities are listed in PRIORITIES array as high → normal → low (front-of-queue first)', () => {
     expect(PRIORITIES).toEqual(['high', 'normal', 'low'])
   })
 
   it('sources include all 6 spec values including curriculum and skill_md', () => {
     expect(SOURCES).toEqual([
       'ui', 'markdown', 'skill_md', 'github', 'skill_gap', 'curriculum',
+    ])
+  })
+
+  it('failure kinds cover soft-fail and hard env_* taxonomy', () => {
+    expect(FAILURE_KINDS).toEqual([
+      'parse', 'apply', 'locked', 'budget',
+      'lint', 'type', 'build', 'test',
+      'env_branch', 'env_gh', 'env_push', 'env_perm', 'env_db', 'env_llm',
     ])
   })
 })

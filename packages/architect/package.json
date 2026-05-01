@@ -8,9 +8,11 @@
   "scripts": {
     "build": "tsc",
     "dev": "node --loader ts-node/esm src/index.ts",
+    "pretest": "pnpm --filter @coastal-ai/core build",
     "test": "vitest run"
   },
   "dependencies": {
+    "@coastal-ai/core": "workspace:*",
     "better-sqlite3": "^11.10.0",
     "dotenv": "^16.4.0"
   },

@@ -5,6 +5,36 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./architect/types": {
+      "types": "./dist/architect/types.d.ts",
+      "default": "./dist/architect/types.js"
+    },
+    "./architect/db": {
+      "types": "./dist/architect/db.d.ts",
+      "default": "./dist/architect/db.js"
+    },
+    "./architect/store": {
+      "types": "./dist/architect/store.d.ts",
+      "default": "./dist/architect/store.js"
+    },
+    "./architect/cycle-store": {
+      "types": "./dist/architect/cycle-store.d.ts",
+      "default": "./dist/architect/cycle-store.js"
+    },
+    "./architect/dedup": {
+      "types": "./dist/architect/dedup.d.ts",
+      "default": "./dist/architect/dedup.js"
+    },
+    "./architect/ulid": {
+      "types": "./dist/architect/ulid.d.ts",
+      "default": "./dist/architect/ulid.js"
+    }
+  },
   "bin": {
     "coastal-acp": "dist/acp/entry.js"
   },

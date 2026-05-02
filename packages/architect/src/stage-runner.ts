@@ -1,4 +1,4 @@
-import type { WorkItem } from '@coastal-ai/core/architect/types'
+import type { WorkItem, Cycle } from '@coastal-ai/core/architect/types'
 import type { WorkItemStore } from '@coastal-ai/core/architect/store'
 import type { CycleStore } from '@coastal-ai/core/architect/cycle-store'
 
@@ -49,7 +49,7 @@ export async function runWorkItemCycle(deps: RunCycleDeps): Promise<RunCycleOutc
       await new Promise(r => setTimeout(r, COOLDOWN_MS(iteration - 1)))
     }
 
-    const cycle = priorCycleId
+    const cycle: Cycle = priorCycleId
       ? cycleStore.startRevise(workItem.id, priorCycleId, priorReviseContext)
       : cycleStore.start(workItem.id)
 

@@ -1,26 +1,45 @@
 // packages/architect/src/config.ts
 import { posix } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
-/** Paths the self-build loop is never allowed to modify. */
-export const LOCKED_PATHS: ReadonlySet<string> = new Set([
-  'packages/architect/src/index.ts',
-  'packages/architect/src/config.ts',
-  'packages/architect/src/patcher.ts',
-  'packages/architect/src/validator.ts',
-  'packages/core/src/agents/permission-gate.ts',
-  'packages/core/src/agents/action-log.ts',
-  'packages/core/src/api/routes/admin.ts',
-].map(p => p.toLowerCase()))
+const DEFAULT_LOCKED_PATTERNS: RegExp[] = [
+  /^data\//,
+  /^\.git\//,
+  /^node_modules\//,
+  /(^|\/)\.env(\..*)?$/,
+  /(^|\/)secrets\//,
+  /^packaging\//,
+  /^coastalos\/build\//,
+  /^packages\/architect\//,
+  /^packages\/core\/src\/agents\/permission-gate\.ts$/,
+  /^packages\/core\/src\/agents\/action-log\.ts$/,
+  /^packages\/core\/src\/api\/routes\/admin\.ts$/,
+]
 
-/** Returns true if the normalized relative path is in the locked set. */
-export function isLockedPath(relPath: string): boolean {
-  const norm = posix.normalize(
+function normalizeForCheck(relPath: string): string {
+  return posix.normalize(
     relPath
-      .replace(/\\/g, '/')          // Windows backslashes → forward slashes
-      .replace(/^(\.\/)+/, '')       // strip one or more leading ./
-      .toLowerCase()                 // case-insensitive on Windows NTFS
+      .replace(/\\/g, '/')
+      .replace(/^(\.\/)+/, '')
+      .toLowerCase()
   )
-  return LOCKED_PATHS.has(norm)
+}
+
+export function isLockedPath(relPath: string, overrides?: RegExp[]): string | null {
+  const norm = normalizeForCheck(relPath)
+  const patterns = overrides && overrides.length > 0 ? overrides : DEFAULT_LOCKED_PATTERNS
+  for (const re of patterns) {
+    if (re.test(norm)) return `path '${relPath}' matches locked pattern ${re}`
+  }
+  return null
+}
+
+export function loadLockedPathOverrides(dataDir: string): RegExp[] | null {
+  const file = join(dataDir, '.architect-locked-paths')
+  if (!existsSync(file)) return null
+  const lines = readFileSync(file, 'utf8').split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#'))
+  return lines.map(l => new RegExp(l))
 }
 
 /** Number of unreviewed skill gaps that triggers an architect cycle. */

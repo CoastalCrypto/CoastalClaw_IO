@@ -47,8 +47,9 @@ async function runCycle(): Promise<void> {
   }
 
   // Locked path guard
-  if (isLockedPath(result.targetFile)) {
-    console.warn(`[coastal-architect] Proposed change targets locked path: ${result.targetFile} — skipping.`)
+  const lockReason = isLockedPath(result.targetFile)
+  if (lockReason) {
+    console.warn(`[coastal-architect] ${lockReason} — skipping.`)
     return
   }
 

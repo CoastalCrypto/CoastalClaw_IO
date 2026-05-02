@@ -8,6 +8,10 @@ import { runTests } from './validator.js'
 import { waitForVeto } from './announcer.js'
 import { SKILL_GAPS_THRESHOLD, VETO_TIMEOUT_MS, isLockedPath } from './config.js'
 import Database from 'better-sqlite3'
+import { openArchitectDb } from '@coastal-ai/core/architect/db'
+import { WorkItemStore } from '@coastal-ai/core/architect/store'
+import { CycleStore } from '@coastal-ai/core/architect/cycle-store'
+import { ArchitectDaemon } from './daemon.js'
 
 const REPO_ROOT    = process.env.CC_REPO_ROOT          ?? process.cwd()
 const DATA_DIR     = process.env.CC_DATA_DIR            ?? join(REPO_ROOT, 'data')
@@ -118,6 +122,37 @@ async function main(): Promise<void> {
   // Write PID file so admin /run route can signal this process
   const pidFile = join(DATA_DIR, '.architect-pid')
   writeFileSync(pidFile, String(process.pid))
+
+  if (process.env.CC_ARCHITECT_LEGACY !== '1') {
+    // Queue-driven daemon (v1.5)
+    const architectDb = openArchitectDb(join(DATA_DIR, 'architect.db'))
+    const daemon = new ArchitectDaemon({
+      workStore: new WorkItemStore(architectDb),
+      cycleStore: new CycleStore(architectDb),
+      runPlan: async (_input) => {
+        // TODO(Plan 2): wire real runPlanningStage here
+        return { kind: 'hard_fail' as const, failureKind: 'env_llm', message: 'not yet wired' }
+      },
+      runBuild: async (_input) => {
+        // TODO(Plan 2): wire real runBuildingStage here
+        return { kind: 'hard_fail' as const, failureKind: 'env_llm', message: 'not yet wired' }
+      },
+      isApprovalRequired: () => false,
+      log: (msg) => console.log(`[coastal-architect] ${msg}`),
+    })
+    daemon.start(CHECK_INTERVAL_MS)
+    console.log(`[coastal-architect] Queue-driven daemon started (interval: ${CHECK_INTERVAL_MS}ms)`)
+
+    const cleanup = () => {
+      daemon.stop()
+      architectDb.close()
+      try { unlinkSync(join(DATA_DIR, '.architect-pid')) } catch {}
+      process.exit(0)
+    }
+    process.on('SIGTERM', cleanup)
+    process.on('SIGINT', cleanup)
+    return  // skip legacy path
+  }
 
   let lastCount = countUnreviewedGaps()
 

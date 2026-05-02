@@ -31,6 +31,16 @@ export class Patcher {
     }
   }
 
+  async applyMultiFileDiff(diff: string): Promise<void> {
+    const tmpFile = join(this.repoRoot, '.architect-tmp.diff')
+    writeFileSync(tmpFile, diff)
+    try {
+      execFileSync('git', ['apply', '--whitespace=nowarn', tmpFile], { cwd: this.repoRoot })
+    } finally {
+      try { unlinkSync(tmpFile) } catch { /* ignore cleanup errors */ }
+    }
+  }
+
   async commitChange(message: string): Promise<void> {
     execFileSync('git', ['add', '-A'], { cwd: this.repoRoot })
     execFileSync('git', ['commit', '-m', message], { cwd: this.repoRoot })

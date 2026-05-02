@@ -38,15 +38,18 @@
 //   ModelRouter -> ModelRouterLike adapter. This wrapper is forward-compatible:
 //   when a router that knows the 'architect' domain is plugged in, no change
 //   here is required.
+//
+// REMOVE OR UPDATE THIS COMMENT WHEN the ModelRouter -> ModelRouterLike
+// adapter lands and the architect domain is registered in the core router.
 
 export type Tier = 'lite' | 'standard' | 'apex'
+
+export type MinTier = 'low' | 'medium' | 'high'
 
 const TIER_RANK: Record<Tier, number> = { lite: 0, standard: 1, apex: 2 }
 
 // CC_ARCHITECT_MIN_TIER values mapped onto the same rank scale.
 const MIN_TIER_RANK: Record<MinTier, number> = { low: 0, medium: 1, high: 2 }
-
-export type MinTier = 'low' | 'medium' | 'high'
 
 export interface ModelDescriptor {
   id: string
@@ -77,6 +80,18 @@ export class MinCapabilityError extends Error {
   }
 }
 
+export class NoModelAssignedError extends Error {
+  readonly domain: string
+  readonly priority: 'low' | 'high'
+
+  constructor(domain: string, priority: 'low' | 'high') {
+    super(`No model assigned for domain '${domain}' at priority '${priority}'.`)
+    this.name = 'NoModelAssignedError'
+    this.domain = domain
+    this.priority = priority
+  }
+}
+
 export interface ArchitectModelClientOpts {
   minTier: MinTier
 }
@@ -90,18 +105,27 @@ const REMEDIATION_MESSAGE =
   `high-priority planning is too small to produce reliable diffs. ` +
   `Install a stronger model, or set CC_ARCHITECT_MIN_TIER=low to run anyway (not recommended).`
 
+const NO_MODEL_REMEDIATION_MESSAGE =
+  `Architect has no model assigned for the 'architect' domain. Lowering ` +
+  `CC_ARCHITECT_MIN_TIER will not help here. Register the 'architect' domain ` +
+  `in the ModelRouter (or install any model so the router can fall back to ` +
+  `'general') and try again.`
+
 export class ArchitectModelRouterClient {
   private readonly router: ModelRouterLike
-  private readonly opts: ArchitectModelClientOpts
+  private readonly minTier: MinTier
 
   constructor(router: ModelRouterLike, opts: ArchitectModelClientOpts) {
+    // Boundary check: minTier is typed but typically arrives from
+    // process.env.CC_ARCHITECT_MIN_TIER. Validate the runtime value.
     if (!(opts.minTier in MIN_TIER_RANK)) {
+      const expected = Object.keys(MIN_TIER_RANK).join(', ')
       throw new Error(
-        `Invalid minTier '${opts.minTier}'. Expected one of: low, medium, high.`,
+        `Invalid minTier '${opts.minTier}'. Expected one of: ${expected}.`,
       )
     }
     this.router = router
-    this.opts = opts
+    this.minTier = opts.minTier
   }
 
   /** Route a planning prompt to the high-priority architect model. */
@@ -128,6 +152,9 @@ export class ArchitectModelRouterClient {
       const model = await this.assertModel('high')
       return { ok: true, modelId: model.id }
     } catch (err) {
+      if (err instanceof NoModelAssignedError) {
+        return { ok: false, message: NO_MODEL_REMEDIATION_MESSAGE }
+      }
       if (err instanceof MinCapabilityError) {
         return { ok: false, message: REMEDIATION_MESSAGE }
       }
@@ -139,15 +166,18 @@ export class ArchitectModelRouterClient {
   private async assertModel(priority: 'low' | 'high'): Promise<ModelDescriptor> {
     const model = await this.router.getModelFor('architect', priority)
     if (!model) {
-      throw new MinCapabilityError('<none>', 'lite', this.opts.minTier)
+      throw new NoModelAssignedError('architect', priority)
     }
+    // Defensive: ModelRouterLike adapters may be cast through `as any` when
+    // bridging from the existing `ModelRouter` (which has no tier field).
+    // Validate the runtime value.
     if (!(model.tier in TIER_RANK)) {
       throw new Error(
         `Router returned model ${model.id} with unknown tier '${model.tier}'.`,
       )
     }
-    if (TIER_RANK[model.tier] < MIN_TIER_RANK[this.opts.minTier]) {
-      throw new MinCapabilityError(model.id, model.tier, this.opts.minTier)
+    if (TIER_RANK[model.tier] < MIN_TIER_RANK[this.minTier]) {
+      throw new MinCapabilityError(model.id, model.tier, this.minTier)
     }
     return model
   }

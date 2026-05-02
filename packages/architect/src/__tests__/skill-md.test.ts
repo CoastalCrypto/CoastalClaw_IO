@@ -69,4 +69,23 @@ describe('serializeSkillMd round-trip', () => {
     if (!r.ok) throw new Error(r.error)
     expect(r.value).toEqual(original)
   })
+
+  it('round-trip preserves version, locale, and acceptance', () => {
+    const original = {
+      name: 'Full',
+      description: 'all optional fields populated',
+      version: 2,
+      locale: 'en-US',
+      acceptance: 'must compile and tests pass',
+      targetHints: ['x.ts'],
+      budgetLoc: 50,
+      budgetIters: 1,
+      approvalPolicy: 'pr-only' as const,
+      body: 'body',
+    }
+    const text = serializeSkillMd(original)
+    const r = parseSkillMd(text)
+    if (!r.ok) throw new Error(r.error)
+    expect(r.value).toEqual(original)
+  })
 })

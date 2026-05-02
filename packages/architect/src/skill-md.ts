@@ -65,7 +65,6 @@ export function serializeSkillMd(s: SkillMd): string {
 // design so this module is self-contained for export usage.
 function parseSimpleYaml(text: string): Record<string, unknown> {
   const out: Record<string, unknown> = {}
-  let currentKey: string | null = null
   let currentList: string[] | null = null
   for (const rawLine of text.split(/\r?\n/)) {
     const line = rawLine.replace(/\s+$/, '')
@@ -76,16 +75,16 @@ function parseSimpleYaml(text: string): Record<string, unknown> {
     }
     const m = line.match(/^([A-Za-z_]\w*):\s*(.*)$/)
     if (!m) continue
-    currentKey = m[1]
+    const key = m[1]
     const rawValue = m[2]
     if (rawValue === '') {
       currentList = []
-      out[currentKey] = currentList
+      out[key] = currentList
     } else {
       currentList = null
       const stripped = rawValue.replace(/^['"]|['"]$/g, '')
       const num = Number(stripped)
-      out[currentKey] = !Number.isNaN(num) && /^-?\d+(\.\d+)?$/.test(stripped) ? num : stripped
+      out[key] = !Number.isNaN(num) && /^-?\d+(\.\d+)?$/.test(stripped) ? num : stripped
     }
   }
   return out

@@ -78,4 +78,17 @@ describe('CycleStore', () => {
     expect(cycleStore.listForWorkItem(item.id).map(c => c.iteration)).toEqual([1, 2])
     expect(cycleStore.listForWorkItem(item.id)[1].id).toBe(b.id)
   })
+
+  it('startRevise throws when fromCycleId does not exist', () => {
+    const item = workStore.insert({ source: 'ui', title: 't', body: '', targetHints: [] })
+    expect(() => cycleStore.startRevise(item.id, 'NONEXISTENT_ID', { reason: 'r' })).toThrow(/not found/)
+  })
+
+  it('startRevise: explicit from_cycle wins over a stray field in ctx', () => {
+    const item = workStore.insert({ source: 'ui', title: 't', body: '', targetHints: [] })
+    const c1 = cycleStore.start(item.id)
+    cycleStore.terminate(c1.id, { outcome: 'revised' })
+    const c2 = cycleStore.startRevise(item.id, c1.id, { from_cycle: 'WRONG', reason: 'r' })
+    expect(c2.reviseContext).toMatchObject({ from_cycle: c1.id })
+  })
 })

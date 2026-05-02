@@ -42,13 +42,17 @@ export class CycleStore {
 
   startRevise(workItemId: string, fromCycleId: string, ctx: ReviseContext): Cycle {
     const prior = this.db.prepare('SELECT iteration FROM cycles WHERE id = ?').get(fromCycleId) as { iteration: number } | undefined
-    const nextIter = (prior?.iteration ?? 0) + 1
+    if (!prior) throw new Error(`startRevise: cycle ${fromCycleId} not found`)
+    const nextIter = prior.iteration + 1
     const id = ulid()
     const now = Date.now()
+    // Spread ctx first so the explicit from_cycle always wins, even if a caller
+    // accidentally passes one in ReviseContext.
+    const reviseContext = JSON.stringify({ ...ctx, from_cycle: fromCycleId })
     this.db.prepare(`
       INSERT INTO cycles (id, work_item_id, kind, iteration, stage, revise_context, created_at, updated_at)
       VALUES (?, ?, 'normal', ?, 'planning', ?, ?, ?)
-    `).run(id, workItemId, nextIter, JSON.stringify({ from_cycle: fromCycleId, ...ctx }), now, now)
+    `).run(id, workItemId, nextIter, reviseContext, now, now)
     return this.getById(id)!
   }
 

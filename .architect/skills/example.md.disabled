@@ -1,0 +1,12 @@
+---
+name: Example work item
+description: This file is intentionally suffixed .disabled so the watcher ignores it. Rename to example.md to activate.
+target_hints:
+  - packages/core/src/some-file.ts
+budget_iters: 3
+approval_policy: plan-only
+---
+
+# Why
+
+Replace this body with a real description of what you want the architect to do.

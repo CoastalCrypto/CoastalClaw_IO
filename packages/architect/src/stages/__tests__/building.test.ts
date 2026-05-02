@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from 'vitest'
 import { runBuildingStage } from '../building.js'
 
 const baseDeps = {
-  branchName: 'feature/architect/test-w1',
   diff: '--- a/x.ts\n+++ b/x.ts\n@@\n+x\n',
   applyDiff: vi.fn(),
   runLint: vi.fn(),
@@ -57,6 +56,19 @@ describe('runBuildingStage', () => {
     const result = await runBuildingStage(deps as any)
     expect(result.kind).toBe('soft_fail')
     if (result.kind === 'soft_fail') expect(result.failureKind).toBe('type')
+  })
+
+  it('stops at build failure with kind=build', async () => {
+    const deps = {
+      ...baseDeps,
+      applyDiff: vi.fn().mockResolvedValue(undefined),
+      runLint: vi.fn().mockResolvedValue({ ok: true, output: '' }),
+      runTypecheck: vi.fn().mockResolvedValue({ ok: true, output: '' }),
+      runBuild: vi.fn().mockResolvedValue({ ok: false, output: 'build failed' }),
+    }
+    const result = await runBuildingStage(deps as any)
+    expect(result.kind).toBe('soft_fail')
+    if (result.kind === 'soft_fail') expect(result.failureKind).toBe('build')
   })
 
   it('stops at test failure with kind=test', async () => {

@@ -1,7 +1,6 @@
 export interface GateOutput { ok: boolean; output: string }
 
 export interface BuildingInput {
-  branchName: string
   diff: string
   applyDiff: (diff: string) => Promise<void>
   runLint: () => Promise<GateOutput>

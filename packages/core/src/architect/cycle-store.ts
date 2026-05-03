@@ -103,6 +103,24 @@ export class CycleStore {
     return rows.map(r => this.fromRow(r))
   }
 
+  listRecent(limit: number, opts?: { stage?: string; sinceMs?: number }): Cycle[] {
+    let sql = 'SELECT * FROM cycles WHERE 1=1'
+    const params: any[] = []
+    if (opts?.stage) { sql += ' AND stage = ?'; params.push(opts.stage) }
+    if (opts?.sinceMs) { sql += ' AND created_at >= ?'; params.push(opts.sinceMs) }
+    sql += ' ORDER BY created_at DESC LIMIT ?'
+    params.push(limit)
+    return (this.db.prepare(sql).all(...params) as any[]).map(r => this.fromRow(r))
+  }
+
+  recordApproval(cycleId: string, opts: { gate: string; decision: string; comment?: string; decidedBy?: string }): void {
+    const id = ulid()
+    this.db.prepare(`
+      INSERT INTO approvals (id, cycle_id, gate, decision, decided_by, comment, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(id, cycleId, opts.gate, opts.decision, opts.decidedBy ?? null, opts.comment ?? null, Date.now())
+  }
+
   private fromRow(r: any): Cycle {
     return {
       id: r.id,

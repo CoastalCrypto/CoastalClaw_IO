@@ -10,8 +10,10 @@ import { chatRoutes } from './api/routes/chat.js'
 import { adminActionsRoutes } from './api/routes/admin-actions.js'
 import { adminRoutes, getOrCreateAdminToken, validateSessionToken } from './api/routes/admin.js'
 import { architectRoutes } from './api/routes/architect.js'
+import { architectCycleRoutes } from './api/routes/architect-cycles.js'
 import { openArchitectDb } from './architect/db.js'
 import { WorkItemStore } from './architect/store.js'
+import { CycleStore } from './architect/cycle-store.js'
 import { agentRoutes } from './api/routes/agents.js'
 import { agentMemoryRoutes } from './api/routes/agent-memory.js'
 import { teamRoutes } from './api/routes/team.js'
@@ -160,7 +162,9 @@ export async function buildServer() {
   // main coastal-ai.db so it can be backed up / wiped independently.
   const architectDb = openArchitectDb(join(config.dataDir, 'architect.db'))
   const architectStore = new WorkItemStore(architectDb)
+  const cycleStore = new CycleStore(architectDb)
   await fastify.register(architectRoutes, { store: architectStore })
+  await fastify.register(architectCycleRoutes, { cycleStore, workStore: architectStore })
 
   await fastify.register(teamRoutes)
   await fastify.register(personaRoutes, { registry: agentRegistry })

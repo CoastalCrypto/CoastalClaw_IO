@@ -54,4 +54,19 @@ export class Patcher {
   currentBranch(): string {
     return execFileSync('git', ['branch', '--show-current'], { cwd: this.repoRoot, encoding: 'utf8' }).trim()
   }
+
+  async pushBranch(branchName: string): Promise<void> {
+    execFileSync('git', ['push', '-u', 'origin', branchName], { cwd: this.repoRoot, stdio: 'pipe' })
+  }
+
+  branchExistsOnRemote(branchName: string): boolean {
+    try {
+      const result = execFileSync('git', ['ls-remote', '--heads', 'origin', branchName], {
+        cwd: this.repoRoot, encoding: 'utf8', stdio: 'pipe',
+      })
+      return result.trim().length > 0
+    } catch {
+      return false
+    }
+  }
 }

@@ -11,6 +11,7 @@ import { adminActionsRoutes } from './api/routes/admin-actions.js'
 import { adminRoutes, getOrCreateAdminToken, validateSessionToken } from './api/routes/admin.js'
 import { architectRoutes } from './api/routes/architect.js'
 import { architectCycleRoutes } from './api/routes/architect-cycles.js'
+import { architectControlRoutes } from './api/routes/architect-controls.js'
 import { openArchitectDb } from './architect/db.js'
 import { WorkItemStore } from './architect/store.js'
 import { CycleStore } from './architect/cycle-store.js'
@@ -165,6 +166,7 @@ export async function buildServer() {
   const cycleStore = new CycleStore(architectDb)
   await fastify.register(architectRoutes, { store: architectStore })
   await fastify.register(architectCycleRoutes, { cycleStore, workStore: architectStore })
+  await fastify.register(architectControlRoutes, { dataDir: config.dataDir })
 
   await fastify.register(teamRoutes)
   await fastify.register(personaRoutes, { registry: agentRegistry })

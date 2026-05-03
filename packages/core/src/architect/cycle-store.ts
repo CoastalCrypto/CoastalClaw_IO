@@ -96,6 +96,13 @@ export class CycleStore {
     return rows.map(r => this.fromRow(r))
   }
 
+  listByStage(stage: CycleStage): Cycle[] {
+    const rows = this.db.prepare(
+      'SELECT * FROM cycles WHERE stage = ? ORDER BY created_at ASC'
+    ).all(stage) as any[]
+    return rows.map(r => this.fromRow(r))
+  }
+
   private fromRow(r: any): Cycle {
     return {
       id: r.id,

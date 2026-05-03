@@ -73,4 +73,30 @@ describe('ArchitectDaemon end-to-end', () => {
     resolveA!()
     await first
   })
+
+  it('polls and transitions merged PR to outcome=merged', async () => {
+    const item = workStore.insert({ source: 'ui', title: 'Fix', body: 'b', targetHints: [] })
+    // Manually create a cycle in pr_review stage
+    const cycle = cycleStore.start(item.id)
+    // Set it to pr_review with a prUrl by updating directly
+    db.prepare("UPDATE cycles SET stage = 'pr_review', pr_url = ? WHERE id = ?")
+      .run('https://github.com/x/1', cycle.id)
+    workStore.updateStatus(item.id, 'awaiting_human')
+
+    const daemon = new ArchitectDaemon({
+      workStore, cycleStore,
+      runPlan: vi.fn().mockResolvedValue({ kind: 'hard_fail', failureKind: 'env_llm', message: '' }),
+      runBuild: vi.fn(),
+      isApprovalRequired: () => false,
+      pollPR: vi.fn().mockResolvedValue({ status: 'merged' }),
+      emitEvent: vi.fn(),
+      log: vi.fn(),
+    })
+
+    await daemon.tick()
+    const updated = cycleStore.getById(cycle.id)!
+    expect(updated.outcome).toBe('merged')
+    expect(updated.stage).toBe('done')
+    expect(workStore.getById(item.id)!.status).toBe('merged')
+  })
 })

@@ -53,3 +53,7 @@ export const SKIP_HOURS = 24
 
 /** Default cron expression for nightly run (02:00 local). */
 export const NIGHTLY_CRON = '0 2 * * *'
+
+export const CURRICULUM_SCAN_INTERVAL_MS = 4 * 60 * 60 * 1000 // 4 hours
+export const CURRICULUM_DAILY_BUDGET_CONSERVATIVE = 1
+export const CURRICULUM_DAILY_BUDGET_AGGRESSIVE = 5

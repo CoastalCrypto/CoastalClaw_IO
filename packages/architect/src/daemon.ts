@@ -15,11 +15,14 @@ export interface DaemonDeps {
   emitEvent?: (type: string, opts: Record<string, unknown>) => void
   runPR?: (input: any) => Promise<any>
   captureSnapshot?: (opts: { cycleId: string; workItemId: string; capturedBy: string }) => void
+  curriculumScanner?: { scan: () => Promise<any> }
+  curriculumEnabled?: boolean
 }
 
 export class ArchitectDaemon {
   private locked = false
   private interval: NodeJS.Timeout | null = null
+  private lastCurriculumScan = 0
 
   constructor(private deps: DaemonDeps) {}
 
@@ -32,7 +35,22 @@ export class ArchitectDaemon {
 
       // Phase 2: Process next pending item
       const next = this.deps.workStore.listPending(1)[0]
-      if (!next) return polled ? 'polled' : 'idle'
+      if (!next) {
+        // Phase 3: Curriculum scan (idle path)
+        if (this.deps.curriculumScanner && this.deps.curriculumEnabled) {
+          const SCAN_INTERVAL = 4 * 60 * 60 * 1000 // 4 hours
+          if (Date.now() - this.lastCurriculumScan >= SCAN_INTERVAL) {
+            try {
+              await this.deps.curriculumScanner.scan()
+              this.lastCurriculumScan = Date.now()
+              return polled ? 'polled' : 'ran'
+            } catch (err) {
+              this.deps.log?.(`curriculum scan error: ${err instanceof Error ? err.message : String(err)}`)
+            }
+          }
+        }
+        return polled ? 'polled' : 'idle'
+      }
 
       await runWorkItemCycle({
         workItem: next,

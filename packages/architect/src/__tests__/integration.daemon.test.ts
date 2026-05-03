@@ -99,4 +99,49 @@ describe('ArchitectDaemon end-to-end', () => {
     expect(updated.stage).toBe('done')
     expect(workStore.getById(item.id)!.status).toBe('merged')
   })
+
+  it('runs curriculum scan when idle and enabled', async () => {
+    // No work items in queue — daemon is idle
+    const scan = vi.fn().mockResolvedValue({ proposalsInserted: 1 })
+    const daemon = new ArchitectDaemon({
+      workStore, cycleStore,
+      runPlan: vi.fn(), runBuild: vi.fn(),
+      isApprovalRequired: () => false,
+      curriculumScanner: { scan },
+      curriculumEnabled: true,
+      log: vi.fn(),
+    })
+    const result = await daemon.tick()
+    expect(scan).toHaveBeenCalled()
+  })
+
+  it('does not run curriculum scan when disabled', async () => {
+    const scan = vi.fn()
+    const daemon = new ArchitectDaemon({
+      workStore, cycleStore,
+      runPlan: vi.fn(), runBuild: vi.fn(),
+      isApprovalRequired: () => false,
+      curriculumScanner: { scan },
+      curriculumEnabled: false,
+      log: vi.fn(),
+    })
+    await daemon.tick()
+    expect(scan).not.toHaveBeenCalled()
+  })
+
+  it('does not run curriculum scan when queue has items', async () => {
+    workStore.insert({ source: 'ui', title: 'Task', body: '', targetHints: [] })
+    const scan = vi.fn()
+    const daemon = new ArchitectDaemon({
+      workStore, cycleStore,
+      runPlan: vi.fn().mockResolvedValue({ kind: 'ok', plan: 'p', diff: 'd', modelUsed: 'm' }),
+      runBuild: vi.fn().mockResolvedValue({ kind: 'ok', testSummary: 'ok' }),
+      isApprovalRequired: () => false,
+      curriculumScanner: { scan },
+      curriculumEnabled: true,
+      log: vi.fn(),
+    })
+    await daemon.tick()
+    expect(scan).not.toHaveBeenCalled()
+  })
 })

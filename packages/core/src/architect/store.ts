@@ -97,6 +97,29 @@ export class WorkItemStore {
     return rows.map(r => this.fromRow(r))
   }
 
+  listByStatus(status: WorkItemStatus, limit = 100): WorkItem[] {
+    const rows = this.db.prepare(
+      'SELECT * FROM work_items WHERE status = ? ORDER BY updated_at DESC LIMIT ?'
+    ).all(status, limit) as any[]
+    return rows.map(r => this.fromRow(r))
+  }
+
+  listAll(limit = 100): WorkItem[] {
+    const rows = this.db.prepare(
+      'SELECT * FROM work_items ORDER BY updated_at DESC LIMIT ?'
+    ).all(limit) as any[]
+    return rows.map(r => this.fromRow(r))
+  }
+
+  countByStatus(): Record<string, number> {
+    const rows = this.db.prepare(
+      'SELECT status, COUNT(*) as cnt FROM work_items GROUP BY status'
+    ).all() as Array<{ status: string; cnt: number }>
+    const result: Record<string, number> = {}
+    for (const r of rows) result[r.status] = r.cnt
+    return result
+  }
+
   updateStatus(id: string, status: WorkItemStatus, opts: { pausedReason?: string } = {}): void {
     const now = Date.now()
     this.db.prepare(`

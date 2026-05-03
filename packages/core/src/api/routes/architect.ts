@@ -35,6 +35,13 @@ const insertSchema = z.object({
   allowSelfModify: z.boolean().optional(),
 })
 
+const patchSchema = z.object({
+  status: z.enum(['pending', 'paused', 'cancelled']).optional(),
+  pausedReason: z.string().optional(),
+  priority: z.enum(PRIORITIES).optional(),
+  approvalPolicy: z.enum(APPROVAL_POLICIES).optional(),
+}).refine(data => Object.keys(data).length > 0, { message: 'At least one field required' })
+
 export interface ArchitectRouteDeps {
   store: WorkItemStore
 }
@@ -74,10 +81,13 @@ export async function architectRoutes(
   })
 
   app.get('/api/admin/architect/work-items', async (req) => {
-    // For Plan 1, only support status=pending. Plan 3 extends this.
-    const status = (req.query as any)?.status
-    if (status !== 'pending') return [] // out of scope for backbone
-    return store.listPending(100)
+    const query = req.query as any
+    const status = query?.status
+    const limit = Number(query?.limit ?? 100)
+    if (status && status !== 'all') {
+      return store.listByStatus(status, limit)
+    }
+    return store.listAll(limit)
   })
 
   app.get<{ Params: { id: string } }>(
@@ -87,6 +97,34 @@ export async function architectRoutes(
       const item = store.getById(id)
       if (!item) return reply.code(404).send({ error: 'not_found' })
       return item
+    },
+  )
+
+  app.patch<{ Params: { id: string } }>(
+    '/api/admin/architect/work-items/:id',
+    async (req, reply) => {
+      const parsed = patchSchema.safeParse(req.body)
+      if (!parsed.success) {
+        return reply.code(400).send({
+          error: 'invalid_payload',
+          details: parsed.error.flatten(),
+        })
+      }
+      const item = store.getById(req.params.id)
+      if (!item) return reply.code(404).send({ error: 'not_found' })
+      if (parsed.data.status) {
+        store.updateStatus(item.id, parsed.data.status as any, { pausedReason: parsed.data.pausedReason })
+      }
+      if (parsed.data.priority || parsed.data.approvalPolicy) {
+        const sets: string[] = []
+        const vals: any[] = []
+        if (parsed.data.priority) { sets.push('priority = ?'); vals.push(parsed.data.priority) }
+        if (parsed.data.approvalPolicy) { sets.push('approval_policy = ?'); vals.push(parsed.data.approvalPolicy) }
+        sets.push('updated_at = ?'); vals.push(Date.now())
+        vals.push(item.id)
+        ;(store as any).db.prepare(`UPDATE work_items SET ${sets.join(', ')} WHERE id = ?`).run(...vals)
+      }
+      return store.getById(item.id)
     },
   )
 }

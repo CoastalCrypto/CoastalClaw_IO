@@ -1,6 +1,7 @@
 import type { WorkItem, Cycle } from '@coastal-ai/core/architect/types'
 import type { WorkItemStore } from '@coastal-ai/core/architect/store'
 import type { CycleStore } from '@coastal-ai/core/architect/cycle-store'
+import type { PRCreationResult } from './stages/pr-creation.js'
 
 export interface PlanResult {
   kind: 'ok' | 'soft_fail' | 'hard_fail'
@@ -25,10 +26,23 @@ export interface RunCycleDeps {
   runPlan: (input: { workItem: WorkItem; reviseContext: any }) => Promise<PlanResult>
   runBuild: (input: { branchName: string; diff: string }) => Promise<BuildResult>
   isApprovalRequired: (gate: 'plan' | 'pr') => boolean
+  runPR?: (input: {
+    workItem: WorkItem
+    cycle: Cycle
+    branchName: string
+    planText: string
+    diffText: string
+    testSummary: string
+    modelUsed: string
+  }) => Promise<PRCreationResult>
+  captureSnapshot?: (opts: { cycleId: string; workItemId: string; capturedBy: string }) => void
+  emitEvent?: (type: string, opts: Record<string, unknown>) => void
+  autoMerge?: (prUrl: string) => Promise<{ kind: string; message?: string }>
 }
 
 export type RunCycleOutcome =
   | { outcome: 'built' }
+  | { outcome: 'pr_review' }
   | { outcome: 'cancelled' }
   | { outcome: 'error' }
   | { outcome: 'awaiting_human' }
@@ -127,7 +141,56 @@ export async function runWorkItemCycle(deps: RunCycleDeps): Promise<RunCycleOutc
       continue
     }
 
-    // BUILD OK
+    // BUILD OK — capture snapshot, then create PR if wired
+    deps.captureSnapshot?.({ cycleId: cycle.id, workItemId: workItem.id, capturedBy: 'auto:building' })
+    deps.emitEvent?.('build_ok', { cycleId: cycle.id, workItemId: workItem.id })
+
+    if (deps.runPR) {
+      const pr = await deps.runPR({
+        workItem, cycle, branchName,
+        planText: plan.plan!, diffText: plan.diff!,
+        testSummary: build.testSummary!, modelUsed: plan.modelUsed!,
+      })
+
+      if (pr.kind === 'hard_fail') {
+        cycleStore.terminate(cycle.id, {
+          outcome: 'error',
+          failureKind: pr.failureKind as any,
+          errorMessage: pr.message,
+          planText: plan.plan,
+          diffText: plan.diff,
+          modelUsed: plan.modelUsed,
+          branchName,
+          testSummary: build.testSummary,
+        })
+        workStore.updateStatus(workItem.id, 'error', { pausedReason: pr.message })
+        deps.emitEvent?.('pr_failed', { cycleId: cycle.id, workItemId: workItem.id, failureKind: pr.failureKind })
+        return { outcome: 'error' }
+      }
+
+      // PR created successfully
+      cycleStore.terminate(cycle.id, {
+        outcome: 'built',
+        planText: plan.plan,
+        diffText: plan.diff,
+        modelUsed: plan.modelUsed,
+        branchName,
+        testSummary: build.testSummary,
+        prUrl: pr.prUrl,
+      })
+      cycleStore.setStage(cycle.id, 'pr_review')
+      deps.emitEvent?.('pr_created', { cycleId: cycle.id, workItemId: workItem.id, prUrl: pr.prUrl })
+
+      // Auto-merge for 'none' approval policy
+      if (workItem.approvalPolicy === 'none' && deps.autoMerge) {
+        await deps.autoMerge(pr.prUrl)
+      }
+
+      workStore.updateStatus(workItem.id, 'awaiting_human')
+      return { outcome: 'pr_review' }
+    }
+
+    // No PR stage wired (Plan 1 fallback)
     cycleStore.terminate(cycle.id, {
       outcome: 'built',
       planText: plan.plan,

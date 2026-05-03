@@ -103,4 +103,60 @@ describe('runWorkItemCycle', () => {
     expect(cycles).toHaveLength(1)
     expect(cycles[0].iteration).toBe(1)
   })
+
+  it('build ok → PR created → cycle transitions to pr_review', async () => {
+    const item = workStore.insert({ source: 'ui', title: 't', body: '', targetHints: [] })
+    const result = await runWorkItemCycle({
+      workItem: item,
+      workStore, cycleStore,
+      runPlan: vi.fn().mockResolvedValue(okPlanResult),
+      runBuild: vi.fn().mockResolvedValue(okBuildResult),
+      runPR: vi.fn().mockResolvedValue({ kind: 'ok', prUrl: 'https://github.com/x/1', prNumber: 1 }),
+      isApprovalRequired: () => false,
+      captureSnapshot: vi.fn(),
+      emitEvent: vi.fn(),
+    } as any)
+    expect(result.outcome).toBe('pr_review')
+    const cycles = cycleStore.listForWorkItem(item.id)
+    expect(cycles[0].prUrl).toBe('https://github.com/x/1')
+    expect(cycles[0].stage).toBe('pr_review')
+  })
+
+  it('PR creation hard-fail → cycle pauses with env_gh', async () => {
+    const item = workStore.insert({ source: 'ui', title: 't', body: '', targetHints: [] })
+    const result = await runWorkItemCycle({
+      workItem: item,
+      workStore, cycleStore,
+      runPlan: vi.fn().mockResolvedValue(okPlanResult),
+      runBuild: vi.fn().mockResolvedValue(okBuildResult),
+      runPR: vi.fn().mockResolvedValue({ kind: 'hard_fail', failureKind: 'env_gh', message: 'gh not found' }),
+      isApprovalRequired: () => false,
+      captureSnapshot: vi.fn(),
+      emitEvent: vi.fn(),
+    } as any)
+    expect(result.outcome).toBe('error')
+    expect(workStore.getById(item.id)!.status).toBe('error')
+    expect(workStore.getById(item.id)!.pausedReason).toContain('gh not found')
+  })
+
+  it('approval_policy=none triggers auto-merge after PR', async () => {
+    const item = workStore.insert({
+      source: 'ui', title: 't', body: '', targetHints: [],
+      approvalPolicy: 'none',
+    })
+    const autoMerge = vi.fn().mockResolvedValue({ kind: 'ok' })
+    const result = await runWorkItemCycle({
+      workItem: item,
+      workStore, cycleStore,
+      runPlan: vi.fn().mockResolvedValue(okPlanResult),
+      runBuild: vi.fn().mockResolvedValue(okBuildResult),
+      runPR: vi.fn().mockResolvedValue({ kind: 'ok', prUrl: 'url', prNumber: 1 }),
+      isApprovalRequired: () => false,
+      captureSnapshot: vi.fn(),
+      emitEvent: vi.fn(),
+      autoMerge,
+    } as any)
+    expect(autoMerge).toHaveBeenCalledWith('url')
+    expect(result.outcome).toBe('pr_review')
+  })
 })

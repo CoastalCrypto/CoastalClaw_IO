@@ -133,6 +133,12 @@ export class CycleStore {
     }
   }
 
+  listMergedWithPR(): Cycle[] {
+    return (this.db.prepare(
+      "SELECT * FROM cycles WHERE outcome = 'merged' AND pr_url IS NOT NULL ORDER BY updated_at DESC"
+    ).all() as any[]).map(r => this.fromRow(r))
+  }
+
   recordApproval(cycleId: string, opts: { gate: string; decision: string; comment?: string; decidedBy?: string }): void {
     const id = ulid()
     this.db.prepare(`

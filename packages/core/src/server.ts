@@ -13,6 +13,7 @@ import { architectRoutes } from './api/routes/architect.js'
 import { architectCycleRoutes } from './api/routes/architect-cycles.js'
 import { architectControlRoutes } from './api/routes/architect-controls.js'
 import { architectInsightRoutes } from './api/routes/architect-insights.js'
+import { architectReceiptRoutes } from './api/routes/architect-receipts.js'
 import { openArchitectDb } from './architect/db.js'
 import { WorkItemStore } from './architect/store.js'
 import { CycleStore } from './architect/cycle-store.js'
@@ -169,6 +170,7 @@ export async function buildServer() {
   await fastify.register(architectCycleRoutes, { cycleStore, workStore: architectStore })
   await fastify.register(architectControlRoutes, { dataDir: config.dataDir })
   await fastify.register(architectInsightRoutes, { cycleStore, workStore: architectStore })
+  await fastify.register(architectReceiptRoutes, { cycleStore })
 
   await fastify.register(teamRoutes)
   await fastify.register(personaRoutes, { registry: agentRegistry })

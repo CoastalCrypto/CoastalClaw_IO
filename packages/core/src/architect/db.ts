@@ -121,6 +121,18 @@ export function openArchitectDb(dbPath: string): Database.Database {
     CREATE INDEX IF NOT EXISTS suppressions_active
       ON curriculum_suppressions(signature)
       WHERE suppressed_until > 0;
+
+    CREATE TABLE IF NOT EXISTS architect_events (
+      id              TEXT PRIMARY KEY,
+      cycle_id        TEXT REFERENCES cycles(id) ON DELETE SET NULL,
+      work_item_id    TEXT REFERENCES work_items(id) ON DELETE SET NULL,
+      event_type      TEXT NOT NULL,
+      payload         TEXT,
+      created_at      INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS events_work_item ON architect_events(work_item_id, created_at);
+    CREATE INDEX IF NOT EXISTS events_type ON architect_events(event_type, created_at);
   `)
 
   return db

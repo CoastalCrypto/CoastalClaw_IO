@@ -113,6 +113,26 @@ export class CycleStore {
     return (this.db.prepare(sql).all(...params) as any[]).map(r => this.fromRow(r))
   }
 
+  getInsights(rangeDays = 30): {
+    successRate: number
+    avgIterations: number
+    totalDurationMs: number
+    topFailureKind: string | null
+  } {
+    const since = Date.now() - rangeDays * 24 * 60 * 60 * 1000
+    const total = this.db.prepare('SELECT COUNT(*) as cnt FROM cycles WHERE created_at >= ?').get(since) as { cnt: number }
+    const merged = this.db.prepare("SELECT COUNT(*) as cnt FROM cycles WHERE outcome = 'merged' AND created_at >= ?").get(since) as { cnt: number }
+    const avgIter = this.db.prepare("SELECT AVG(iteration) as avg FROM cycles WHERE outcome = 'merged' AND created_at >= ?").get(since) as { avg: number | null }
+    const duration = this.db.prepare("SELECT SUM(duration_ms) as total FROM cycles WHERE outcome = 'merged' AND created_at >= ?").get(since) as { total: number | null }
+    const topFail = this.db.prepare("SELECT failure_kind, COUNT(*) as cnt FROM cycles WHERE failure_kind IS NOT NULL AND created_at >= ? GROUP BY failure_kind ORDER BY cnt DESC LIMIT 1").get(since) as { failure_kind: string; cnt: number } | undefined
+    return {
+      successRate: total.cnt > 0 ? merged.cnt / total.cnt : 0,
+      avgIterations: avgIter.avg ?? 0,
+      totalDurationMs: duration.total ?? 0,
+      topFailureKind: topFail?.failure_kind ?? null,
+    }
+  }
+
   recordApproval(cycleId: string, opts: { gate: string; decision: string; comment?: string; decidedBy?: string }): void {
     const id = ulid()
     this.db.prepare(`

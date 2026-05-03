@@ -33,6 +33,10 @@
     "./architect/ulid": {
       "types": "./dist/architect/ulid.d.ts",
       "default": "./dist/architect/ulid.js"
+    },
+    "./models/router": {
+      "types": "./dist/models/router.d.ts",
+      "default": "./dist/models/router.js"
     }
   },
   "bin": {

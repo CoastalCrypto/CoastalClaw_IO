@@ -2,6 +2,7 @@
 import 'dotenv/config'
 import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs'
 import { join } from 'node:path'
+import { spawnSync } from 'node:child_process'
 import { plan } from './planner.js'
 import { Patcher } from './patcher.js'
 import { runTests } from './validator.js'
@@ -12,6 +13,21 @@ import { openArchitectDb } from '@coastal-ai/core/architect/db'
 import { WorkItemStore } from '@coastal-ai/core/architect/store'
 import { CycleStore } from '@coastal-ai/core/architect/cycle-store'
 import { ArchitectDaemon } from './daemon.js'
+import { runPlanningStage } from './stages/planning.js'
+import { runBuildingStage } from './stages/building.js'
+import { runPRCreationStage } from './stages/pr-creation.js'
+import { pollPRStatus, triggerAutoMerge } from './stages/pr-review.js'
+import { ModelRouter } from '@coastal-ai/core/models/router'
+import { createModelRouterAdapter } from './model-router-adapter.js'
+import { ArchitectModelRouterClient } from './model-router-client.js'
+import { SnapshotManager } from './snapshots.js'
+import { EventLog } from './event-log.js'
+import { CurriculumScanner } from './curriculum/scanner.js'
+import { SuppressionStore } from './curriculum/suppression-store.js'
+import { findStaleTodos, findChurnHotspots } from './curriculum/signals.js'
+import { runLintGate, runTypeGate, runBuildGate, runTestGate } from './gates.js'
+import { loadWorkspaceMapSync } from './workspace-map.js'
+import { findTouchedPackages } from './touched-packages.js'
 
 const REPO_ROOT    = process.env.CC_REPO_ROOT          ?? process.cwd()
 const DATA_DIR     = process.env.CC_DATA_DIR            ?? join(REPO_ROOT, 'data')
@@ -126,18 +142,197 @@ async function main(): Promise<void> {
   if (process.env.CC_ARCHITECT_LEGACY !== '1') {
     // Queue-driven daemon (v1.5)
     const architectDb = openArchitectDb(join(DATA_DIR, 'architect.db'))
+
+    // Build the model client once; shared across all closures.
+    const MIN_TIER = (process.env.CC_ARCHITECT_MIN_TIER ?? 'low') as 'low' | 'medium' | 'high'
+    const modelRouter = new ModelRouter({ ollamaUrl: OLLAMA_URL, defaultModel: OLLAMA_MODEL })
+    const routerAdapter = createModelRouterAdapter(modelRouter as any)
+    const modelClient = new ArchitectModelRouterClient(routerAdapter, { minTier: MIN_TIER })
+
+    // Patcher for applying diffs and creating branches.
+    const patcher = new Patcher(REPO_ROOT)
+
+    // Snapshot and event-log singletons.
+    const snapshotManager = new SnapshotManager({ repoRoot: REPO_ROOT, dataDir: DATA_DIR, db: architectDb })
+    const eventLog = new EventLog(architectDb)
+
+    // Workspace map (loaded once; packages are stable at startup).
+    const workspaceMap = loadWorkspaceMapSync(REPO_ROOT)
+
+    // Exec wrapper for gate runners: handles Windows (pnpm.cmd) vs Unix.
+    const pnpmBin = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
+    async function execGate(cmd: string, opts: { cwd: string }) {
+      // cmd is e.g. "pnpm --filter core lint" — split off the "pnpm" prefix
+      // that gates.ts prepends and use the platform-correct binary.
+      const withoutPnpm = cmd.startsWith('pnpm ') ? cmd.slice(5) : cmd
+      const args = withoutPnpm.split(/\s+/).filter(Boolean)
+      const result = spawnSync(pnpmBin, args, {
+        cwd: opts.cwd,
+        encoding: 'utf8',
+        shell: false,
+      })
+      return {
+        stdout: result.stdout ?? '',
+        stderr: result.stderr ?? '',
+        exitCode: result.status ?? 1,
+      }
+    }
+
+    // Curriculum scanner (disabled by default; operator sets CC_ARCHITECT_CURRICULUM=1).
+    const suppressionStore = new SuppressionStore(architectDb)
+    const curriculumScanner = new CurriculumScanner({
+      workStore: new WorkItemStore(architectDb),
+      cycleStore: new CycleStore(architectDb),
+      suppressions: suppressionStore,
+      repoRoot: REPO_ROOT,
+      callLLM: (prompt) => modelClient.callSummary(prompt),
+      harvestSignals: () => {
+        let grepOut = ''
+        try {
+          const r = spawnSync(
+            process.platform === 'win32' ? 'grep' : 'grep',
+            ['-rn', '--include=*.ts', '--include=*.js', '-E', 'TODO|FIXME', '.'],
+            { cwd: REPO_ROOT, encoding: 'utf8', shell: false },
+          )
+          grepOut = r.stdout ?? ''
+        } catch { /* non-fatal */ }
+
+        let gitOut = ''
+        try {
+          const r = spawnSync(
+            'git',
+            ['log', '--name-only', '--pretty=format:', '--since=90 days ago'],
+            { cwd: REPO_ROOT, encoding: 'utf8', shell: false },
+          )
+          gitOut = r.stdout ?? ''
+        } catch { /* non-fatal */ }
+
+        return {
+          staleTodos: findStaleTodos(grepOut),
+          churnHotspots: findChurnHotspots(gitOut),
+        }
+      },
+      isLockedPath,
+      dailyBudget: Number(process.env.CC_CURRICULUM_DAILY_BUDGET ?? '1'),
+    })
+
     const daemon = new ArchitectDaemon({
       workStore: new WorkItemStore(architectDb),
       cycleStore: new CycleStore(architectDb),
-      runPlan: async (_input) => {
-        // TODO(Plan 2): wire real runPlanningStage here
-        return { kind: 'hard_fail' as const, failureKind: 'env_llm', message: 'not yet wired' }
+
+      runPlan: async (input) => {
+        return runPlanningStage({
+          workItem: input.workItem,
+          reviseContext: input.reviseContext ?? null,
+          readSourceFile: async (relPath) => {
+            return readFileSync(join(REPO_ROOT, relPath), 'utf8')
+          },
+          client: modelClient,
+          lockedPathCheck: isLockedPath,
+        })
       },
-      runBuild: async (_input) => {
-        // TODO(Plan 2): wire real runBuildingStage here
-        return { kind: 'hard_fail' as const, failureKind: 'env_llm', message: 'not yet wired' }
+
+      runBuild: async (input) => {
+        const { branchName, diff } = input
+        const touchedPkgs = findTouchedPackages(diff, workspaceMap)
+        const gateOpts = { cwd: REPO_ROOT, exec: execGate }
+        return runBuildingStage({
+          diff,
+          applyDiff: async (d) => {
+            await patcher.createBranch(branchName)
+            await patcher.applyDiff(d)
+          },
+          runLint:      () => runLintGate(touchedPkgs, gateOpts),
+          runTypecheck: () => runTypeGate(touchedPkgs, gateOpts),
+          runBuild:     () => runBuildGate(touchedPkgs, gateOpts),
+          runTests:     () => runTestGate(touchedPkgs, gateOpts),
+        })
       },
-      isApprovalRequired: () => false,
+
+      runPR: async (input) => {
+        return runPRCreationStage({
+          ...input,
+          commitAndPush: async (message, branch) => {
+            await patcher.commitChange(message)
+            await patcher.pushBranch(branch)
+          },
+          createPR: async ({ title, body, branchName: branch, draft }) => {
+            const args = [
+              'pr', 'create',
+              '--title', title,
+              '--body', body,
+              '--head', branch,
+            ]
+            if (draft) args.push('--draft')
+            const result = spawnSync('gh', args, {
+              cwd: REPO_ROOT, encoding: 'utf8', shell: false, stdio: 'pipe',
+            })
+            if (result.status !== 0) {
+              throw new Error(result.stderr?.trim() || 'gh pr create failed')
+            }
+            const prUrl = result.stdout.trim()
+            const numMatch = prUrl.match(/\/pull\/(\d+)/)
+            const prNumber = numMatch ? Number(numMatch[1]) : 0
+            return { prUrl, prNumber }
+          },
+        })
+      },
+
+      pollPR: async (prUrl) => {
+        return pollPRStatus({
+          prUrl,
+          ghView: async (url) => {
+            const result = spawnSync(
+              'gh', ['pr', 'view', url, '--json', 'state,mergedAt'],
+              { cwd: REPO_ROOT, encoding: 'utf8', shell: false, stdio: 'pipe' },
+            )
+            if (result.status !== 0) {
+              throw new Error(result.stderr?.trim() || 'gh pr view failed')
+            }
+            return JSON.parse(result.stdout) as { state: string; mergedAt: string | null }
+          },
+        })
+      },
+
+      autoMerge: async (prUrl) => {
+        return triggerAutoMerge({
+          prUrl,
+          ghMerge: async (url) => {
+            const result = spawnSync(
+              'gh', ['pr', 'merge', url, '--squash', '--auto'],
+              { cwd: REPO_ROOT, encoding: 'utf8', shell: false, stdio: 'pipe' },
+            )
+            if (result.status !== 0) {
+              throw new Error(result.stderr?.trim() || 'gh pr merge failed')
+            }
+          },
+        })
+      },
+
+      captureSnapshot: (opts) => {
+        snapshotManager.capture({
+          cycleId: opts.cycleId,
+          workItemId: opts.workItemId,
+          capturedBy: opts.capturedBy,
+        })
+      },
+
+      emitEvent: (type, opts) => {
+        eventLog.emit(type, opts)
+      },
+
+      isApprovalRequired: (gate) => {
+        const modeFile = join(DATA_DIR, '.architect-mode')
+        if (!existsSync(modeFile)) return false
+        const mode = readFileSync(modeFile, 'utf8').trim()
+        if (mode === 'manual') return true
+        if (mode === 'semi' && gate === 'pr') return true
+        return false
+      },
+
+      curriculumScanner,
+      curriculumEnabled: process.env.CC_ARCHITECT_CURRICULUM === '1',
+
       log: (msg) => console.log(`[coastal-architect] ${msg}`),
     })
     daemon.start(CHECK_INTERVAL_MS)
@@ -145,6 +340,7 @@ async function main(): Promise<void> {
 
     const cleanup = () => {
       daemon.stop()
+      modelRouter.close()
       architectDb.close()
       try { unlinkSync(join(DATA_DIR, '.architect-pid')) } catch {}
       process.exit(0)

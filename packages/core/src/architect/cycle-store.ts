@@ -30,7 +30,7 @@ export interface ReviseContext {
 export class CycleStore {
   constructor(private db: Database.Database) {}
 
-  start(workItemId: string, opts: StartOpts = {}): Cycle {
+  start(workItemId: string | null, opts: StartOpts = {}): Cycle {
     const id = ulid()
     const now = Date.now()
     this.db.prepare(`

@@ -106,6 +106,51 @@ Flash a bootable USB drive. Plug it into any UEFI machine and boot — no instal
 
 ---
 
+## 🏗 Architect — Self-Healing System (v1.5.0)
+
+The Architect is Coastal.AI's autonomous improvement daemon. It takes work items, writes plans using your local models, runs them against lint/typecheck/build/test gates, opens PRs, and shows its work.
+
+### Quick Start
+
+```bash
+# Via CLI
+coastal-ai architect on                    # start daemon
+coastal-ai architect mode hands-off        # set mode
+coastal-ai architect ask "Add retry logic" # create work item
+coastal-ai architect status                # check status
+
+# Via Web UI
+# Navigate to the Architect page in the dashboard
+```
+
+### Three Modes
+
+| Mode | What it does |
+|------|-------------|
+| **Hands-on** | Shows you every change before it happens. Plan + PR review gates. |
+| **Hands-off** | Only shows pull requests. No plan gate. |
+| **Autopilot** | Auto-merges anything that passes all tests. No gates. |
+
+### How It Works
+
+1. **Work items** enter the queue via UI, CLI, `.architect/queue.md`, or `.architect/skills/*.md`
+2. **Planning** — LLM generates a plan + unified diff
+3. **Building** — applies diff, runs lint/typecheck/build/test (scoped to touched packages)
+4. **PR creation** — commits, pushes, opens a PR via `gh`
+5. **Polling** — daemon monitors PR status, transitions on merge/close
+
+Failed stages retry with exponential cooldown until the budget is exhausted. Hard failures (model down, GitHub auth expired) pause the work item for manual intervention.
+
+### Curriculum Mode
+
+When the queue is empty, the Architect can propose its own improvements by scanning for stale TODOs, churn hotspots, and lint warnings. Proposals are always low-priority and require full human approval.
+
+### Time-Travel Snapshots
+
+Before every build, the Architect captures a workspace snapshot in a shadow git repo. If something goes wrong, you can restore any prior state to a recovery branch.
+
+---
+
 ## 🔒 Privacy & Data
 
 Coastal.AI is built around a single principle: **your data never leaves your hardware.**

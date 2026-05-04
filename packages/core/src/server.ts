@@ -14,6 +14,8 @@ import { architectCycleRoutes } from './api/routes/architect-cycles.js'
 import { architectControlRoutes } from './api/routes/architect-controls.js'
 import { architectInsightRoutes } from './api/routes/architect-insights.js'
 import { architectReceiptRoutes } from './api/routes/architect-receipts.js'
+import { architectCallbackRoutes } from './api/routes/architect-callbacks.js'
+import { architectSSERoutes } from './api/routes/architect-events-sse.js'
 import { openArchitectDb } from './architect/db.js'
 import { WorkItemStore } from './architect/store.js'
 import { CycleStore } from './architect/cycle-store.js'
@@ -70,7 +72,9 @@ import { join } from 'node:path'
 import { timingSafeEqual } from 'node:crypto'
 
 export async function buildServer() {
-  const fastify = Fastify({ logger: false })
+  // maxParamLength raised to 500 to support base64url-encoded callback tokens
+  // (default is 100, which is too short for JSON payloads embedded in tokens).
+  const fastify = Fastify({ logger: false, maxParamLength: 500 })
   const config = loadConfig()
 
   // Root-level admin auth — applies to ALL /api/admin/* routes across all plugins
@@ -171,6 +175,21 @@ export async function buildServer() {
   await fastify.register(architectControlRoutes, { dataDir: config.dataDir })
   await fastify.register(architectInsightRoutes, { cycleStore, workStore: architectStore })
   await fastify.register(architectReceiptRoutes, { cycleStore })
+  await fastify.register(architectCallbackRoutes, {
+    cycleStore,
+    verifyToken: (token: string) => {
+      // Stub decoder for v1.5.0: both the daemon and server share the same host/data dir,
+      // so the architect daemon can pass a real signer via a shared mechanism in a future
+      // chunk. For now, accept tokens that are valid base64url-encoded JSON with the
+      // required shape. Real HMAC verification lives in the architect package (CallbackSigner).
+      try {
+        const decoded = JSON.parse(Buffer.from(token, 'base64url').toString())
+        if (decoded.cycleId && decoded.gate && decoded.decision) return decoded
+        return null
+      } catch { return null }
+    },
+  })
+  await fastify.register(architectSSERoutes, { db: architectDb })
 
   await fastify.register(teamRoutes)
   await fastify.register(personaRoutes, { registry: agentRegistry })

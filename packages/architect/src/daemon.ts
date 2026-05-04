@@ -1,19 +1,29 @@
 // packages/architect/src/daemon.ts
+import type { WorkItem, Cycle } from '@coastal-ai/core/architect/types'
 import type { WorkItemStore } from '@coastal-ai/core/architect/store'
 import type { CycleStore } from '@coastal-ai/core/architect/cycle-store'
-import { runWorkItemCycle, type PlanResult, type BuildResult } from './stage-runner.js'
+import type { PRCreationResult } from './stages/pr-creation.js'
+import { runWorkItemCycle, type PlanResult, type BuildResult, type ReviseContext } from './stage-runner.js'
 
 export interface DaemonDeps {
   workStore: WorkItemStore
   cycleStore: CycleStore
-  runPlan: (input: any) => Promise<PlanResult>
-  runBuild: (input: any) => Promise<BuildResult>
+  runPlan: (input: { workItem: WorkItem; reviseContext: ReviseContext | null }) => Promise<PlanResult>
+  runBuild: (input: { branchName: string; diff: string }) => Promise<BuildResult>
   isApprovalRequired: (gate: 'plan' | 'pr') => boolean
   log?: (msg: string) => void
   pollPR?: (prUrl: string) => Promise<{ status: string; message?: string }>
   autoMerge?: (prUrl: string) => Promise<{ kind: string; message?: string }>
   emitEvent?: (type: string, opts: Record<string, unknown>) => void
-  runPR?: (input: any) => Promise<any>
+  runPR?: (input: {
+    workItem: WorkItem
+    cycle: Cycle
+    branchName: string
+    planText: string
+    diffText: string
+    testSummary: string
+    modelUsed: string
+  }) => Promise<PRCreationResult>
   captureSnapshot?: (opts: { cycleId: string; workItemId: string; capturedBy: string }) => void
   curriculumScanner?: { scan: () => Promise<any> }
   curriculumEnabled?: boolean
@@ -75,8 +85,8 @@ export class ArchitectDaemon {
         workItem: next,
         workStore: this.deps.workStore,
         cycleStore: this.deps.cycleStore,
-        runPlan: this.deps.runPlan as any,
-        runBuild: this.deps.runBuild as any,
+        runPlan: this.deps.runPlan,
+        runBuild: this.deps.runBuild,
         isApprovalRequired: this.deps.isApprovalRequired,
         runPR: this.deps.runPR,
         captureSnapshot: this.deps.captureSnapshot,

@@ -1,11 +1,11 @@
-import type { WorkItem, Cycle } from '@coastal-ai/core/architect/types'
+import type { WorkItem, Cycle, FailureKind } from '@coastal-ai/core/architect/types'
 import type { WorkItemStore } from '@coastal-ai/core/architect/store'
 import type { CycleStore } from '@coastal-ai/core/architect/cycle-store'
 import type { PRCreationResult } from './stages/pr-creation.js'
 
 export interface PlanResult {
   kind: 'ok' | 'soft_fail' | 'hard_fail'
-  failureKind?: string
+  failureKind?: FailureKind
   message?: string
   plan?: string
   diff?: string
@@ -14,16 +14,23 @@ export interface PlanResult {
 
 export interface BuildResult {
   kind: 'ok' | 'soft_fail' | 'hard_fail'
-  failureKind?: string
+  failureKind?: FailureKind
   message?: string
   testSummary?: string
+}
+
+export interface ReviseContext {
+  reason: string
+  failureKind?: FailureKind
+  message?: string
+  testOutput?: string
 }
 
 export interface RunCycleDeps {
   workItem: WorkItem
   workStore: WorkItemStore
   cycleStore: CycleStore
-  runPlan: (input: { workItem: WorkItem; reviseContext: any }) => Promise<PlanResult>
+  runPlan: (input: { workItem: WorkItem; reviseContext: ReviseContext | null }) => Promise<PlanResult>
   runBuild: (input: { branchName: string; diff: string }) => Promise<BuildResult>
   isApprovalRequired: (gate: 'plan' | 'pr') => boolean
   runPR?: (input: {
@@ -55,7 +62,7 @@ export async function runWorkItemCycle(deps: RunCycleDeps): Promise<RunCycleOutc
   workStore.updateStatus(workItem.id, 'active')
 
   let priorCycleId: string | null = null
-  let priorReviseContext: any = null
+  let priorReviseContext: ReviseContext | null = null
   let iteration = 1
 
   while (iteration <= workItem.budgetIters) {
@@ -75,7 +82,7 @@ export async function runWorkItemCycle(deps: RunCycleDeps): Promise<RunCycleOutc
     if (plan.kind === 'hard_fail') {
       cycleStore.terminate(cycle.id, {
         outcome: 'error',
-        failureKind: plan.failureKind as any,
+        failureKind: plan.failureKind,
         errorMessage: plan.message,
       })
       workStore.updateStatus(workItem.id, 'error', { pausedReason: plan.message })
@@ -85,7 +92,7 @@ export async function runWorkItemCycle(deps: RunCycleDeps): Promise<RunCycleOutc
     if (plan.kind === 'soft_fail') {
       cycleStore.terminate(cycle.id, {
         outcome: 'revised',
-        failureKind: plan.failureKind as any,
+        failureKind: plan.failureKind,
         errorMessage: plan.message,
       })
       priorCycleId = cycle.id
@@ -110,7 +117,7 @@ export async function runWorkItemCycle(deps: RunCycleDeps): Promise<RunCycleOutc
     if (build.kind === 'hard_fail') {
       cycleStore.terminate(cycle.id, {
         outcome: 'error',
-        failureKind: build.failureKind as any,
+        failureKind: build.failureKind,
         errorMessage: build.message,
         planText: plan.plan,
         diffText: plan.diff,
@@ -124,7 +131,7 @@ export async function runWorkItemCycle(deps: RunCycleDeps): Promise<RunCycleOutc
     if (build.kind === 'soft_fail') {
       cycleStore.terminate(cycle.id, {
         outcome: 'revised',
-        failureKind: build.failureKind as any,
+        failureKind: build.failureKind,
         errorMessage: build.message,
         planText: plan.plan,
         diffText: plan.diff,
@@ -155,7 +162,7 @@ export async function runWorkItemCycle(deps: RunCycleDeps): Promise<RunCycleOutc
       if (pr.kind === 'hard_fail') {
         cycleStore.terminate(cycle.id, {
           outcome: 'error',
-          failureKind: pr.failureKind as any,
+          failureKind: pr.failureKind,
           errorMessage: pr.message,
           planText: plan.plan,
           diffText: plan.diff,

@@ -17,7 +17,9 @@ import { Channels } from './pages/Channels'
 import { Users } from './pages/Users'
 import { Pipeline } from './pages/Pipeline'
 import { AgentGraph } from './pages/AgentGraph'
-import { Architect } from './pages/Architect'
+const Architect = lazy(() =>
+  import('./pages/Architect').then((m) => ({ default: m.Architect }))
+)
 import { NavBar, type NavPage } from './components/NavBar'
 import { TitleBar } from './components/TitleBar'
 import { CommandPalette } from './components/CommandPalette'
@@ -159,7 +161,7 @@ export default function App() {
         {page === 'agent-graph' && <AgentGraph onNav={nav} />}
         {page === 'settings'  && <Settings onNav={nav} />}
         {page === 'system'    && <System onNav={nav} />}
-        {page === 'architect' && <Architect onNav={nav} />}
+        {page === 'architect' && <Suspense fallback={<div className="min-h-screen flex items-center justify-center" style={{ background: '#050a0f' }}><div className="font-mono text-sm animate-pulse" style={{ color: '#00e5ff' }}>loading architect...</div></div>}><Architect onNav={nav} /></Suspense>}
         {page === 'users'     && <Users onNav={nav} currentUserId={currentUser.id} />}
         {page === 'models'    && (
           <div className="min-h-screen" style={{ background: '#050a0f', color: '#e2f4ff' }}>

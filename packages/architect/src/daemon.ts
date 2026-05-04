@@ -17,12 +17,31 @@ export interface DaemonDeps {
   captureSnapshot?: (opts: { cycleId: string; workItemId: string; capturedBy: string }) => void
   curriculumScanner?: { scan: () => Promise<any> }
   curriculumEnabled?: boolean
+  notifier?: {
+    notifyApprovalNeeded: (opts: {
+      cycleId: string
+      gate: 'plan' | 'pr'
+      workItemTitle: string
+      planSummary: string
+      diffStats: string
+      reviewTimeoutMin: number
+    }) => Promise<void>
+    notifyDigest: (opts: {
+      merged: number
+      opened: number
+      rejected: number
+      errors: number
+    }) => Promise<void>
+  }
+  digestEnabled?: boolean
+  digestIntervalMs?: number
 }
 
 export class ArchitectDaemon {
   private locked = false
   private interval: NodeJS.Timeout | null = null
   private lastCurriculumScan = 0
+  private digestInterval: NodeJS.Timeout | null = null
 
   constructor(private deps: DaemonDeps) {}
 
@@ -101,10 +120,29 @@ export class ArchitectDaemon {
     this.interval = setInterval(() => {
       this.tick().catch(err => this.deps.log?.(`tick error: ${err instanceof Error ? err.message : String(err)}`))
     }, intervalMs)
+
+    if (this.deps.notifier && this.deps.digestEnabled) {
+      this.digestInterval = setInterval(async () => {
+        try {
+          const insights = this.deps.cycleStore.getInsights(1) // last 24h
+          const counts = this.deps.workStore.countByStatus()
+          await this.deps.notifier!.notifyDigest({
+            merged: Math.round(insights.successRate * 100), // approximate
+            opened: counts.awaiting_human ?? 0,
+            rejected: 0,
+            errors: counts.error ?? 0,
+          })
+        } catch (err) {
+          this.deps.log?.(`digest error: ${err instanceof Error ? err.message : String(err)}`)
+        }
+      }, this.deps.digestIntervalMs ?? 24 * 60 * 60 * 1000)
+    }
   }
 
   stop(): void {
     if (this.interval) clearInterval(this.interval)
     this.interval = null
+    if (this.digestInterval) clearInterval(this.digestInterval)
+    this.digestInterval = null
   }
 }

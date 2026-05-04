@@ -144,4 +144,24 @@ describe('ArchitectDaemon end-to-end', () => {
     await daemon.tick()
     expect(scan).not.toHaveBeenCalled()
   })
+
+  it('runs digest timer when enabled', async () => {
+    const notifyDigest = vi.fn().mockResolvedValue(undefined)
+    const daemon = new ArchitectDaemon({
+      workStore, cycleStore,
+      runPlan: vi.fn(), runBuild: vi.fn(),
+      isApprovalRequired: () => false,
+      notifier: {
+        notifyApprovalNeeded: vi.fn(),
+        notifyDigest,
+      },
+      digestEnabled: true,
+      digestIntervalMs: 10, // 10ms for test speed
+      log: vi.fn(),
+    })
+    daemon.start(60000) // normal tick interval, but digest fires fast
+    await new Promise(r => setTimeout(r, 50)) // wait for digest to fire
+    daemon.stop()
+    expect(notifyDigest).toHaveBeenCalled()
+  })
 })

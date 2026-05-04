@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { coreClient } from '../../api/client'
+import { statusLabel } from '../../utils/architect-labels'
 
 const STATUS_COLORS: Record<string, string> = {
   pending:        'text-yellow-400 bg-yellow-400/10',
@@ -116,7 +117,7 @@ export function QueueTab() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${STATUS_COLORS[item.status] ?? 'text-gray-400'}`}>
-                    {item.status}
+                    {statusLabel(item.status)}
                   </span>
                   <span className="text-sm truncate" style={{ color: '#e2f4ff' }}>{item.title}</span>
                 </div>

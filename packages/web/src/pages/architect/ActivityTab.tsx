@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { coreClient } from '../../api/client'
+import { failureLabel, stageLabel } from '../../utils/architect-labels'
 import { ApprovalButtons } from './ApprovalButtons'
 
 export function ActivityTab() {
@@ -53,7 +54,7 @@ export function ActivityTab() {
                 style={{ background: '#0d1f33', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-3 min-w-0">
                   <span className={`text-[10px] font-mono ${outcomeColors[c.outcome ?? ''] ?? 'text-gray-400'}`}>
-                    {c.outcome ?? c.stage}
+                    {c.outcome ?? stageLabel(c.stage)}
                   </span>
                   <span className="text-sm truncate" style={{ color: '#e2f4ff' }}>
                     iter {c.iteration} · {c.modelUsed ?? 'unknown'}
@@ -68,7 +69,7 @@ export function ActivityTab() {
                   {c.planText && <div className="mb-3"><span className="text-[10px] font-mono text-cyan-400/60">PLAN</span><p className="text-xs mt-1 whitespace-pre-wrap" style={{ color: '#94adc4' }}>{c.planText}</p></div>}
                   {c.testSummary && <div className="mb-3"><span className="text-[10px] font-mono text-cyan-400/60">TESTS</span><p className="text-xs mt-1" style={{ color: '#94adc4' }}>{c.testSummary}</p></div>}
                   {c.prUrl && <div className="mb-3"><span className="text-[10px] font-mono text-cyan-400/60">PR</span><a href={c.prUrl} target="_blank" rel="noopener" className="text-xs text-cyan-400 hover:underline ml-2">{c.prUrl}</a></div>}
-                  {c.failureKind && <div className="mb-3"><span className="text-[10px] font-mono text-red-400/60">FAILURE</span><span className="text-xs ml-2" style={{ color: '#94adc4' }}>{c.failureKind}: {c.errorMessage}</span></div>}
+                  {c.failureKind && <div className="mb-3"><span className="text-[10px] font-mono text-red-400/60">FAILURE</span><span className="text-xs ml-2" style={{ color: '#94adc4' }}>{failureLabel(c.failureKind)}: {c.errorMessage}</span></div>}
                   {(c.stage === 'plan_review' || c.stage === 'pr_review') && (
                     <ApprovalButtons cycleId={c.id} gate={c.stage === 'plan_review' ? 'plan' : 'merge'} onDone={() => {
                       coreClient.architectActivity(100).then(setCycles).catch(() => {})

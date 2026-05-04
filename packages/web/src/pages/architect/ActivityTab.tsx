@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { coreClient } from '../../api/client'
 import { failureLabel, stageLabel } from '../../utils/architect-labels'
+import { useArchitectSSE } from '../../hooks/useArchitectSSE'
 import { ApprovalButtons } from './ApprovalButtons'
 
 export function ActivityTab() {
@@ -9,12 +10,19 @@ export function ActivityTab() {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [filter, setFilter] = useState('all')
 
+  const refresh = useCallback(() => {
+    coreClient.architectActivity(100).then(setCycles).catch(() => {})
+  }, [])
+
   useEffect(() => {
     coreClient.architectActivity(100)
       .then(setCycles)
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  // Auto-refresh when SSE events arrive
+  useArchitectSSE(refresh)
 
   if (loading) return <div className="animate-pulse font-mono text-xs text-cyan-400/60">loading activity...</div>
 

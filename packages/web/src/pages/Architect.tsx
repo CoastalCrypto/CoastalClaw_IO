@@ -55,7 +55,7 @@ function TabBar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   )
 }
 
-// ── Queue Tab ──────────────────────────────────────────────────────────────────
+// ── Queue Tab (Chunk 3) ────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<string, string> = {
   pending:        'text-yellow-400 bg-yellow-400/10',

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { coreClient } from '../../api/client'
+import { failureLabel } from '../../utils/architect-labels'
 
 export function InsightsTab() {
   const [data, setData] = useState<any>(null)
@@ -15,19 +16,13 @@ export function InsightsTab() {
   if (loading) return <div className="animate-pulse font-mono text-xs text-cyan-400/60">loading insights...</div>
   if (!data) return <p className="text-xs" style={{ color: '#4a6a8a' }}>Failed to load insights</p>
 
-  const failureLabels: Record<string, string> = {
-    parse: 'AI output invalid', apply: 'Diff failed', locked: 'Protected file',
-    budget: 'Too big', lint: 'Style issue', type: 'TS error', build: 'Build failed',
-    test: 'Tests failed', env_llm: 'Model error', env_gh: 'GitHub error', env_push: 'Push error',
-  }
-
   const tiles = [
     { label: 'Success Rate', value: `${(data.successRate * 100).toFixed(0)}%`, color: data.successRate > 0.5 ? '#10b981' : '#f59e0b' },
     { label: 'Avg Iterations', value: data.avgIterations.toFixed(1), color: '#00e5ff' },
     { label: 'Time Saved', value: `${Math.round(data.totalDurationMs / 3600000)}h`, color: '#00e5ff' },
     { label: 'Open Queue', value: String(data.openQueueDepth), color: data.openQueueDepth > 5 ? '#f59e0b' : '#94adc4' },
     { label: 'Errors', value: String(data.errorCount), color: data.errorCount > 0 ? '#ef4444' : '#10b981' },
-    { label: 'Top Failure', value: failureLabels[data.topFailureKind] ?? data.topFailureKind ?? 'None', color: '#94adc4' },
+    { label: 'Top Failure', value: failureLabel(data.topFailureKind), color: '#94adc4' },
   ]
 
   return (

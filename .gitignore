@@ -22,3 +22,6 @@ packages/shell/dist-electron/
 
 # Root-level runtime data directory
 data/
+
+# Firecrawl cache
+.firecrawl/

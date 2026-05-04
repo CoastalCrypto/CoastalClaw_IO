@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { NavBar, type NavPage } from '../components/NavBar'
 import { coreClient } from '../api/client'
+import { useArchitectSSE } from '../hooks/useArchitectSSE'
 import { StatusCard } from './architect/StatusCard'
 import { TabBar, type Tab } from './architect/TabBar'
 import { QueueTab } from './architect/QueueTab'
@@ -16,9 +17,14 @@ export function Architect({ onNav }: { onNav: (page: NavPage) => void }) {
   const [status, setStatus] = useState<{ power: string; mode: string } | null>(null)
   const [showWizard, setShowWizard] = useState(!localStorage.getItem('architect_setup_done'))
 
-  useEffect(() => {
+  const refreshStatus = useCallback(() => {
     coreClient.architectStatus().then(setStatus).catch(() => {})
   }, [])
+
+  useEffect(refreshStatus, [refreshStatus])
+
+  // Refresh status card when SSE events arrive (power/mode may have changed)
+  useArchitectSSE(refreshStatus)
 
   return (
     <div className="min-h-screen text-white" style={{ background: '#050a0f' }}>
@@ -27,7 +33,7 @@ export function Architect({ onNav }: { onNav: (page: NavPage) => void }) {
       {showWizard && (
         <FirstRunWizard onComplete={() => {
           setShowWizard(false)
-          coreClient.architectStatus().then(setStatus).catch(() => {})
+          refreshStatus()
         }} />
       )}
 
@@ -37,7 +43,7 @@ export function Architect({ onNav }: { onNav: (page: NavPage) => void }) {
             <h1 className="text-xl font-semibold" style={{ color: '#e2f4ff' }}>Architect</h1>
             <p className="text-xs mt-1" style={{ color: '#94adc4' }}>Self-healing improvement system</p>
           </div>
-          <PauseButton onPaused={() => coreClient.architectStatus().then(setStatus).catch(() => {})} />
+          <PauseButton onPaused={refreshStatus} />
         </div>
         <StatusCard status={status} />
         <TabBar tab={tab} setTab={setTab} />

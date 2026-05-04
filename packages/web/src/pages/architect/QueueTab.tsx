@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { coreClient } from '../../api/client'
 import { statusLabel } from '../../utils/architect-labels'
+import { useArchitectSSE } from '../../hooks/useArchitectSSE'
 
 const STATUS_COLORS: Record<string, string> = {
   pending:        'text-yellow-400 bg-yellow-400/10',
@@ -23,14 +24,17 @@ export function QueueTab() {
 
   const inp = 'w-full bg-black/30 border border-white/8 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500/40 placeholder:text-gray-600'
 
-  const load = () => {
+  const load = useCallback(() => {
     coreClient.architectWorkItems('all')
       .then(setItems)
       .catch((e: any) => setError(e.message))
       .finally(() => setLoading(false))
-  }
+  }, [])
 
-  useEffect(load, [])
+  useEffect(load, [load])
+
+  // Auto-refresh when SSE events arrive
+  useArchitectSSE(load)
 
   const handleCreate = async () => {
     if (!title.trim()) return

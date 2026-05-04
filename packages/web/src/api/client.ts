@@ -464,6 +464,116 @@ export class CoreClient {
     return res.json()
   }
 
+  // ── Architect ─────────────────────────────────────────────────────────────
+
+  async architectStatus(): Promise<{ power: string; mode: string }> {
+    const res = await fetch(`${this.baseUrl}/api/admin/architect/status`, { headers: this.adminHeaders() })
+    this.checkAuth(res)
+    if (!res.ok) throw new Error(`Architect status failed (${res.status})`)
+    return res.json()
+  }
+
+  async architectWorkItems(status = 'all'): Promise<any[]> {
+    const res = await fetch(`${this.baseUrl}/api/admin/architect/work-items?status=${status}`, { headers: this.adminHeaders() })
+    this.checkAuth(res)
+    if (!res.ok) throw new Error(`Failed to list work items (${res.status})`)
+    return res.json()
+  }
+
+  async architectCreateWorkItem(data: { title: string; body?: string }): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/api/admin/architect/work-items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify(data),
+    })
+    this.checkAuth(res)
+    if (!res.ok) await this.extractError(res, `Create work item failed (${res.status})`)
+    return res.json()
+  }
+
+  async architectPatchWorkItem(id: string, data: Record<string, unknown>): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/api/admin/architect/work-items/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify(data),
+    })
+    this.checkAuth(res)
+    if (!res.ok) await this.extractError(res, `Patch work item failed (${res.status})`)
+    return res.json()
+  }
+
+  async architectActivity(limit = 50): Promise<any[]> {
+    const res = await fetch(`${this.baseUrl}/api/admin/architect/activity?limit=${limit}`, { headers: this.adminHeaders() })
+    this.checkAuth(res)
+    if (!res.ok) throw new Error(`Activity failed (${res.status})`)
+    return res.json()
+  }
+
+  async architectCycle(id: string): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/api/admin/architect/cycles/${id}`, { headers: this.adminHeaders() })
+    this.checkAuth(res)
+    if (!res.ok) throw new Error(`Cycle not found (${res.status})`)
+    return res.json()
+  }
+
+  async architectApproval(cycleId: string, data: { gate: string; decision: string; comment?: string }): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/api/admin/architect/cycles/${cycleId}/approval`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify(data),
+    })
+    this.checkAuth(res)
+    if (!res.ok) await this.extractError(res, `Approval failed (${res.status})`)
+    return res.json()
+  }
+
+  async architectSetPower(state: 'on' | 'off'): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/api/admin/architect/power`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify({ state }),
+    })
+    this.checkAuth(res)
+    if (!res.ok) throw new Error(`Power change failed (${res.status})`)
+    return res.json()
+  }
+
+  async architectSetMode(mode: string): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/api/admin/architect/mode`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify({ mode }),
+    })
+    this.checkAuth(res)
+    if (!res.ok) throw new Error(`Mode change failed (${res.status})`)
+    return res.json()
+  }
+
+  async architectRunNow(): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/api/admin/architect/run-now`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...this.adminHeaders() },
+      body: JSON.stringify({}),
+    })
+    this.checkAuth(res)
+    if (!res.ok) throw new Error(`Run-now failed (${res.status})`)
+    return res.json()
+  }
+
+  async architectInsights(range = 30): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/api/admin/architect/insights?range=${range}`, { headers: this.adminHeaders() })
+    this.checkAuth(res)
+    if (!res.ok) throw new Error(`Insights failed (${res.status})`)
+    return res.json()
+  }
+
+  async architectReceipts(): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/api/admin/architect/receipts`, { headers: this.adminHeaders() })
+    this.checkAuth(res)
+    if (!res.ok) throw new Error(`Receipts failed (${res.status})`)
+    return res.json()
+  }
+
   // ── Auth / Users ────────────────────────────────────────────────────────────
 
   async checkSetup(): Promise<{ needsSetup: boolean }> {

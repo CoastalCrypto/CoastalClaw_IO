@@ -1,4 +1,4 @@
-# Handoff — Coastal.AI Session 5 (Hardening + UX Polish)
+# Handoff — Coastal.AI Session 5 (Hardening + UX Polish + Decomposition)
 
 **Date:** 2026-05-05
 **Repo:** `C:\Users\John\CoastalAI` -> `https://github.com/CoastalCrypto/Coastal.AI`
@@ -7,35 +7,37 @@
 
 ---
 
-## Session 5 Summary (14 commits since v1.5.0)
+## Session 5 Summary (18 commits since v1.5.0)
 
 ### Performance
-- **40% main bundle reduction** (1034KB -> 621KB): lazy-loaded all 12 non-Chat pages via React.lazy + Suspense
-- Added `PageLoader` wrapper component for DRY loading fallback
-- **Shared SSE singleton**: all 5 architect tabs share one EventSource instead of each opening their own
+- **40% main bundle reduction** (1034KB -> 621KB): lazy-loaded all 12 non-Chat pages
+- **Shared SSE singleton**: one EventSource for all architect tabs
+- **PageLoader** wrapper for DRY loading fallback
 
 ### Security Hardening
-- **Input validation**: clamped `limit` (max 500), `since` (non-negative), `range` (1-365), `comment` (max 2000 chars) across all architect API routes
-- **SSE connection limit**: max 10 concurrent SSE connections with 429 response and proper cleanup on disconnect
-- **Rate limiting**: added per-route rate limits on power (10/min), mode (10/min), run-now (5/min), approval (20/min), and callbacks (20/min)
-- Security audit: verified HMAC + expiry validation in CallbackSigner is correct
+- Input validation: `limit` (max 500), `since` (non-negative), `range` (1-365), `comment` (max 2000)
+- SSE connection limit: max 10 concurrent, 429 when exceeded, proper cleanup
+- Rate limiting: power (10/min), mode (10/min), run-now (5/min), approval (20/min), callbacks (20/min)
+- Security audit confirmed HMAC + expiry validation is correct
 
-### Code Quality
-- **Architect.tsx decomposed**: 669 -> 52 lines, 10 focused sub-components
-- **7 `as any` casts removed**: proper FailureKind + ReviseContext types in stage-runner.ts and daemon.ts
-- **DRY labels**: all tabs use shared architect-labels.ts utilities
-- **Error boundary** wraps Architect page
+### Code Decomposition
+- **Architect.tsx**: 669 -> 52 lines (10 sub-components)
+- **Chat.tsx**: 1364 -> 749 lines (8 sub-components + types + hook)
+  - Extracted: types, MessageList, BackgroundPicker, ChatSidebar, ShortcutsOverlay, ArchitectToast, LayoutIcon, TeamResult, useReconnectingWs
+- **7 `as any` casts removed** with proper FailureKind + ReviseContext types
+- DRY labels across all architect tabs
 
 ### Features
-- **SSE live updates**: all 5 architect tabs + StatusCard auto-refresh via shared SSE connection
-- **Relative timestamps**: "3 minutes ago" instead of raw dates
-- **Keyboard navigation**: press 1-5 to switch architect tabs
-- **Expandable work items**: click queue items to see body, target hints, budget, approval policy, paused reason
+- SSE live updates: all 5 architect tabs + StatusCard
+- Relative timestamps ("3 minutes ago")
+- Keyboard tab navigation (1-5)
+- Expandable work items with detail panel
+- Error boundary for graceful failures
 
 ### Tests
-- **+14 new tests**: SSE endpoint (3), WorkItemStore (7), CycleStore (5, net +4 with fix)
+- +14 new tests: SSE endpoint (3), WorkItemStore (7), CycleStore (5)
 - Core: **326 passed** (was 315)
-- Architect: **~133 passed** (31 test files)
+- Architect: **~133 passed** (31 files)
 - All green, TSC clean, web build clean
 
 ---
@@ -44,13 +46,12 @@
 
 | Metric | Value |
 |--------|-------|
-| HEAD | `2070bc3` |
+| HEAD | `76e7d47` |
 | Core tests | 326 passed, 7 skipped |
 | Architect tests | ~133 passed (31 files) |
 | Web main bundle | 621KB (was 1034KB) |
-| Architect chunk | 22KB (lazy-loaded) |
 
 ### Remaining for Production
 1. Manual smoke test with real Ollama model
 2. Test callback URLs via Telegram/Discord
-3. Chat.tsx decomposition (1364 lines — largest file, deferred to avoid regressions)
+3. Audit daemon + video packages

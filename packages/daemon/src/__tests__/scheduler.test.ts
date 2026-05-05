@@ -34,4 +34,31 @@ describe('shouldRunNow', () => {
     const now = new Date('2026-03-31T09:15:00')
     expect(shouldRunNow('0 8 * * *', now)).toBe(false)
   })
+
+  it('matches step patterns (*/5)', () => {
+    const now = new Date('2026-03-31T08:15:00')
+    expect(shouldRunNow('*/5 * * * *', now)).toBe(true) // 15 % 5 === 0
+    expect(shouldRunNow('*/7 * * * *', now)).toBe(false) // 15 % 7 !== 0
+  })
+
+  it('matches day-of-week', () => {
+    // 2026-03-31 is a Tuesday (day 2)
+    const now = new Date('2026-03-31T08:00:00')
+    expect(shouldRunNow('0 8 * * 2', now)).toBe(true)
+    expect(shouldRunNow('0 8 * * 5', now)).toBe(false)
+  })
+
+  it('rejects invalid cron (wrong number of parts)', () => {
+    expect(shouldRunNow('0 8', new Date())).toBe(false)
+  })
+})
+
+describe('parseCronExpression edge cases', () => {
+  it('parses "every 30m"', () => {
+    expect(parseCronExpression('every 30m')).toBe('*/30 * * * *')
+  })
+
+  it('defaults unknown format to hourly', () => {
+    expect(parseCronExpression('whenever')).toBe('0 * * * *')
+  })
 })

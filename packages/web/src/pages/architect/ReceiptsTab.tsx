@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { coreClient } from '../../api/client'
+import { relativeTime } from '../../utils/relative-time'
 
 export function ReceiptsTab() {
   const [data, setData] = useState<any>(null)
@@ -35,7 +36,7 @@ export function ReceiptsTab() {
             <div className="flex gap-4 mt-1">
               <span className="text-[10px] font-mono" style={{ color: '#4a6a8a' }}>iter {pr.iteration}</span>
               <span className="text-[10px] font-mono" style={{ color: '#4a6a8a' }}>{pr.modelUsed}</span>
-              <span className="text-[10px] font-mono" style={{ color: '#4a6a8a' }}>{new Date(pr.mergedAt).toLocaleDateString()}</span>
+              <span className="text-[10px] font-mono" style={{ color: '#4a6a8a' }}>{relativeTime(pr.mergedAt)}</span>
             </div>
           </div>
         ))}

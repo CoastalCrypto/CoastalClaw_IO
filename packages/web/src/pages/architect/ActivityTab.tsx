@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { coreClient } from '../../api/client'
 import { failureLabel, stageLabel } from '../../utils/architect-labels'
+import { relativeTime } from '../../utils/relative-time'
 import { useArchitectSSE } from '../../hooks/useArchitectSSE'
 import { ApprovalButtons } from './ApprovalButtons'
 
@@ -69,7 +70,7 @@ export function ActivityTab() {
                   </span>
                 </div>
                 <span className="text-[10px] font-mono shrink-0" style={{ color: '#4a6a8a' }}>
-                  {new Date(c.createdAt).toLocaleDateString()}
+                  {relativeTime(c.createdAt)}
                 </span>
               </button>
               {expanded === c.id && (

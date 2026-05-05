@@ -1,17 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { coreClient } from '../../api/client'
 import { relativeTime } from '../../utils/relative-time'
+import { useArchitectSSE } from '../../hooks/useArchitectSSE'
 
 export function ReceiptsTab() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const refresh = useCallback(() => {
     coreClient.architectReceipts()
       .then(setData)
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(refresh, [refresh])
+  useArchitectSSE(refresh)
 
   if (loading) return <div className="animate-pulse font-mono text-xs text-cyan-400/60">loading receipts...</div>
   if (!data || data.prs.length === 0) return (

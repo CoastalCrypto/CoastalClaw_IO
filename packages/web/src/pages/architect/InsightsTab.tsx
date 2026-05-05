@@ -1,17 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { coreClient } from '../../api/client'
 import { failureLabel } from '../../utils/architect-labels'
+import { useArchitectSSE } from '../../hooks/useArchitectSSE'
 
 export function InsightsTab() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const refresh = useCallback(() => {
     coreClient.architectInsights(30)
       .then(setData)
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(refresh, [refresh])
+  useArchitectSSE(refresh)
 
   if (loading) return <div className="animate-pulse font-mono text-xs text-cyan-400/60">loading insights...</div>
   if (!data) return <p className="text-xs" style={{ color: '#4a6a8a' }}>Failed to load insights</p>

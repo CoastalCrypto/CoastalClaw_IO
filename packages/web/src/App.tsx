@@ -1,25 +1,10 @@
-import { useState, lazy, Suspense, useEffect } from 'react'
+import { useState, lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { ApolloProvider } from '@apollo/client'
 import { AuthContext, type AuthUser } from './context/AuthContext'
 import { Onboarding } from './pages/Onboarding'
 import { Login } from './pages/Login'
 import { ChangePassword } from './pages/ChangePassword'
 import { Chat } from './pages/Chat'
-import { Models } from './pages/Models'
-import { Agents } from './pages/Agents'
-import { Settings } from './pages/Settings'
-import { System } from './pages/System'
-import { Dashboard } from './pages/Dashboard'
-import { Analytics } from './pages/Analytics'
-import { Tools } from './pages/Tools'
-import { Skills } from './pages/Skills'
-import { Channels } from './pages/Channels'
-import { Users } from './pages/Users'
-import { Pipeline } from './pages/Pipeline'
-import { AgentGraph } from './pages/AgentGraph'
-const Architect = lazy(() =>
-  import('./pages/Architect').then((m) => ({ default: m.Architect }))
-)
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { NavBar, type NavPage } from './components/NavBar'
 import { TitleBar } from './components/TitleBar'
@@ -28,10 +13,37 @@ import { coreClient } from './api/client'
 import { apolloClient } from './api/apolloClient'
 import './index.css'
 
+// Lazy-loaded pages — only fetched when the user navigates to them
+const Dashboard  = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })))
+const Analytics  = lazy(() => import('./pages/Analytics').then(m => ({ default: m.Analytics })))
+const Tools      = lazy(() => import('./pages/Tools').then(m => ({ default: m.Tools })))
+const Skills     = lazy(() => import('./pages/Skills').then(m => ({ default: m.Skills })))
+const Channels   = lazy(() => import('./pages/Channels').then(m => ({ default: m.Channels })))
+const Agents     = lazy(() => import('./pages/Agents').then(m => ({ default: m.Agents })))
+const Pipeline   = lazy(() => import('./pages/Pipeline').then(m => ({ default: m.Pipeline })))
+const AgentGraph = lazy(() => import('./pages/AgentGraph').then(m => ({ default: m.AgentGraph })))
+const Settings   = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })))
+const System     = lazy(() => import('./pages/System').then(m => ({ default: m.System })))
+const Users      = lazy(() => import('./pages/Users').then(m => ({ default: m.Users })))
+const Models     = lazy(() => import('./pages/Models').then(m => ({ default: m.Models })))
+const Architect  = lazy(() => import('./pages/Architect').then(m => ({ default: m.Architect })))
+
 // Three.js is large — load it async so the onboarding form renders immediately
 const OceanScene = lazy(() =>
   import('./components/animations/OceanScene').then((m) => ({ default: m.OceanScene }))
 )
+
+function PageLoader({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#050a0f' }}>
+        <div className="font-mono text-sm animate-pulse" style={{ color: '#00e5ff' }}>loading...</div>
+      </div>
+    }>
+      {children}
+    </Suspense>
+  )
+}
 
 function loadStoredUser(): AuthUser | null {
   try {
@@ -152,25 +164,27 @@ export default function App() {
         {paletteOpen && currentUser && (
           <CommandPalette onNav={(p) => { setPage(p); setPaletteOpen(false) }} onClose={() => setPaletteOpen(false)} />
         )}
-        {page === 'dashboard' && <Dashboard onNav={nav} />}
-        {page === 'analytics' && <Analytics onNav={nav} />}
-        {page === 'tools'     && <Tools onNav={nav} />}
-        {page === 'skills'    && <Skills onNav={nav} />}
-        {page === 'channels'  && <Channels onNav={nav} />}
-        {page === 'agents'    && <Agents onNav={nav} />}
-        {page === 'pipeline'  && <Pipeline onNav={nav} />}
-        {page === 'agent-graph' && <AgentGraph onNav={nav} />}
-        {page === 'settings'  && <Settings onNav={nav} />}
-        {page === 'system'    && <System onNav={nav} />}
-        {page === 'architect' && <ErrorBoundary><Suspense fallback={<div className="min-h-screen flex items-center justify-center" style={{ background: '#050a0f' }}><div className="font-mono text-sm animate-pulse" style={{ color: '#00e5ff' }}>loading architect...</div></div>}><Architect onNav={nav} /></Suspense></ErrorBoundary>}
-        {page === 'users'     && <Users onNav={nav} currentUserId={currentUser.id} />}
-        {page === 'models'    && (
-          <div className="min-h-screen" style={{ background: '#050a0f', color: '#e2f4ff' }}>
-            <NavBar page="models" onNav={nav} />
-            <div className="pt-20 px-4 sm:px-6 max-w-4xl mx-auto pb-12">
-              <Models />
+        {page === 'dashboard'   && <PageLoader><Dashboard onNav={nav} /></PageLoader>}
+        {page === 'analytics'   && <PageLoader><Analytics onNav={nav} /></PageLoader>}
+        {page === 'tools'       && <PageLoader><Tools onNav={nav} /></PageLoader>}
+        {page === 'skills'      && <PageLoader><Skills onNav={nav} /></PageLoader>}
+        {page === 'channels'    && <PageLoader><Channels onNav={nav} /></PageLoader>}
+        {page === 'agents'      && <PageLoader><Agents onNav={nav} /></PageLoader>}
+        {page === 'pipeline'    && <PageLoader><Pipeline onNav={nav} /></PageLoader>}
+        {page === 'agent-graph' && <PageLoader><AgentGraph onNav={nav} /></PageLoader>}
+        {page === 'settings'    && <PageLoader><Settings onNav={nav} /></PageLoader>}
+        {page === 'system'      && <PageLoader><System onNav={nav} /></PageLoader>}
+        {page === 'architect'   && <ErrorBoundary><PageLoader><Architect onNav={nav} /></PageLoader></ErrorBoundary>}
+        {page === 'users'       && <PageLoader><Users onNav={nav} currentUserId={currentUser.id} /></PageLoader>}
+        {page === 'models'      && (
+          <PageLoader>
+            <div className="min-h-screen" style={{ background: '#050a0f', color: '#e2f4ff' }}>
+              <NavBar page="models" onNav={nav} />
+              <div className="pt-20 px-4 sm:px-6 max-w-4xl mx-auto pb-12">
+                <Models />
+              </div>
             </div>
-          </div>
+          </PageLoader>
         )}
         {/* Always mounted so chat history and session survive page navigation */}
         <div style={{ display: page === 'chat' ? 'block' : 'none' }}>

@@ -33,7 +33,7 @@ export async function architectCycleRoutes(app: FastifyInstance, deps: CycleRout
     comment: z.string().max(2000).optional(),
   })
 
-  app.post<{ Params: { id: string } }>('/api/admin/architect/cycles/:id/approval', async (req, reply) => {
+  app.post<{ Params: { id: string } }>('/api/admin/architect/cycles/:id/approval', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async (req, reply) => {
     const parsed = approvalSchema.safeParse(req.body)
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_payload', details: parsed.error.flatten() })
     const cycle = cycleStore.getById(req.params.id)

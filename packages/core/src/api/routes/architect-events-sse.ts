@@ -3,10 +3,21 @@ import type Database from 'better-sqlite3'
 
 export interface ArchitectSSEDeps {
   db: Database.Database
+  maxConnections?: number
 }
 
+const DEFAULT_MAX_CONNECTIONS = 10
+
 export async function architectSSERoutes(app: FastifyInstance, deps: ArchitectSSEDeps): Promise<void> {
+  const maxConns = deps.maxConnections ?? DEFAULT_MAX_CONNECTIONS
+  let activeConnections = 0
+
   app.get('/api/admin/architect/events', async (req, reply) => {
+    if (activeConnections >= maxConns) {
+      return reply.code(429).send({ error: 'too_many_connections', message: `Max ${maxConns} SSE connections reached.` })
+    }
+    activeConnections++
+
     reply.raw.setHeader('Content-Type', 'text/event-stream')
     reply.raw.setHeader('Cache-Control', 'no-cache')
     reply.raw.setHeader('Connection', 'keep-alive')
@@ -38,7 +49,12 @@ export async function architectSSERoutes(app: FastifyInstance, deps: ArchitectSS
       } catch { /* db may be closed during shutdown */ }
     }, 2000)
 
-    req.raw.on('close', () => clearInterval(interval))
+    const cleanup = () => {
+      clearInterval(interval)
+      activeConnections--
+    }
+
+    req.raw.on('close', cleanup)
     await new Promise<void>(resolve => req.raw.on('close', resolve))
   })
 }

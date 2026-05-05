@@ -29,7 +29,7 @@ export async function architectControlRoutes(app: FastifyInstance, deps: Control
     return getState()
   })
 
-  app.post('/api/admin/architect/power', async (req, reply) => {
+  app.post('/api/admin/architect/power', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (req, reply) => {
     const powerSchema = z.object({ state: z.enum(['on', 'off']) })
     const parsed = powerSchema.safeParse(req.body)
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_payload', details: parsed.error.flatten() })
@@ -43,7 +43,7 @@ export async function architectControlRoutes(app: FastifyInstance, deps: Control
     return { ok: true, power: state }
   })
 
-  app.post('/api/admin/architect/mode', async (req, reply) => {
+  app.post('/api/admin/architect/mode', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (req, reply) => {
     const modeSchema = z.object({
       mode: z.enum(['hands-on', 'hands-off', 'autopilot', 'custom']),
     })
@@ -54,7 +54,7 @@ export async function architectControlRoutes(app: FastifyInstance, deps: Control
     return { ok: true, mode }
   })
 
-  app.post('/api/admin/architect/run-now', async (_req, reply) => {
+  app.post('/api/admin/architect/run-now', { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, async (_req, reply) => {
     // Signal the daemon to run a tick immediately
     writeFileSync(join(dataDir, '.architect-run-now'), '1')
     return { ok: true, message: 'Tick requested' }

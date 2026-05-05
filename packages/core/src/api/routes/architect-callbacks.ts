@@ -8,7 +8,7 @@ export interface CallbackRouteDeps {
 
 export async function architectCallbackRoutes(app: FastifyInstance, deps: CallbackRouteDeps): Promise<void> {
   // POST for API clients
-  app.post<{ Params: { token: string } }>('/api/admin/architect/callbacks/:token', async (req, reply) => {
+  app.post<{ Params: { token: string } }>('/api/admin/architect/callbacks/:token', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async (req, reply) => {
     const payload = deps.verifyToken(req.params.token)
     if (!payload) return reply.code(410).send({ error: 'expired_or_invalid', message: 'This link has expired or is invalid.' })
     deps.cycleStore.recordApproval(payload.cycleId, {
@@ -20,7 +20,7 @@ export async function architectCallbackRoutes(app: FastifyInstance, deps: Callba
   })
 
   // GET for browser link clicks (Telegram taps etc.)
-  app.get<{ Params: { token: string } }>('/api/admin/architect/callbacks/:token', async (req, reply) => {
+  app.get<{ Params: { token: string } }>('/api/admin/architect/callbacks/:token', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async (req, reply) => {
     const payload = deps.verifyToken(req.params.token)
     if (!payload) return reply.code(410).type('text/html').send('<h1>Link Expired</h1><p>This approval link has expired or is invalid.</p>')
     deps.cycleStore.recordApproval(payload.cycleId, {

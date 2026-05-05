@@ -65,3 +65,66 @@ describe('WorkItemStore.list', () => {
     expect(pending.map(i => i.title)).toEqual(['b', 'a', 'c']) // high → normal → low
   })
 })
+
+describe('WorkItemStore.listByStatus', () => {
+  it('filters by status', () => {
+    const a = store.insert({ source: 'ui', title: 'A', body: '', targetHints: [] })
+    const b = store.insert({ source: 'ui', title: 'B', body: '', targetHints: [] })
+    store.updateStatus(b.id, 'cancelled')
+
+    expect(store.listByStatus('pending')).toHaveLength(1)
+    expect(store.listByStatus('pending')[0].title).toBe('A')
+    expect(store.listByStatus('cancelled')).toHaveLength(1)
+    expect(store.listByStatus('merged')).toHaveLength(0)
+  })
+})
+
+describe('WorkItemStore.listAll', () => {
+  it('returns all items up to limit', () => {
+    for (let i = 0; i < 5; i++) {
+      store.insert({ source: 'ui', title: `T${i}`, body: '', targetHints: [] })
+    }
+    expect(store.listAll(3)).toHaveLength(3)
+    expect(store.listAll()).toHaveLength(5)
+  })
+})
+
+describe('WorkItemStore.countByStatus', () => {
+  it('returns counts grouped by status', () => {
+    store.insert({ source: 'ui', title: 'X', body: '', targetHints: [] })
+    store.insert({ source: 'ui', title: 'Y', body: '', targetHints: [] })
+    const z = store.insert({ source: 'ui', title: 'Z', body: '', targetHints: [] })
+    store.updateStatus(z.id, 'cancelled')
+
+    const counts = store.countByStatus()
+    expect(counts.pending).toBe(2)
+    expect(counts.cancelled).toBe(1)
+  })
+})
+
+describe('WorkItemStore.updateStatus', () => {
+  it('sets pausedReason for error status', () => {
+    const item = store.insert({ source: 'ui', title: 'Err', body: '', targetHints: [] })
+    store.updateStatus(item.id, 'error', { pausedReason: 'LLM down' })
+
+    const updated = store.getById(item.id)!
+    expect(updated.status).toBe('error')
+    expect(updated.pausedReason).toBe('LLM down')
+    expect(updated.pausedAt).toBeGreaterThan(0)
+  })
+
+  it('clears pausedReason when resuming from error', () => {
+    const item = store.insert({ source: 'ui', title: 'Fix', body: '', targetHints: [] })
+    store.updateStatus(item.id, 'error', { pausedReason: 'broken' })
+    store.updateStatus(item.id, 'pending')
+
+    const updated = store.getById(item.id)!
+    expect(updated.status).toBe('pending')
+    expect(updated.pausedReason).toBeNull()
+    expect(updated.pausedAt).toBeNull()
+  })
+
+  it('getById returns null for nonexistent id', () => {
+    expect(store.getById('nonexistent')).toBeNull()
+  })
+})

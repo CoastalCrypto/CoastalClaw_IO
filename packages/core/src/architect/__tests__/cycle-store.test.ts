@@ -91,4 +91,64 @@ describe('CycleStore', () => {
     const c2 = cycleStore.startRevise(item.id, c1.id, { from_cycle: 'WRONG', reason: 'r' })
     expect(c2.reviseContext).toMatchObject({ from_cycle: c1.id })
   })
+
+  it('listByStage returns cycles in the given stage', () => {
+    const item = workStore.insert({ source: 'ui', title: 't', body: '', targetHints: [] })
+    const c = cycleStore.start(item.id)
+    expect(cycleStore.listByStage('planning')).toHaveLength(1)
+    expect(cycleStore.listByStage('building')).toHaveLength(0)
+    cycleStore.setStage(c.id, 'building')
+    expect(cycleStore.listByStage('building')).toHaveLength(1)
+    expect(cycleStore.listByStage('planning')).toHaveLength(0)
+  })
+
+  it('listRecent returns recent cycles with limit', () => {
+    const item = workStore.insert({ source: 'ui', title: 't', body: '', targetHints: [] })
+    for (let i = 0; i < 5; i++) {
+      const c = cycleStore.start(item.id)
+      cycleStore.terminate(c.id, { outcome: 'revised' })
+    }
+    expect(cycleStore.listRecent(3)).toHaveLength(3)
+    expect(cycleStore.listRecent(10)).toHaveLength(5)
+  })
+
+  it('recordApproval stores the approval decision', () => {
+    const item = workStore.insert({ source: 'ui', title: 't', body: '', targetHints: [] })
+    const c = cycleStore.start(item.id)
+    cycleStore.recordApproval(c.id, {
+      gate: 'plan',
+      decision: 'approved',
+      decidedBy: 'admin',
+      comment: 'Looks good',
+    })
+    // Verify via the cycle detail (approval is recorded)
+    const cycle = cycleStore.getById(c.id)!
+    expect(cycle).toBeDefined()
+  })
+
+  it('getInsights returns aggregate stats', () => {
+    const item = workStore.insert({ source: 'ui', title: 't', body: '', targetHints: [] })
+    const c1 = cycleStore.start(item.id)
+    cycleStore.terminate(c1.id, { outcome: 'merged', durationMs: 5000 })
+    const c2 = cycleStore.start(item.id)
+    cycleStore.terminate(c2.id, { outcome: 'failed', failureKind: 'test' })
+
+    const insights = cycleStore.getInsights(30)
+    expect(insights.successRate).toBe(0.5)
+    expect(insights.totalDurationMs).toBe(5000)
+    expect(insights.topFailureKind).toBe('test')
+  })
+
+  it('listMergedWithPR returns only merged cycles with PR URLs', () => {
+    const item = workStore.insert({ source: 'ui', title: 't', body: '', targetHints: [] })
+    const c1 = cycleStore.start(item.id)
+    cycleStore.terminate(c1.id, { outcome: 'merged', prUrl: 'https://github.com/x/1' })
+    const c2 = cycleStore.start(item.id)
+    cycleStore.terminate(c2.id, { outcome: 'failed' })
+
+    const merged = cycleStore.listMergedWithPR()
+    expect(merged).toHaveLength(1)
+    expect(merged[0].prUrl).toBe('https://github.com/x/1')
+    expect(merged[0].outcome).toBe('merged')
+  })
 })

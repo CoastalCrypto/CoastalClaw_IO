@@ -11,7 +11,8 @@ export async function architectInsightRoutes(app: FastifyInstance, deps: Insight
   const { cycleStore, workStore } = deps
 
   app.get('/api/admin/architect/insights', async (req) => {
-    const range = Number((req.query as any)?.range ?? 30)
+    const rawRange = Number((req.query as any)?.range ?? 30)
+    const range = Number.isFinite(rawRange) && rawRange > 0 ? Math.min(rawRange, 365) : 30
     const insights = cycleStore.getInsights(range)
     const counts = workStore.countByStatus()
     return {

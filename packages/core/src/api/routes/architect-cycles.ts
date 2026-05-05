@@ -14,8 +14,10 @@ export async function architectCycleRoutes(app: FastifyInstance, deps: CycleRout
   app.get('/api/admin/architect/activity', async (req) => {
     const q = req.query as any
     const stage = q?.status && q.status !== 'all' ? q.status : undefined
-    const since = q?.since ? Number(q.since) : undefined
-    const limit = Number(q?.limit ?? 50)
+    const rawSince = q?.since ? Number(q.since) : undefined
+    const since = rawSince != null && Number.isFinite(rawSince) && rawSince >= 0 ? rawSince : undefined
+    const rawLimit = Number(q?.limit ?? 50)
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 500) : 50
     return cycleStore.listRecent(limit, { stage, sinceMs: since })
   })
 
@@ -28,7 +30,7 @@ export async function architectCycleRoutes(app: FastifyInstance, deps: CycleRout
   const approvalSchema = z.object({
     gate: z.enum(['plan', 'diff', 'merge']),
     decision: z.enum(['approved', 'rejected', 'revised']),
-    comment: z.string().optional(),
+    comment: z.string().max(2000).optional(),
   })
 
   app.post<{ Params: { id: string } }>('/api/admin/architect/cycles/:id/approval', async (req, reply) => {

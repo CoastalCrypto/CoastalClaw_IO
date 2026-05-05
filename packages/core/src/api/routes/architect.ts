@@ -83,7 +83,8 @@ export async function architectRoutes(
   app.get('/api/admin/architect/work-items', async (req) => {
     const query = req.query as any
     const status = query?.status
-    const limit = Number(query?.limit ?? 100)
+    const rawLimit = Number(query?.limit ?? 100)
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 500) : 100
     if (status && status !== 'all') {
       return store.listByStatus(status, limit)
     }

@@ -13,7 +13,8 @@ export async function architectSSERoutes(app: FastifyInstance, deps: ArchitectSS
     reply.raw.setHeader('X-Accel-Buffering', 'no')
     reply.raw.flushHeaders()
 
-    let lastTimestamp = Number((req.query as any)?.since ?? 0)
+    const rawSince = Number((req.query as any)?.since ?? 0)
+    let lastTimestamp = Number.isFinite(rawSince) && rawSince >= 0 ? rawSince : 0
 
     // Send initial batch
     const initial = deps.db.prepare(
